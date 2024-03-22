@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use miette::{IntoDiagnostic, Result};
 use tokio::fs::read_to_string;
 
-use crate::{firefox, Browser, BrowserFile};
+use crate::{browser::BrowserFile, firefox, Browser};
 
 /// just impl the `base` method
 pub trait FFPath {
@@ -41,42 +41,46 @@ pub trait FFPath {
         self.base().join(Self::COOKIES)
     }
 
-    async fn helper(init_path: PathBuf, base: &str) -> Result<PathBuf> {
+    fn helper(
+        init_path: PathBuf,
+        base: &str,
+    ) -> impl std::future::Future<Output = Result<PathBuf>> + Send {
         let mut ini_path = init_path.clone();
         ini_path.push(format!("{}/profiles.ini", base));
-        if !ini_path.exists() {
-            miette::bail!(
-                "{} not exists",
-                ini_path
-                    .to_str()
-                    .unwrap_or_default()
-            );
-        }
-        let str = read_to_string(ini_path)
-            .await
-            .into_diagnostic()?;
-        let ini_file = ini::Ini::load_from_str(&str).into_diagnostic()?;
-        let mut section = String::new();
-        for (sec, prop) in ini_file {
-            let Some(sec) = sec
-            else {
-                continue;
-            };
-            if sec.starts_with("install") {
-                section = prop
-                    .get("default")
-                    .unwrap_or_default()
-                    .to_owned();
-                break;
+        async move {
+            if !ini_path.exists() {
+                miette::bail!(
+                    "{} not exists",
+                    ini_path
+                        .to_str()
+                        .unwrap_or_default()
+                );
             }
+            let str = read_to_string(ini_path)
+                .await
+                .into_diagnostic()?;
+            let ini_file = ini::Ini::load_from_str(&str).into_diagnostic()?;
+            let mut section = String::new();
+            for (sec, prop) in ini_file {
+                let Some(sec) = sec else {
+                    continue;
+                };
+                if sec.starts_with("Install") {
+                    prop.get("Default")
+                        .unwrap_or_default()
+                        .clone_into(&mut section);
+                    break;
+                }
+            }
+
+            tracing::debug!("section: {}", section);
+
+            let mut res = init_path;
+            res.push(format!("{}/{}", base, section));
+            tracing::debug!("path: {:?}", res);
+
+            Ok(res)
         }
-
-        tracing::debug!("section: {}", section);
-
-        let mut res = init_path;
-        res.push(format!("{}/{}", base, section));
-
-        Ok(res)
     }
 }
 

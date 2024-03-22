@@ -1,83 +1,10 @@
+pub mod browser;
 pub mod chromium;
 pub mod firefox;
 
-use std::fmt::Display;
-
+use browser::{Browser, Cookies};
 use miette::Result;
-use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy)]
-#[derive(PartialEq, Eq)]
-#[derive(Default)]
-#[derive(Debug)]
-pub enum Browser {
-    Edge      = 0,
-    Chrome    = 1,
-    #[default]
-    Firefox   = 2,
-    Librewolf = 3,
-}
-
-#[derive(Clone, Copy)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq)]
-enum BrowserFile {
-    #[default]
-    Cookies,
-    Key,
-    Storage,
-    Passwd,
-    Extensions,
-    Bookmarks,
-    Credit,
-    Session,
-    History,
-}
-
-impl Display for Browser {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Edge => "edge",
-            Self::Chrome => "chrome",
-            Self::Firefox => "firefox",
-            Self::Librewolf => "librewolf",
-        }
-        .fmt(f)
-    }
-}
-
-impl From<&str> for Browser {
-    fn from(value: &str) -> Self {
-        match value {
-            "edge" => Self::Edge,
-            "chrome" => Self::Chrome,
-            "librewolf" => Self::Librewolf,
-            _ => Self::Firefox,
-        }
-    }
-}
-
-#[derive(Default, Clone)]
-#[derive(Serialize, Deserialize)]
-#[derive(Debug)]
-#[derive(PartialEq, Eq)]
-pub struct Cookies {
-    pub csrf:    String,
-    pub session: String,
-}
-
-impl Cookies {
-    pub fn is_completion(&self) -> bool {
-        !(self.csrf.is_empty() || self.session.is_empty())
-    }
-}
-
-impl Display for Cookies {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        format!("LEETCODE_SESSION={};csrftoken={};", self.session, self.csrf).fmt(f)
-    }
-}
 /// get csrf and session
 ///
 /// * `borwser`: firefox, librewolf, edge, chrome
@@ -88,8 +15,29 @@ where
     let res = match borwser.into() {
         Browser::Firefox => firefox::get_session_csrf(Browser::Firefox, host).await?,
         Browser::Librewolf => firefox::get_session_csrf(Browser::Librewolf, host).await?,
+
         Browser::Edge => chromium::items::cookie::get_session_csrf(Browser::Edge, host).await?,
         Browser::Chrome => chromium::items::cookie::get_session_csrf(Browser::Chrome, host).await?,
+        Browser::Chromium => {
+            chromium::items::cookie::get_session_csrf(Browser::Chromium, host).await?
+        },
+        Browser::Brave => chromium::items::cookie::get_session_csrf(Browser::Brave, host).await?,
+        Browser::Yandex => chromium::items::cookie::get_session_csrf(Browser::Yandex, host).await?,
+        Browser::Vivaldi => {
+            chromium::items::cookie::get_session_csrf(Browser::Vivaldi, host).await?
+        },
+        Browser::Opera => chromium::items::cookie::get_session_csrf(Browser::Opera, host).await?,
+
+        #[cfg(not(target_os = "linux"))]
+        Browser::OperaGX => {
+            chromium::items::cookie::get_session_csrf(Browser::OperaGX, host).await?
+        },
+        #[cfg(not(target_os = "linux"))]
+        Browser::CocCoc => chromium::items::cookie::get_session_csrf(Browser::CocCoc, host).await?,
+        #[cfg(not(target_os = "linux"))]
+        Browser::Arc => chromium::items::cookie::get_session_csrf(Browser::Arc, host).await?,
+        #[cfg(target_os = "macos")]
+        Browser::Safari => unimplemented!(),
     };
 
     Ok(res)

@@ -1,42 +1,32 @@
-use decrypt_cookies::{get_cookie, Browser};
+use decrypt_cookies::{browser::Browser, get_cookie};
 use miette::Result;
-use secret_service::{EncryptionType, SecretService};
+use strum::IntoEnumIterator;
 
 #[ignore = "need realy environment"]
 #[tokio::test]
 async fn get_cookie_work() -> Result<()> {
-    // tracing_subscriber::fmt()
-    //     .with_max_level(tracing::Level::TRACE)
-    //     .with_test_writer()
-    //     .init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::WARN)
+        .with_test_writer()
+        .init();
 
     let leetcode_cn = "leetcode.cn";
-    let edge = get_cookie(Browser::Edge, leetcode_cn)
-        .await
-        .unwrap();
-    println!(r##"(| {} {leetcode_cn} |) -> {edge:#?}"##, Browser::Edge);
-
-    let chrome = get_cookie(Browser::Chrome, leetcode_cn)
-        .await
-        .unwrap();
-    println!(r##"(| chrome cn |) -> {:#?}"##, chrome);
-
-    let ff = get_cookie(Browser::Firefox, leetcode_cn)
-        .await
-        .unwrap();
-    println!(r##"(| ff cn |) -> {:#?}"##, ff);
-
-    let librewolf = get_cookie(Browser::Librewolf, leetcode_cn)
-        .await
-        .unwrap();
-    println!(r##"(| librewolf cn |) -> {:#?}"##, librewolf);
+    for browser in Browser::iter() {
+        dbg!(browser);
+        let edge = get_cookie(browser, leetcode_cn)
+            .await
+            .unwrap();
+        println!(r##"(| {} {leetcode_cn} |) -> {edge:#?}"##, Browser::Edge);
+    }
 
     Ok(())
 }
 
 #[ignore = "just inspect"]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(target_os = "linux")]
 async fn all_pass() {
+use secret_service::{EncryptionType, SecretService};
     // initialize secret service (dbus connection and encryption session)
     let ss = SecretService::connect(EncryptionType::Dh)
         .await

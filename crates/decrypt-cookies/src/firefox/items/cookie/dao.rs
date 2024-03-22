@@ -6,7 +6,7 @@ use super::entities::{
     moz_cookies::{self, Model},
     prelude::*,
 };
-use crate::{firefox::path::file_path, Browser, BrowserFile};
+use crate::{browser::BrowserFile, firefox::path::file_path, Browser};
 
 #[derive(Clone)]
 #[derive(Debug)]

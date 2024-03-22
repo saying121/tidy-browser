@@ -16,32 +16,33 @@ exclude = ["tests/"]
 tokio  = { version = "^1" }
 miette = { workspace = true }
 
+sea-orm = { workspace = true }
 
 tracing = { workspace = true }
 
 serde    = { workspace = true }
-rust-ini = { version = "0.20.0" }
+rust-ini = { version = "0.21" }
 
 dirs = { workspace = true }
 
-sea-orm = { workspace = true }
+strum        = { version = "^0.26" }
+strum_macros = { version = "^0.26" }
 
-des = { version = "^0.8" }
-der = { version = "0.7.8" }
+aes = { version = "0.8.3" }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))'.dependencies]
 secret-service = { version = "^3", default_features = true, features = ["rt-tokio-crypto-rust"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
-keyring = { version = "2.3.2", default_features = false, features = ["platform-macos"] }
+# It is not working as expected on Linux.
+keyring = { version = "^2", default_features = false, features = ["platform-macos"] }
 
 [target.'cfg(not(windows))'.dependencies]
-aes    = { version = "0.8.3" }
 cbc    = { version = "0.1.2" }
 pbkdf2 = { version = "0.12.2", features = ["sha1"] }
 sha1   = { version = "0.10.6" }
 
-# [target.'cfg(windows)'.dependencies]
+[target.'cfg(windows)'.dependencies]
 serde_json = { version = "^1" }
 base64 = { version = "^0.22" }
 windows = { version = "^0.54", features = [

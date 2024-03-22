@@ -16,12 +16,23 @@ pub async fn get_session_csrf(browser: Browser, host: &str) -> Result<Cookies> {
     // the `encrypted_value` start with `v10`, so use `[3..]`
     for cookie in &mut cookies {
         if cookie.name == "csrftoken" {
-            res.csrf = decrypt_cookies(&mut cookie.encrypted_value[3..].to_vec(), browser).await?;
+            res.csrf = match decrypt_cookies(&mut cookie.encrypted_value, browser).await {
+                Ok(it) => it,
+                Err(err) => {
+                    tracing::warn!("decrypt csrf failed: {err}");
+                    "".to_owned()
+                },
+            };
             tracing::trace!("{:?}", &cookie.encrypted_value);
-        }
-        else if cookie.name == "LEETCODE_SESSION" {
-            res.session =
-                decrypt_cookies(&mut cookie.encrypted_value[3..].to_vec(), browser).await?;
+        } else if cookie.name == "LEETCODE_SESSION" {
+            res.session = match decrypt_cookies(&mut cookie.encrypted_value.to_vec(), browser).await
+            {
+                Ok(it) => it,
+                Err(err) => {
+                    tracing::warn!("decrypt session failed: {err}");
+                    "".to_owned()
+                },
+            };
             tracing::trace!("{:?}", &cookie.encrypted_value);
         }
     }

@@ -12,16 +12,42 @@ pub struct WinChromiumBase {
 }
 
 impl WinChromiumBase {
-    const EDGE_WIN: &'static str = r#"Microsoft\Edge\User Data\Default"#;
-    const CHROME_WIN: &'static str = r#"Google\Chrome\User Data\Default"#;
+    const EDGE_WIN: &'static str = "Microsoft/Edge/User Data/Default";
+    const CHROME_WIN: &'static str = "Google/Chrome/User Data/Default";
+    const CHROMIUM_WIN: &'static str = "Chromium/User Data/Default";
+    const BRAVE_WIN: &'static str = "BraveSoftware/Brave-Browser/User Data/Default";
+    const VIVALDI_WIN: &'static str = "Vivaldi/User Data/Default";
+    const COCCOC_WIN: &'static str = "CocCoc/Browser/User Data/Default";
+    const YANDEX_WIN: &'static str = "Yandex/YandexBrowser/User Data/Default";
+    const OPERA_WIN: &'static str = "Opera Software/Opera Stable";
+    const OPERAGX_WIN: &'static str = "Opera Software/Opera GX Stable";
+    // const ARC_WIN: &'static str = r#"Yandex/YandexBrowser/User Data/Default"#;
 
     pub fn new(browser: Browser) -> Self {
-        let mut cookie_dir = dirs::data_local_dir().expect("get config dir failed");
-        let v = match browser {
-            Browser::Edge => Self::EDGE_WIN,
-            _ => Self::CHROME_WIN,
+        let mut cookie_dir = if matches!(browser, Browser::Opera | Browser::OperaGX) {
+            dirs::data_dir().expect("get config dir failed")
+        } else {
+            dirs::data_local_dir().expect("get config dir failed")
         };
-        cookie_dir.push(v);
+
+        let path_base = match browser {
+            Browser::Edge => Self::EDGE_WIN,
+            Browser::Chromium => Self::CHROMIUM_WIN,
+            Browser::Chrome => Self::CHROME_WIN,
+            Browser::Brave => Self::BRAVE_WIN,
+            Browser::Yandex => Self::YANDEX_WIN,
+            Browser::Vivaldi => Self::VIVALDI_WIN,
+            Browser::Opera => Self::OPERA_WIN,
+            Browser::OperaGX => Self::OPERAGX_WIN,
+            Browser::CocCoc => Self::COCCOC_WIN,
+            // Browser::Arc => Self::ARC_WIN,
+            _ => {
+                tracing::warn!("{browser} not support fallback Chrome.");
+                Self::CHROME_WIN
+            },
+        };
+        cookie_dir.push(path_base);
+
         Self { base: cookie_dir }
     }
 }

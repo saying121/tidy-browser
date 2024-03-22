@@ -1,13 +1,15 @@
 use std::path::PathBuf;
 
-use crate::{Browser, BrowserFile};
+use crate::{browser::BrowserFile, Browser};
 
 /// just impl the `base` method
 pub trait ChromiumPath {
     #[cfg(target_os = "windows")]
-    const COOKIES: &'static str = r#"Network\Cookies"#; // sqlite3
+    const COOKIES: &'static str = "Network/Cookies"; // sqlite3
+
     #[cfg(not(target_os = "windows"))]
     const COOKIES: &'static str = "Cookies"; // sqlite3
+
     const BOOKMARKS: &'static str = "Bookmarks"; // json
     const LOGINDATA: &'static str = "Login Data"; // sqlite3
     const HISTORY: &'static str = "History"; // sqlite3

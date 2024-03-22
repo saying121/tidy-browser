@@ -5,7 +5,7 @@ use super::entities::{
     cookies::{self, Model},
     prelude::*,
 };
-use crate::{chromium::utils::path::file_path, Browser};
+use crate::{browser::BrowserFile, chromium::utils::path::file_path, Browser};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -17,7 +17,7 @@ pub struct CookiesQuery {
 impl CookiesQuery {
     /// * `browser`: `edge`, `chrome`
     pub async fn new(browser: Browser) -> Result<Self> {
-        let cookie_path = file_path(browser, crate::BrowserFile::Cookies);
+        let cookie_path = file_path(browser, BrowserFile::Cookies);
         tracing::debug!(path = ?cookie_path);
 
         let db_conn_str = format!("sqlite:{}?mode=rwc", cookie_path.to_string_lossy());

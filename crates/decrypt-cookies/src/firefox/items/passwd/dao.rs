@@ -2,7 +2,7 @@ use miette::{IntoDiagnostic, Result};
 use sea_orm::{prelude::*, Database, FromQueryResult, QuerySelect};
 
 use super::key4db::{meta_data, prelude::*};
-use crate::{firefox::path::file_path, Browser};
+use crate::{browser::BrowserFile, firefox::path::file_path, Browser};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -35,7 +35,7 @@ pub struct Items {
 impl Key4Query {
     /// * `browser`: `edge`, `chrome`
     pub async fn new(browser: Browser) -> Result<Self> {
-        let cookie_path = file_path(browser, crate::BrowserFile::Key).await?;
+        let cookie_path = file_path(browser, BrowserFile::Key).await?;
         tracing::debug!(path = ?cookie_path);
 
         let db_conn_str = format!("sqlite:{}?mode=rwc", cookie_path.to_string_lossy());

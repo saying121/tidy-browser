@@ -1,9 +1,9 @@
 [workspace.package]
 edition      = "2021"
 authors      = ["saying121 <saying121@outlook.com>"]
-homepage     = "https://github.com/saying121/leetcode-cn-en-cli"
+homepage     = "https://github.com/saying121/tidy-browser"
 rust-version = "1.78"
-repository   = "https://github.com/saying121/leetcode-cn-en-cli"
+repository   = "https://github.com/saying121/tidy-browser"
 
 [workspace]
 members  = ["crates/*"]
