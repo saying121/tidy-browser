@@ -19,7 +19,7 @@ impl MacChromiumBase {
     const YANDEX_MAC: &'static str = "Yandex/YandexBrowser/Default";
     const VIVALDI_MAC: &'static str = "Vivaldi/Default";
     const OPERA_MAC: &'static str = "com.operasoftware.Opera/Default";
-    const OPERAGX_MAC: &'static str = "com.operasoftware.OperaGX/Default";
+    const OPERAGX_MAC: &'static str = "com.operasoftware.OperaGX";
     const COCCOC_MAC: &'static str = "Coccoc/Default";
     const ARC_MAC: &'static str = "Arc/User Data/Default";
 
