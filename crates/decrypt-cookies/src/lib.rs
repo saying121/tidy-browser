@@ -2,13 +2,17 @@ pub mod browser;
 pub mod chromium;
 pub mod firefox;
 
-use browser::{Browser, Cookies};
 use miette::Result;
+
+pub use browser::Browser;
+pub use browser::cookies::LeetCodeCookies;
+pub use chromium::items::cookie::CookiesGetter;
+pub use firefox::items::cookie::dao::CookiesQuery;
 
 /// get csrf and session
 ///
 /// * `borwser`: firefox, librewolf, edge, chrome
-pub async fn get_cookie<T>(borwser: T, host: &str) -> Result<Cookies>
+pub async fn get_cookie<T>(borwser: T, host: &str) -> Result<LeetCodeCookies>
 where
     T: Into<Browser>,
 {
@@ -37,7 +41,7 @@ where
         #[cfg(not(target_os = "linux"))]
         Browser::Arc => chromium::items::cookie::get_session_csrf(Browser::Arc, host).await?,
         #[cfg(target_os = "macos")]
-        Browser::Safari => unimplemented!(),
+        Browser::Safari => unimplemented!("not support Safari"),
     };
 
     Ok(res)

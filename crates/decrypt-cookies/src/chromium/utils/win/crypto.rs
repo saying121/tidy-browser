@@ -1,7 +1,9 @@
 use std::{ffi::c_void, ptr};
 
-use aes::cipher::generic_array::GenericArray;
-use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit};
+use aes_gcm::{
+    aead::{generic_array::GenericArray, Aead},
+    Aes256Gcm, KeyInit,
+};
 use base64::{engine::general_purpose, Engine};
 use miette::{IntoDiagnostic, Result};
 use serde::{Deserialize, Serialize};
@@ -69,7 +71,8 @@ impl Decrypter {
             return String::from_utf8(decrypt_with_dpapi(ciphertext)?).into_diagnostic();
         };
 
-        let nonce = &ciphertext[K_ENCRYPTION_VERSION_PREFIX.len()..K_NONCE_LENGTH + K_ENCRYPTION_VERSION_PREFIX.len()];
+        let nonce = &ciphertext
+            [K_ENCRYPTION_VERSION_PREFIX.len()..K_NONCE_LENGTH + K_ENCRYPTION_VERSION_PREFIX.len()];
         let raw_ciphertext = &ciphertext[K_NONCE_LENGTH + K_ENCRYPTION_VERSION_PREFIX.len()..];
 
         let cipher = Aes256Gcm::new(GenericArray::from_slice(pass));

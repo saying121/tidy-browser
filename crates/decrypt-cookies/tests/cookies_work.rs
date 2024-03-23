@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use decrypt_cookies::{browser::Browser, get_cookie};
 use miette::Result;
 use strum::IntoEnumIterator;
@@ -22,11 +24,21 @@ async fn get_cookie_work() -> Result<()> {
     Ok(())
 }
 
+#[test]
+fn browsers() {
+    let b = Browser::Edge;
+    assert_eq!(&b.to_string(), "Edge");
+    let b = Browser::from_str("Edge").unwrap();
+    assert_eq!(b, Browser::Edge);
+    let b = Browser::from_str("eDgE").unwrap();
+    assert_eq!(b, Browser::Edge);
+}
+
 #[ignore = "just inspect"]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[cfg(target_os = "linux")]
 async fn all_pass() {
-use secret_service::{EncryptionType, SecretService};
+    use secret_service::{EncryptionType, SecretService};
     // initialize secret service (dbus connection and encryption session)
     let ss = SecretService::connect(EncryptionType::Dh)
         .await

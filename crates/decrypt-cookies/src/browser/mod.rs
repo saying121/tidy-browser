@@ -1,4 +1,5 @@
-use serde::{Deserialize, Serialize};
+pub mod cookies;
+
 use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 
 #[derive(Clone, Copy)]
@@ -9,36 +10,49 @@ use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 pub enum Browser {
     /// win, mac, linux
     #[default]
+    #[strum(ascii_case_insensitive)]
     Firefox,
     /// win, mac, linux
+    #[strum(ascii_case_insensitive)]
     Librewolf,
 
     /// win, mac, linux
-    Chromium,
-    /// win, mac, linux
+    #[strum(ascii_case_insensitive)]
     Chrome,
     /// win, mac, linux
+    #[strum(ascii_case_insensitive)]
     Edge,
     /// win, mac, linux
+    #[strum(ascii_case_insensitive)]
+    Chromium,
+    /// win, mac, linux
+    #[strum(ascii_case_insensitive)]
     Brave,
     /// win, mac, linux
+    #[strum(ascii_case_insensitive)]
     Yandex,
     /// win, mac, linux
+    #[strum(ascii_case_insensitive)]
     Vivaldi,
     /// win, mac, linux
+    #[strum(ascii_case_insensitive)]
     Opera,
     /// win, mac
     #[cfg(not(target_os = "linux"))]
+    #[strum(ascii_case_insensitive)]
     OperaGX,
     /// win, mac
     #[cfg(not(target_os = "linux"))]
+    #[strum(ascii_case_insensitive)]
     CocCoc,
     /// win, mac, ?
     #[cfg(not(target_os = "linux"))]
+    #[strum(ascii_case_insensitive)]
     Arc,
 
     /// mac
     #[cfg(target_os = "macos")]
+    #[strum(ascii_case_insensitive)]
     Safari,
 }
 
@@ -99,25 +113,4 @@ pub enum BrowserFile {
     Credit,
     Session,
     History,
-}
-
-#[derive(Default, Clone)]
-#[derive(Serialize, Deserialize)]
-#[derive(Debug)]
-#[derive(PartialEq, Eq)]
-pub struct Cookies {
-    pub csrf: String,
-    pub session: String,
-}
-
-impl Cookies {
-    pub fn is_completion(&self) -> bool {
-        !(self.csrf.is_empty() || self.session.is_empty())
-    }
-}
-
-impl std::fmt::Display for Cookies {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        format!("LEETCODE_SESSION={};csrftoken={};", self.session, self.csrf).fmt(f)
-    }
 }

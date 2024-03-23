@@ -59,7 +59,7 @@ impl Decrypter {
     }
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=72
-    pub fn decrypt(&self, be_decrypte: &[u8]) -> Result<String> {
+    pub fn decrypt(&self, be_decrypte: &mut [u8]) -> Result<String> {
         let (pass, prefix_len) = if be_decrypte.starts_with(K_OBFUSCATION_PREFIX_V11) {
             (self.pass_v11.as_slice(), K_OBFUSCATION_PREFIX_V11.len())
         } else if be_decrypte.starts_with(K_OBFUSCATION_PREFIX_V10) {
@@ -74,9 +74,7 @@ impl Decrypter {
         pbkdf2_hmac::<sha1::Sha1>(pass, K_SALT, K_ENCRYPTION_ITERATIONS, &mut key);
         let decrypter = Aes128CbcDec::new(&key.into(), &iv.into());
 
-        let mut be_decrypte = be_decrypte[prefix_len..].to_vec();
-
-        if let Ok(res) = decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte) {
+        if let Ok(res) = decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..]) {
             return String::from_utf8(res.to_vec()).into_diagnostic();
         }
 

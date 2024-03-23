@@ -2,7 +2,7 @@ use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
 use miette::{IntoDiagnostic, Result};
 use pbkdf2::pbkdf2_hmac;
 
-use crate::{ Browser};
+use crate::Browser;
 
 type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 
@@ -30,13 +30,13 @@ const K_ENCRYPTION_VERSION_PREFIX: &[u8] = b"v10";
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
     browser: Browser,
-    pass: String,
+    pass_v10: String,
 }
 
 impl Decrypter {
     pub async fn new(browser: Browser) -> Result<Self> {
-        let pass = Self::get_pass(browser).await?;
-        Ok(Self { browser, pass })
+        let pass_v10 = Self::get_pass(browser).await?;
+        Ok(Self { browser, pass_v10 })
     }
     pub async fn get_pass(browser: Browser) -> Result<String> {
         let entry =
@@ -50,12 +50,13 @@ impl Decrypter {
         if !be_decrypte.starts_with(K_ENCRYPTION_VERSION_PREFIX) {
             return String::from_utf8(be_decrypte.to_vec()).into_diagnostic();
         }
+        let prefix_len = K_ENCRYPTION_VERSION_PREFIX.len();
 
         let mut key = [0_u8; 16];
         let iv = [b' '; 16];
 
         pbkdf2_hmac::<sha1::Sha1>(
-            self.pass.as_bytes(),
+            self.pass_v10.as_bytes(),
             K_SALT,
             K_ENCRYPTION_ITERATIONS,
             &mut key,
@@ -63,7 +64,8 @@ impl Decrypter {
 
         let decrypter = Aes128CbcDec::new(&key.into(), &iv.into());
 
-        if let Ok(res) = decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[3..])
+        if let Ok(res) =
+            decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..])
         {
             return String::from_utf8(res.to_vec()).into_diagnostic();
         }

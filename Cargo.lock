@@ -552,7 +552,7 @@ version = "0.1.0"
 
 [[package]]
 name = "decrypt-cookies"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "aes 0.8.4",
  "aes-gcm",
