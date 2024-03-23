@@ -69,7 +69,7 @@ impl Decrypter {
             return String::from_utf8(decrypt_with_dpapi(ciphertext)?).into_diagnostic();
         };
 
-        let nonce = &ciphertext[K_ENCRYPTION_VERSION_PREFIX.len()..K_NONCE_LENGTH];
+        let nonce = &ciphertext[K_ENCRYPTION_VERSION_PREFIX.len()..K_NONCE_LENGTH + K_ENCRYPTION_VERSION_PREFIX.len()];
         let raw_ciphertext = &ciphertext[K_NONCE_LENGTH + K_ENCRYPTION_VERSION_PREFIX.len()..];
 
         let cipher = Aes256Gcm::new(GenericArray::from_slice(pass));

@@ -19,7 +19,7 @@ impl WinChromiumBase {
     const VIVALDI_WIN: &'static str = "Vivaldi/User Data/Default";
     const COCCOC_WIN: &'static str = "CocCoc/Browser/User Data/Default";
     const YANDEX_WIN: &'static str = "Yandex/YandexBrowser/User Data/Default";
-    const OPERA_WIN: &'static str = "Opera Software/Opera Stable";
+    const OPERA_WIN: &'static str = "Opera Software/Opera Stable/Default";
     const OPERAGX_WIN: &'static str = "Opera Software/Opera GX Stable";
     // const ARC_WIN: &'static str = r#"Yandex/YandexBrowser/User Data/Default"#;
 
