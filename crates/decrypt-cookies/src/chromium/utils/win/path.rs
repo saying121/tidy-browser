@@ -59,8 +59,9 @@ impl ChromiumPath for WinChromiumBase {
         &self.base
     }
     fn key(&self) -> PathBuf {
+        // shit, quirky
         if self.browser == Browser::OperaGX {
-            path.join(<WinChromiumBase as ChromiumPath>::LOCAL_STATE)
+            self.base().join(Self::LOCAL_STATE)
         }
         else {
             let mut path = self.base().clone();
