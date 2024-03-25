@@ -28,3 +28,4 @@ build_go/
 flamegraph/
 flamegraph.svg
 perf.data*
+/temp

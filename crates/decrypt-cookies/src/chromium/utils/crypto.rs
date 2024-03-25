@@ -1,21 +1,14 @@
+use miette::Result;
+
 use crate::Browser;
 
-pub async fn decrypt_cookies(encrypted: &mut [u8], browser: Browser) -> miette::Result<String> {
-    #[cfg(target_os = "linux")]
-    let res = {
-        let decrypter = super::linux::crypto::Decrypter::new(browser).await?;
-        decrypter.decrypt(encrypted)
-    };
-    #[cfg(target_os = "macos")]
-    let res = {
-        let decrypter = super::macos::crypto::Decrypter::new(browser).await?;
-        decrypter.decrypt(encrypted)
-    };
-    #[cfg(target_os = "windows")]
-    let res = {
-        let decrypter = super::win::crypto::Decrypter::new(browser).await?;
-        decrypter.decrypt(encrypted)
-    };
+pub trait BrowserDecrypt
+where
+    Self: std::marker::Sized,
+{
+    fn build(browser: Browser) -> impl std::future::Future<Output = Result<Self>> + Send;
 
-    res
+    fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String>;
+
+    fn get_pass(browser: Browser) -> impl std::future::Future<Output = Result<Vec<u8>>> + Send;
 }

@@ -3,7 +3,7 @@ use miette::{IntoDiagnostic, Result};
 use pbkdf2::pbkdf2_hmac;
 use secret_service::{EncryptionType, SecretService};
 
-use crate::Browser;
+use crate::{chromium::utils::crypto::BrowserDecrypt, Browser};
 
 type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 
@@ -50,8 +50,8 @@ pub struct Decrypter {
 }
 
 // OPTIMIZE: lazy initialize pass_v11?
-impl Decrypter {
-    pub async fn new(browser: Browser) -> Result<Self> {
+impl BrowserDecrypt for Decrypter {
+    async fn build(browser: Browser) -> Result<Self> {
         let pass_v11 = Self::get_pass(browser)
             .await
             .unwrap_or_else(|_| PASSWORD_V10.to_vec());
@@ -59,7 +59,7 @@ impl Decrypter {
     }
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=72
-    pub fn decrypt(&self, be_decrypte: &mut [u8]) -> Result<String> {
+    fn decrypt(&self, be_decrypte: &mut [u8]) -> Result<String> {
         let (pass, prefix_len) = if be_decrypte.starts_with(K_OBFUSCATION_PREFIX_V11) {
             (self.pass_v11.as_slice(), K_OBFUSCATION_PREFIX_V11.len())
         } else if be_decrypte.starts_with(K_OBFUSCATION_PREFIX_V10) {
@@ -74,7 +74,9 @@ impl Decrypter {
         pbkdf2_hmac::<sha1::Sha1>(pass, K_SALT, K_ENCRYPTION_ITERATIONS, &mut key);
         let decrypter = Aes128CbcDec::new(&key.into(), &iv.into());
 
-        if let Ok(res) = decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..]) {
+        if let Ok(res) =
+            decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..])
+        {
             return String::from_utf8(res.to_vec()).into_diagnostic();
         }
 
@@ -82,7 +84,7 @@ impl Decrypter {
     }
 
     /// from `secret_service` get password
-    pub async fn get_pass(browser: Browser) -> Result<Vec<u8>> {
+    async fn get_pass(browser: Browser) -> Result<Vec<u8>> {
         // initialize secret service (dbus connection and encryption session)
         let ss = SecretService::connect(EncryptionType::Dh)
             .await

@@ -59,7 +59,7 @@ impl CookiesQuery {
             temp_path: Some(temp_path),
         })
     }
-    pub async fn query_cookie(&self, host: &str) -> Result<Vec<Model>> {
+    pub async fn query_cookie_by_host(&self, host: &str) -> Result<Vec<Model>> {
         let res = MozCookies::find()
             .filter(moz_cookies::Column::Host.contains(host))
             .all(&self.conn)

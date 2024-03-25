@@ -10,7 +10,10 @@ use serde::{Deserialize, Serialize};
 use tokio::fs::read_to_string;
 use windows::Win32::{Foundation, Security::Cryptography};
 
-use crate::{chromium::utils::path::ChromiumPath, Browser};
+use crate::{
+    chromium::utils::{crypto::BrowserDecrypt, path::ChromiumPath},
+    Browser,
+};
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=36
 /// AEAD key length in bytes.
@@ -42,9 +45,15 @@ impl Decrypter {
         let pass = Self::get_pass(browser).await?;
         Ok(Self { pass, browser })
     }
+}
 
+impl BrowserDecrypt for Decrypter {
+    async fn build(browser: Browser) -> Result<Self> {
+        let pass = Self::get_pass(browser).await?;
+        Ok(Self { pass, browser })
+    }
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=108
-    pub async fn get_pass(browser: Browser) -> Result<Vec<u8>> {
+    async fn get_pass(browser: Browser) -> Result<Vec<u8>> {
         let base = super::path::WinChromiumBase::new(browser);
         let path = base.key();
         let string_str = read_to_string(path)
@@ -64,7 +73,7 @@ impl Decrypter {
     }
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=213
-    pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
+    fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
         let pass = if ciphertext.starts_with(K_ENCRYPTION_VERSION_PREFIX) {
             self.pass.as_slice()
         } else {

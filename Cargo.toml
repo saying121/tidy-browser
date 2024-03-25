@@ -239,7 +239,7 @@ transmute_ptr_to_ptr     = "warn"
 transmute_undefined_repr = "warn"
 
 # panic                       = "warn"
-panic_in_result_fn          = "warn"
+# panic_in_result_fn          = "warn"
 should_panic_without_expect = "warn"
 significant_drop_tightening = "warn"
 pub_without_shorthand       = "warn"

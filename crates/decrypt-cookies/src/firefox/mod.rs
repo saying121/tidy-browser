@@ -15,7 +15,7 @@ use crate::{Browser, LeetCodeCookies};
 
 pub async fn get_session_csrf(borwser: Browser, host: &str) -> Result<LeetCodeCookies> {
     let query = CookiesQuery::new(borwser).await?;
-    let cookies = query.query_cookie(host).await?;
+    let cookies = query.query_cookie_by_host(host).await?;
 
     let mut res = LeetCodeCookies::default();
 
@@ -33,5 +33,5 @@ pub async fn get_session_csrf(borwser: Browser, host: &str) -> Result<LeetCodeCo
 }
 pub async fn get_all_cookies(borwser: Browser, host: &str) -> Result<Vec<moz_cookies::Model>> {
     let query = CookiesQuery::new(borwser).await?;
-    query.query_cookie(host).await
+    query.query_cookie_by_host(host).await
 }

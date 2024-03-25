@@ -1,2 +1,4 @@
-pub mod items;
+mod items;
 mod utils;
+
+pub use items::ChromiumGetter;

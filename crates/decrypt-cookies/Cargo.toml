@@ -25,15 +25,20 @@ rust-ini = { version = "0.21" }
 
 dirs = { workspace = true }
 
-strum        = { version = "^0.26" }
-strum_macros = { version = "^0.26" }
+cfg-if = { version = "^1" }
+
+strum         = { version = "^0.26" }
+strum_macros  = { version = "^0.26" }
+bytes         = { version = "^1" }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))'.dependencies]
 secret-service = { version = "^3", default_features = true, features = ["rt-tokio-crypto-rust"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
-# It is not working as expected on Linux.
-keyring = { version = "^2", default_features = false, features = ["platform-macos", "platform-ios"] }
+keyring = { version = "^2", default_features = false, features = [
+    "platform-macos",
+    "platform-ios",
+] } # It is not working as expected on Linux.
 
 [target.'cfg(not(windows))'.dependencies]
 aes    = { version = "0.8.3" }

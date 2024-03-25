@@ -1,3 +1,5 @@
+#![allow(clippy::string_slice)]
+
 use std::str::FromStr;
 
 use decrypt_cookies::{browser::Browser, get_cookie};
@@ -17,7 +19,7 @@ async fn get_cookie_work() -> Result<()> {
         dbg!(browser);
         let edge = get_cookie(browser, leetcode_cn)
             .await
-            .unwrap();
+            .unwrap_or_default();
         println!(r##"(| {} {leetcode_cn} |) -> {edge:#?}"##, Browser::Edge);
     }
 

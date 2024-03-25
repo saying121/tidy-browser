@@ -6,7 +6,7 @@
 
 ## TEST STATUS
 
-- linux :
+- Linux:
 
 |  Browser  | Cookies | Test Date  |
 | :-------: | :-----: | :--------: |
@@ -20,24 +20,24 @@
 |  Vivaldi  |   🔑    | 2024-03-23 |
 |   Opera   |   🔑    | 2024-03-23 |
 
-- windows :
+- Windows:
 
-|  Browser  |     Cookies     | Test Date  |
-| :-------: | :-------------: | :--------: |
-|  Firefox  |       🔑        | 2024-03-23 |
-| Librewolf |       🔑        | 2024-03-23 |
-|  Chrome   |       🔑        | 2024-03-23 |
-|   Edge    |       🔑        | 2024-03-23 |
-| Chromium  |       🔑        | 2024-03-23 |
-|   Brave   |       🔑        | 2024-03-23 |
-|  Yandex   |       🔑        | 2024-03-23 |
-|  Vivaldi  |       🔑        | 2024-03-23 |
-|   Opera   |       🔑        | 2024-03-23 |
-|  OperaGX  |       🔑        | 2024-03-23 |
-|  CocCoc   |       🔑        | 2024-03-23 |
-|    Arc    |  🚫(not test)   |            |
+|  Browser  |   Cookies    | Test Date  |
+| :-------: | :----------: | :--------: |
+|  Firefox  |      🔑      | 2024-03-23 |
+| Librewolf |      🔑      | 2024-03-23 |
+|  Chrome   |      🔑      | 2024-03-23 |
+|   Edge    |      🔑      | 2024-03-23 |
+| Chromium  |      🔑      | 2024-03-23 |
+|   Brave   |      🔑      | 2024-03-23 |
+|  Yandex   |      🔑      | 2024-03-23 |
+|  Vivaldi  |      🔑      | 2024-03-23 |
+|   Opera   |      🔑      | 2024-03-23 |
+|  OperaGX  |      🔑      | 2024-03-23 |
+|  CocCoc   |      🔑      | 2024-03-23 |
+|    Arc    | 🚫(not test) |            |
 
-- macos  :
+- Macos:
 
 |  Browser  |     Cookies     | Test Date  |
 | :-------: | :-------------: | :--------: |

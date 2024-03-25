@@ -1,13 +1,15 @@
 pub mod browser;
 pub mod chromium;
 pub mod firefox;
+#[cfg(target_os = "macos")]
+pub mod safari;
 
+pub use browser::{cookies::LeetCodeCookies, Browser};
+pub use firefox::items::FirefoxGetter;
+pub use chromium::ChromiumGetter;
+#[cfg(target_os = "macos")]
+pub use safari::items::SafariGetter;
 use miette::Result;
-
-pub use browser::Browser;
-pub use browser::cookies::LeetCodeCookies;
-pub use chromium::items::cookie::CookiesGetter;
-pub use firefox::items::cookie::dao::CookiesQuery;
 
 /// get csrf and session
 ///
@@ -20,28 +22,18 @@ where
         Browser::Firefox => firefox::get_session_csrf(Browser::Firefox, host).await?,
         Browser::Librewolf => firefox::get_session_csrf(Browser::Librewolf, host).await?,
 
-        Browser::Edge => chromium::items::cookie::get_session_csrf(Browser::Edge, host).await?,
-        Browser::Chrome => chromium::items::cookie::get_session_csrf(Browser::Chrome, host).await?,
-        Browser::Chromium => {
-            chromium::items::cookie::get_session_csrf(Browser::Chromium, host).await?
+        // #[cfg(target_os = "macos")]
+        Browser::Safari => {
+            let getter = safari::items::cookie::CookiesGetter::build::<&str>(None).await?;
+            getter.get_session_csrf(host)
         },
-        Browser::Brave => chromium::items::cookie::get_session_csrf(Browser::Brave, host).await?,
-        Browser::Yandex => chromium::items::cookie::get_session_csrf(Browser::Yandex, host).await?,
-        Browser::Vivaldi => {
-            chromium::items::cookie::get_session_csrf(Browser::Vivaldi, host).await?
-        },
-        Browser::Opera => chromium::items::cookie::get_session_csrf(Browser::Opera, host).await?,
 
-        #[cfg(not(target_os = "linux"))]
-        Browser::OperaGX => {
-            chromium::items::cookie::get_session_csrf(Browser::OperaGX, host).await?
+        chromium => {
+            let getter = ChromiumGetter::build(chromium).await?;
+            getter
+                .get_session_csrf(host)
+                .await?
         },
-        #[cfg(not(target_os = "linux"))]
-        Browser::CocCoc => chromium::items::cookie::get_session_csrf(Browser::CocCoc, host).await?,
-        #[cfg(not(target_os = "linux"))]
-        Browser::Arc => chromium::items::cookie::get_session_csrf(Browser::Arc, host).await?,
-        #[cfg(target_os = "macos")]
-        Browser::Safari => unimplemented!("not support Safari"),
     };
 
     Ok(res)

@@ -1,51 +1,7 @@
-use miette::Result;
-
-use self::dao::CookiesQuery;
 use self::entities::cookies;
-use crate::{chromium::utils::crypto::decrypt_cookies, Browser, LeetCodeCookies};
 
 pub mod dao;
 pub mod entities;
-
-/// get `LEETCODE_SESSION` and `csrftoken` for leetcode
-pub async fn get_session_csrf(browser: Browser, host: &str) -> Result<LeetCodeCookies> {
-    let query = CookiesQuery::new(browser).await?;
-    let mut cookies = query.query_cookie(host).await?;
-
-    let mut res = LeetCodeCookies::default();
-    for cookie in &mut cookies {
-        if cookie.name == "csrftoken" {
-            res.csrf = match decrypt_cookies(&mut cookie.encrypted_value, browser).await {
-                Ok(it) => it,
-                Err(err) => {
-                    tracing::warn!("decrypt csrf failed: {err}");
-                    String::new()
-                },
-            };
-            tracing::trace!("{:?}", &cookie.encrypted_value);
-        } else if cookie.name == "LEETCODE_SESSION" {
-            res.session = match decrypt_cookies(&mut cookie.encrypted_value.clone(), browser).await
-            {
-                Ok(it) => it,
-                Err(err) => {
-                    tracing::warn!("decrypt session failed: {err}");
-                    String::new()
-                },
-            };
-            tracing::trace!("{:?}", &cookie.encrypted_value);
-        }
-    }
-    Ok(res)
-}
-
-/// Chromium based, get cookies and decrypt
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-pub struct CookiesGetter {
-    query: CookiesQuery,
-    browser: Browser,
-}
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -100,38 +56,5 @@ impl From<cookies::Model> for DecryptedCookies {
             source_port: value.source_port,
             last_update_utc: value.last_update_utc,
         }
-    }
-}
-
-impl CookiesGetter {
-    pub async fn build(browser: Browser) -> Result<Self> {
-        let query = CookiesQuery::new(browser).await?;
-        Ok(Self { query, browser })
-    }
-    pub async fn get_cookies_by_host(&self, host: &str) -> Result<Vec<DecryptedCookies>> {
-        let cookies = self
-            .query
-            .query_cookie(host)
-            .await?;
-        let mut decrypted_cookies = vec![];
-        for mut cookie in cookies {
-            let res = decrypt_cookies(&mut cookie.encrypted_value, self.browser).await?;
-            let mut decrypted = DecryptedCookies::from(cookie);
-            decrypted.set_encrypted_value(res);
-            decrypted_cookies.push(decrypted);
-        }
-        Ok(decrypted_cookies)
-    }
-
-    pub async fn get_all_cookies(&self) -> Result<Vec<DecryptedCookies>> {
-        let cookies = self.query.all_cookie().await?;
-        let mut decrypted_cookies = vec![];
-        for mut cookie in cookies {
-            let res = decrypt_cookies(&mut cookie.encrypted_value, self.browser).await?;
-            let mut decrypted = DecryptedCookies::from(cookie);
-            decrypted.set_encrypted_value(res);
-            decrypted_cookies.push(decrypted);
-        }
-        Ok(decrypted_cookies)
     }
 }
