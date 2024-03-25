@@ -22,7 +22,7 @@ where
         Browser::Firefox => firefox::get_session_csrf(Browser::Firefox, host).await?,
         Browser::Librewolf => firefox::get_session_csrf(Browser::Librewolf, host).await?,
 
-        // #[cfg(target_os = "macos")]
+        #[cfg(target_os = "macos")]
         Browser::Safari => {
             let getter = safari::items::cookie::CookiesGetter::build::<&str>(None).await?;
             getter.get_session_csrf(host)

@@ -46,7 +46,8 @@ pub enum Browser {
     #[strum(ascii_case_insensitive)]
     CocCoc,
     /// win, mac, ?
-    #[cfg(not(target_os = "linux"))]
+    // #[cfg(not(target_os = "linux"))]
+    #[cfg(target_os = "macos")]
     #[strum(ascii_case_insensitive)]
     Arc,
 

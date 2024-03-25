@@ -40,13 +40,6 @@ pub struct Decrypter {
     browser: Browser,
 }
 
-impl Decrypter {
-    pub async fn new(browser: Browser) -> Result<Self> {
-        let pass = Self::get_pass(browser).await?;
-        Ok(Self { pass, browser })
-    }
-}
-
 impl BrowserDecrypt for Decrypter {
     async fn build(browser: Browser) -> Result<Self> {
         let pass = Self::get_pass(browser).await?;

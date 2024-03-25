@@ -20,7 +20,7 @@ async fn get_cookie_work() -> Result<()> {
         let edge = get_cookie(browser, leetcode_cn)
             .await
             .unwrap_or_default();
-        println!(r##"(| {} {leetcode_cn} |) -> {edge:#?}"##, Browser::Edge);
+        println!(r##"(| {leetcode_cn} |) -> {edge:#?}"##);
     }
 
     Ok(())

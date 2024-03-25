@@ -8,7 +8,8 @@ use crate::Browser;
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct WinChromiumBase {
-    base: PathBuf,
+    base:    PathBuf,
+    browser: Browser,
 }
 
 impl WinChromiumBase {
@@ -26,7 +27,8 @@ impl WinChromiumBase {
     pub fn new(browser: Browser) -> Self {
         let mut cookie_dir = if matches!(browser, Browser::Opera | Browser::OperaGX) {
             dirs::data_dir().expect("get config dir failed")
-        } else {
+        }
+        else {
             dirs::data_local_dir().expect("get config dir failed")
         };
 
@@ -48,12 +50,23 @@ impl WinChromiumBase {
         };
         cookie_dir.push(path_base);
 
-        Self { base: cookie_dir }
+        Self { base: cookie_dir, browser }
     }
 }
 
 impl ChromiumPath for WinChromiumBase {
     fn base(&self) -> &PathBuf {
         &self.base
+    }
+    fn key(&self) -> PathBuf {
+        if self.browser == Browser::OperaGX {
+            path.join(<WinChromiumBase as ChromiumPath>::LOCAL_STATE)
+        }
+        else {
+            let mut path = self.base().clone();
+            path.pop();
+            path.push(Self::LOCAL_STATE);
+            path
+        }
     }
 }
