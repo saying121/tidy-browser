@@ -4,12 +4,14 @@
 //! <https://github.com/interstateone/BinaryCookies>
 
 use bytes::Buf;
+use chrono::prelude::{DateTime, TimeZone, Utc};
 use miette::{bail, Result};
 
+/// raw file informations, with pages
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct BinaryCookies {
     pub signature:    Vec<u8>,
     pub num_pages:    u32,      // be
@@ -38,7 +40,7 @@ impl BinaryCookies {
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct Page {
     pages_start:     Vec<u8>,
     num_cookies:     u32,      // le
@@ -164,9 +166,15 @@ impl BinaryCookies {
 
         let expires = f64::from_le_bytes(slice_to_arr8(&entry[..8]));
         entry.advance(8);
+        let expires = chrono::Utc
+            .timestamp_opt(expires as i64 + 978_307_200, 0)
+            .unwrap();
 
         let creation = f64::from_le_bytes(slice_to_arr8(&entry[..8]));
         entry.advance(8);
+        let creation = chrono::Utc
+            .timestamp_opt(creation as i64 + 978_307_200, 0)
+            .unwrap();
 
         let comment = if comment_offset > 0 {
             let comment_len = (domain_offset - comment_offset) as usize;
@@ -220,10 +228,11 @@ impl BinaryCookies {
     }
 }
 
+/// alone cookies
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct SafariCookie {
     // cookie_size:    u32, // LE_uint32	Cookie size. Number of bytes associated to the cookie
     version:        Vec<u8>, // byte    Unknown field possibly related to the cookie flags
@@ -235,8 +244,8 @@ pub struct SafariCookie {
     value_offset:   u32, // LE_uint32    Cookie value offset
     comment_offset: u32, // LE_uint32    Cookie comment offset
     // end_header:     Vec<u8>, /* 4    byte    Marks the end of a header. Must be equal to []byte{0x00000000} */
-    expires:        f64, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
-    creation:       f64, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
+    expires:        DateTime<Utc>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
+    creation:       DateTime<Utc>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
     comment:        String, /* N    LE_uint32    Cookie comment string. N = `self.domain_offset` - `self.comment_offset` */
     domain:         String, /* N    LE_uint32    Cookie domain string. N = `self.name_offset` - `self.domain_offset` */
     name:           String, /* N    LE_uint32    Cookie name string. N = `self.path_offset` - `self.name_offset` */
@@ -253,6 +262,14 @@ impl SafariCookie {
     }
     pub const fn is_httponly(&self) -> bool {
         self.cookie_flags & 0x4 == 0x4
+    }
+
+    pub const fn creation(&self) -> DateTime<Utc> {
+        self.creation
+    }
+
+    pub const fn expires(&self) -> DateTime<Utc> {
+        self.expires
     }
 }
 
@@ -287,14 +304,6 @@ impl SafariCookie {
 
     pub const fn comment_offset(&self) -> u32 {
         self.comment_offset
-    }
-
-    pub const fn expires(&self) -> f64 {
-        self.expires
-    }
-
-    pub const fn creation(&self) -> f64 {
-        self.creation
     }
 
     pub fn comment(&self) -> &str {

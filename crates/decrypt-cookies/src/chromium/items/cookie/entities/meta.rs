@@ -4,7 +4,7 @@ use sea_orm::entity::prelude::*;
 
 #[derive(Clone)]
 #[derive(Debug)]
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(DeriveEntityModel)]
 #[sea_orm(table_name = "meta")]
 pub struct Model {

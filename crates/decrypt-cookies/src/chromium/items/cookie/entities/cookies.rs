@@ -5,7 +5,7 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(DeriveEntityModel)]
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[sea_orm(table_name = "cookies")]
 pub struct Model {
     pub creation_utc:       i64,

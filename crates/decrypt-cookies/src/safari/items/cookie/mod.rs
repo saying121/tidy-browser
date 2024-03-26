@@ -10,7 +10,7 @@ use crate::{
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct CookiesGetter {
     pub binary_cookies: BinaryCookies,
 }
@@ -29,7 +29,7 @@ impl CookiesGetter {
         let mut cookie_path = dirs::home_dir().expect("get home dir failed");
         if let Some(path) = cookies_path {
             cookie_path.push(path);
-        println!("{:?}",cookie_path);
+            println!("{:?}", cookie_path);
         }
         else {
             cookie_path.push(Self::COOKIES);

@@ -8,7 +8,7 @@ pub use browser::{cookies::LeetCodeCookies, Browser};
 pub use firefox::FirefoxGetter;
 pub use chromium::ChromiumGetter;
 #[cfg(target_os = "macos")]
-pub use safari::items::SafariGetter;
+pub use safari::SafariGetter;
 use miette::Result;
 
 /// get csrf and session

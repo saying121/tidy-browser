@@ -3,7 +3,7 @@ pub mod cookies;
 use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 
 #[derive(Clone, Copy)]
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq,PartialOrd, Ord)]
 #[derive(Default)]
 #[derive(Debug)]
 #[derive(EnumIter, Display, EnumString, AsRefStr)]

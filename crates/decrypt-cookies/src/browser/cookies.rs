@@ -3,9 +3,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Default, Clone)]
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct LeetCodeCookies {
-    pub csrf: String,
+    pub csrf:    String,
     pub session: String,
 }
 
