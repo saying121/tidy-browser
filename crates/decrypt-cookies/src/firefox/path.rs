@@ -1,3 +1,5 @@
+//! <https://support.mozilla.org/en-US/kb/profiles-where-firefox-stores-user-data>
+
 use std::path::PathBuf;
 
 use miette::{IntoDiagnostic, Result};
@@ -6,11 +8,15 @@ use tokio::fs::read_to_string;
 /// just impl the `base` method
 pub trait FFPath {
     const COOKIES: &'static str = "cookies.sqlite";
-    const DATAS: &'static str = "places.sqlite"; // bookmarks etc.
+    const DATAS: &'static str = "places.sqlite"; // Bookmarks, Downloads and Browsing History:
+    const BOOKMARKBACKUPS: &'static str = "bookmarkbackups/bookmarks-date.jsonlz4";
+    const FAVICONS: &'static str = "favicons.sqlite"; // sqlite3, This file contains all of the favicons for your Firefox bookmarks.
     const KEY: &'static str = "key4.db"; // key sqlite3
-    const STORAGE: &'static str = "webappsstore.sqlite"; // web storage data
     const PASSWD: &'static str = "logins.json"; // passwd
+    const SEARCH: &'static str = "search.json.mozlz4"; // This file stores user-installed search engines.
+    const STORAGE: &'static str = "webappsstore.sqlite"; // web storage data
     const EXTENSIONS: &'static str = "extensions.json";
+    const CERT9: &'static str = "cert9.db"; // This file stores all your security certificate settings and any SSL certificates you have imported into Firefox.
 
     fn base(&self) -> &PathBuf;
 

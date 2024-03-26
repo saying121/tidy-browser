@@ -1,11 +1,11 @@
 # Decrypt Cookies
 
 <!--toc:start-->
-
 - [Decrypt Cookies](#decrypt-cookies)
   - [TODO](#todo)
   - [TEST STATUS](#test-status)
-  <!--toc:end-->
+  - [Thanks To](#thanks-to)
+<!--toc:end-->
 
 ## TODO
 
@@ -62,3 +62,7 @@
 |  CocCoc   |      🔑      |   🚫   | 2024-03-25 |
 |    Arc    | 🚫(not test) |   🚫   |            |
 |  safari   |      🔑      |   🚫   | 2024-03-25 |
+
+## Thanks To
+
+[HackBrowserData](https://github.com/moonD4rk/HackBrowserData)

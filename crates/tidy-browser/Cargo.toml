@@ -1,6 +1,13 @@
 [package]
-name = "tidy-browser"
-version = "0.1.0"
-edition = "2021"
+name        = "tidy-browser"
+version     = "0.1.0"
+description = "tidy up browser information."
+license     = "LGPL-3.0-or-later"
+edition     = { workspace = true }
+authors     = { workspace = true }
+homepage    = { workspace = true }
+repository  = { workspace = true }
+
 
 [dependencies]
+clap = { version = "^4" }
