@@ -98,20 +98,3 @@ impl Browser {
         }
     }
 }
-
-#[derive(Clone, Copy)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq)]
-pub enum BrowserFile {
-    #[default]
-    Cookies,
-    Key,
-    Storage,
-    Passwd,
-    Extensions,
-    Bookmarks,
-    Credit,
-    Session,
-    History,
-}

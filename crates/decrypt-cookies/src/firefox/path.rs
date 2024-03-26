@@ -3,8 +3,6 @@ use std::path::PathBuf;
 use miette::{IntoDiagnostic, Result};
 use tokio::fs::read_to_string;
 
-use crate::{browser::BrowserFile, firefox, Browser};
-
 /// just impl the `base` method
 pub trait FFPath {
     const COOKIES: &'static str = "cookies.sqlite";
@@ -62,7 +60,8 @@ pub trait FFPath {
             let ini_file = ini::Ini::load_from_str(&str).into_diagnostic()?;
             let mut section = String::new();
             for (sec, prop) in ini_file {
-                let Some(sec) = sec else {
+                let Some(sec) = sec
+                else {
                     continue;
                 };
                 if sec.starts_with("Install") {
@@ -82,24 +81,4 @@ pub trait FFPath {
             Ok(res)
         }
     }
-}
-
-pub async fn file_path(browser: Browser, file: BrowserFile) -> Result<PathBuf> {
-    #[cfg(target_os = "linux")]
-    let res = firefox::linux::path::LinuxFFBase::new(browser).await?;
-    #[cfg(target_os = "macos")]
-    let res = firefox::macos::path::MacFFBase::new(browser).await?;
-    #[cfg(target_os = "windows")]
-    let res = firefox::win::path::WinFFBase::new(browser).await?;
-    let pt = match file {
-        BrowserFile::Cookies => res.cookies(),
-        BrowserFile::Key => res.key(),
-        BrowserFile::Storage => res.storage(),
-        BrowserFile::Passwd => res.passwd(),
-        BrowserFile::Extensions => res.extensions(),
-        BrowserFile::Bookmarks | BrowserFile::History => res.datas(),
-        // Bookmarks: moz_bookmarks,  History: moz_places table
-        _ => miette::bail!("just chromium base have"),
-    };
-    Ok(pt)
 }

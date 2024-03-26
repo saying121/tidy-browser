@@ -16,11 +16,11 @@ pub struct Model {
     pub value:              Option<String>,
     pub host:               Option<String>,
     pub path:               Option<String>,
-    pub expiry:             Option<i32>,
+    pub expiry:             Option<i64>,
     #[sea_orm(column_name = "lastAccessed")]
-    pub last_accessed:      Option<i32>,
+    pub last_accessed:      Option<i64>,
     #[sea_orm(column_name = "creationTime")]
-    pub creation_time:      Option<i32>,
+    pub creation_time:      Option<i64>,
     #[sea_orm(column_name = "isSecure")]
     pub is_secure:          Option<i32>,
     #[sea_orm(column_name = "isHttpOnly")]

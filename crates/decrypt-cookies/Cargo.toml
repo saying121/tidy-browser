@@ -1,12 +1,14 @@
 [package]
 name        = "decrypt-cookies"
 version     = "0.3.0"
-description = "A decrypt browser cookies crate"
+description = "A decrypt browser crate"
 license     = "LGPL-3.0-or-later"
 edition     = { workspace = true }
 authors     = { workspace = true }
 homepage    = { workspace = true }
 repository  = { workspace = true }
+keywords    = ["cookies", "decrypt", "Browser", "Chromium", "Firefox", "Safari", "BinaryCookies"]
+categories  = ["asynchronous", "authentication", "cryptography", "encoding"]
 
 exclude = ["tests/"]
 
@@ -15,26 +17,29 @@ exclude = ["tests/"]
 [dependencies]
 tokio  = { workspace = true }
 miette = { workspace = true }
+rayon  = { version = "^1" }
+chrono = { version = "^0.4" }
 
 sea-orm = { workspace = true }
 
 tracing = { workspace = true }
 
-serde    = { workspace = true }
-rust-ini = { version = "0.21" }
+serde = { workspace = true }
+
+rust-ini = { version = "0.21" } # firefox
 
 dirs = { workspace = true }
 
 cfg-if = { version = "^1" }
 
-strum         = { version = "^0.26" }
-strum_macros  = { version = "^0.26" }
-bytes         = { version = "^1" }
+strum        = { version = "^0.26" }
+strum_macros = { version = "^0.26" }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))'.dependencies]
 secret-service = { version = "^3", default_features = true, features = ["rt-tokio-crypto-rust"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
+bytes = { version = "^1" }
 keyring = { version = "^2", default_features = false, features = [
     "platform-macos",
     "platform-ios",

@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-use crate::{browser::BrowserFile, Browser};
-
 /// just impl the `base` method
 pub trait ChromiumPath {
     #[cfg(target_os = "windows")]
@@ -61,26 +59,5 @@ pub trait ChromiumPath {
     /// sqlite3
     fn cookies(&self) -> PathBuf {
         self.base().join(Self::COOKIES)
-    }
-}
-
-pub fn file_path(browser: Browser, file: BrowserFile) -> PathBuf {
-    #[cfg(target_os = "linux")]
-    let base = super::linux::path::LinuxChromiumBase::new(browser);
-    #[cfg(target_os = "macos")]
-    let base = super::macos::path::MacChromiumBase::new(browser);
-    #[cfg(target_os = "windows")]
-    let base = super::win::path::WinChromiumBase::new(browser);
-
-    match file {
-        BrowserFile::Cookies => base.cookies(),
-        BrowserFile::Storage => base.storage(),
-        BrowserFile::Passwd => base.logindata(),
-        BrowserFile::Extensions => base.extensions(),
-        BrowserFile::Bookmarks => base.bookmarks(),
-        BrowserFile::Credit => base.credit(),
-        BrowserFile::Session => base.session(),
-        BrowserFile::History => base.history(),
-        BrowserFile::Key => base.key(),
     }
 }
