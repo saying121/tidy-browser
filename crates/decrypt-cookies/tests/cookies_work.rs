@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use decrypt_cookies::{browser::Browser, get_cookie, ChromiumGetter, FirefoxGetter};
+use decrypt_cookies::{browser::Browser, get_cookie, ChromiumBuilder, FirefoxBuilder};
 use miette::Result;
 use strum::IntoEnumIterator;
 
@@ -34,7 +34,9 @@ async fn get_all_cookie_work() -> Result<()> {
         .init();
 
     for browser in Browser::iter() {
-        let chrmo = ChromiumGetter::build(browser).await?;
+        let chrmo = ChromiumBuilder::new(browser)
+            .build()
+            .await?;
         let a = chrmo.get_cookies_all().await?;
         for i in a.iter().take(6) {
             println!("{}, {},{}", i.name, i.expires_utc, i.creation_utc);
@@ -51,7 +53,9 @@ async fn ff_get_all_cookie_work() -> Result<()> {
         .with_test_writer()
         .init();
 
-    let chrmo = FirefoxGetter::build(Browser::Firefox).await?;
+    let chrmo = FirefoxBuilder::new(Browser::Firefox)
+        .build()
+        .await?;
     let a = chrmo.get_cookies_all().await?;
     for i in a.iter().take(6) {
         println!(

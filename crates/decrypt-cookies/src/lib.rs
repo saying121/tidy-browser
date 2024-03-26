@@ -5,11 +5,11 @@ pub mod firefox;
 pub mod safari;
 
 pub use browser::{cookies::LeetCodeCookies, Browser};
-pub use firefox::FirefoxGetter;
-pub use chromium::ChromiumGetter;
+pub use chromium::{ChromiumBuilder, ChromiumGetter};
+pub use firefox::{FirefoxBuilder, FirefoxGetter};
+use miette::Result;
 #[cfg(target_os = "macos")]
 pub use safari::SafariGetter;
-use miette::Result;
 
 /// get csrf and session
 ///
@@ -20,12 +20,20 @@ where
 {
     let res = match borwser.into() {
         Browser::Firefox => {
-            let getter = FirefoxGetter::build(Browser::Firefox).await?;
-            getter.get_session_csrf(host).await?
+            let getter = FirefoxBuilder::new(Browser::Firefox)
+                .build()
+                .await?;
+            getter
+                .get_session_csrf(host)
+                .await?
         },
         Browser::Librewolf => {
-            let getter = FirefoxGetter::build(Browser::Librewolf).await?;
-            getter.get_session_csrf(host).await?
+            let getter = FirefoxBuilder::new(Browser::Librewolf)
+                .build()
+                .await?;
+            getter
+                .get_session_csrf(host)
+                .await?
         },
 
         #[cfg(target_os = "macos")]
@@ -35,7 +43,9 @@ where
         },
 
         chromium => {
-            let getter = ChromiumGetter::build(chromium).await?;
+            let getter = ChromiumBuilder::new(chromium)
+                .build()
+                .await?;
             getter
                 .get_cookies_session_csrf(host)
                 .await?

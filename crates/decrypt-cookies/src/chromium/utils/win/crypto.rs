@@ -1,4 +1,4 @@
-use std::{ffi::c_void, ptr};
+use std::{ffi::c_void, path::PathBuf, ptr};
 
 use aes_gcm::{
     aead::{generic_array::GenericArray, Aead},
@@ -36,11 +36,66 @@ const K_DPAPIKEY_PREFIX: &[u8] = b"DPAPI";
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
-    pass: Vec<u8>,
+    pass:    Vec<u8>,
     browser: Browser,
+}
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq)]
+pub struct DecrypterBuilder {
+    browser: Browser,
+    path:    Option<PathBuf>,
+}
+
+impl DecrypterBuilder {
+    pub fn new(browser: Browser) -> Self {
+        Self { browser, ..Default::default() }
+    }
+
+    /// set `local_state_path`
+    pub fn local_state_path<P>(&mut self, path: P) -> &mut Self
+    where
+        P: Into<PathBuf>,
+    {
+        self.path = Some(path.into());
+        self
+    }
+    pub async fn build(&mut self) -> Result<Decrypter> {
+        let pass = get_pass_helper(
+            self.path
+                .take()
+                .unwrap_or_else(|| {
+                    let base = super::path::WinChromiumBase::new(self.browser);
+                    base.into_key()
+                }),
+        )
+        .await?;
+
+        Ok(Decrypter { pass, browser: self.browser })
+    }
+}
+
+async fn get_pass_helper(path: PathBuf) -> Result<Vec<u8>> {
+    let string_str = read_to_string(path)
+        .await
+        .into_diagnostic()?;
+    let local_state: LocalState = serde_json::from_str(&string_str).into_diagnostic()?;
+    let encrypted_key = general_purpose::STANDARD
+        .decode(local_state.os_crypt.encrypted_key)
+        .into_diagnostic()?;
+    let mut key = encrypted_key[K_DPAPIKEY_PREFIX.len()..].to_vec();
+
+    let key = tokio::task::spawn_blocking(move || decrypt_with_dpapi(&mut key))
+        .await
+        .into_diagnostic()??;
+
+    Ok(key)
 }
 
 impl BrowserDecrypt for Decrypter {
+    /// the method will use default `LocalState` path,
+    /// custom that path use `DecrypterBuilder`
     async fn build(browser: Browser) -> Result<Self> {
         let pass = Self::get_pass(browser).await?;
         Ok(Self { pass, browser })
@@ -69,7 +124,8 @@ impl BrowserDecrypt for Decrypter {
     fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
         let pass = if ciphertext.starts_with(K_ENCRYPTION_VERSION_PREFIX) {
             self.pass.as_slice()
-        } else {
+        }
+        else {
             return String::from_utf8(decrypt_with_dpapi(ciphertext)?).into_diagnostic();
         };
 

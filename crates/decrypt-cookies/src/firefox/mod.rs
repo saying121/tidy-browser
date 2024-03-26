@@ -8,6 +8,8 @@ mod macos;
 #[cfg(target_os = "windows")]
 mod win;
 
+use std::path::PathBuf;
+
 pub use items::cookie::entities::moz_cookies::{
     Column as MozCookiesColumn, ColumnIter as MozCookiesColumnIter,
 };
@@ -40,20 +42,45 @@ pub struct FirefoxGetter {
     path:          win::path::WinFFBase,
 }
 
-impl FirefoxGetter {
-    pub async fn build(browser: Browser) -> Result<Self> {
-        #[cfg(target_os = "linux")]
-        let path = LinuxFFBase::new(browser).await?;
-        #[cfg(target_os = "macos")]
-        let path = MacFFBase::new(browser).await?;
-        #[cfg(target_os = "windows")]
-        let path = WinFFBase::new(browser).await?;
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+pub struct FirefoxBuilder {
+    browser:      Browser,
+    cookies_path: Option<PathBuf>,
+}
 
-        let query = CookiesQuery::new(path.cookies()).await?;
-
-        Ok(Self { cookies_query: query, path })
+impl FirefoxBuilder {
+    pub fn new(browser: Browser) -> Self {
+        Self { browser, ..Default::default() }
     }
+    /// set `cookies_path`
+    pub fn cookies_path<P>(&mut self, ck_path: P) -> &mut Self
+    where
+        P: Into<PathBuf>,
+    {
+        self.cookies_path = Some(ck_path.into());
+        self
+    }
+    pub async fn build(&mut self) -> Result<FirefoxGetter> {
+        #[cfg(target_os = "linux")]
+        let path = LinuxFFBase::new(self.browser).await?;
+        #[cfg(target_os = "macos")]
+        let path = MacFFBase::new(self.browser).await?;
+        #[cfg(target_os = "windows")]
+        let path = WinFFBase::new(self.browser).await?;
 
+        let query = CookiesQuery::new(
+            self.cookies_path
+                .take()
+                .unwrap_or_else(|| path.cookies()),
+        )
+        .await?;
+        Ok(FirefoxGetter { cookies_query: query, path })
+    }
+}
+
+impl FirefoxGetter {
     /// filter by condition
     ///
     /// # Example

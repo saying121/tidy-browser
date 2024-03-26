@@ -13,6 +13,14 @@ pub struct WinChromiumBase {
 }
 
 impl WinChromiumBase {
+    /// consume self
+    pub fn into_key(mut self) -> PathBuf {
+        self.base.push(Self::LOCAL_STATE);
+        self.base
+    }
+}
+
+impl WinChromiumBase {
     const EDGE_WIN: &'static str = "Microsoft/Edge/User Data/Default";
     const CHROME_WIN: &'static str = "Google/Chrome/User Data/Default";
     const CHROMIUM_WIN: &'static str = "Chromium/User Data/Default";
