@@ -42,13 +42,6 @@ impl SafariBuilder {
 }
 
 impl SafariGetter {
-    pub async fn new<T>(cookie_path: Option<T>) -> Result<Self>
-    where
-        T: AsRef<Path>,
-    {
-        let cookie_getter = CookiesGetter::build(cookie_path).await?;
-        Ok(Self { cookie_getter })
-    }
     pub fn all_cookies(&self) -> Option<Vec<&SafariCookie>> {
         self.cookie_getter.all_cookies()
     }
