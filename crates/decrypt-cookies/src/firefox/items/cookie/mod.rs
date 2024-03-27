@@ -27,13 +27,19 @@ pub struct MozCookies {
     pub scheme_map:         i32,
 }
 
+// reference: https://support.moonpoint.com/network/web/browser/firefox/sqlite_cookies.php
 trait I64ToMozTime {
-    fn to_moz_utc(&self) -> DateTime<Utc>;
+    fn micros_to_moz_utc(&self) -> DateTime<Utc>;
+    fn secs_to_moz_utc(&self) -> DateTime<Utc>;
 }
 
 impl I64ToMozTime for i64 {
-    fn to_moz_utc(&self) -> DateTime<Utc> {
-        Utc.timestamp_opt(self / 1_000_000, 0)
+    fn micros_to_moz_utc(&self) -> DateTime<Utc> {
+        Utc.timestamp_micros(*self)
+            .unwrap()
+    }
+    fn secs_to_moz_utc(&self) -> DateTime<Utc> {
+        Utc.timestamp_opt(*self, 0)
             .unwrap()
     }
 }
@@ -47,18 +53,15 @@ impl From<moz_cookies::Model> for MozCookies {
             value:              value.value.unwrap_or_default(),
             host:               value.host.unwrap_or_default(),
             path:               value.path.unwrap_or_default(),
-            expiry:             value.expiry.map(|v| {
-                (v + value
-                    .creation_time
-                    .unwrap_or_default())
-                .to_moz_utc()
-            }),
+            expiry:             value
+                .expiry
+                .map(|v| v.secs_to_moz_utc()),
             last_accessed:      value
                 .last_accessed
-                .map(|v| v.to_moz_utc()),
+                .map(|v| v.micros_to_moz_utc()),
             creation_time:      value
                 .creation_time
-                .map(|v| v.to_moz_utc()),
+                .map(|v| v.micros_to_moz_utc()),
             is_secure:          value
                 .is_secure
                 .is_some_and(|v| v != 0),

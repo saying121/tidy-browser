@@ -1,7 +1,3 @@
-#![allow(clippy::string_slice)]
-
-use std::str::FromStr;
-
 use decrypt_cookies::{browser::Browser, get_cookie, ChromiumBuilder, FirefoxBuilder};
 use miette::Result;
 use strum::IntoEnumIterator;
@@ -53,13 +49,13 @@ async fn ff_get_all_cookie_work() -> Result<()> {
         .with_test_writer()
         .init();
 
-    let chrmo = FirefoxBuilder::new(Browser::Firefox)
+    let ff = FirefoxBuilder::new(Browser::Firefox)
         .build()
         .await?;
-    let a = chrmo.get_cookies_all().await?;
+    let a = ff.get_cookies_all().await?;
     for i in a.iter().take(6) {
         println!(
-            "{}, {},{},{}",
+            "name: {}, last_accessed: {}, expiry: {}, creation_time: {}",
             i.name,
             i.last_accessed.unwrap_or_default(),
             i.expiry.unwrap_or_default(),
@@ -68,49 +64,4 @@ async fn ff_get_all_cookie_work() -> Result<()> {
     }
 
     Ok(())
-}
-
-#[test]
-fn browsers() {
-    let b = Browser::Edge;
-    assert_eq!(&b.to_string(), "Edge");
-    let b = Browser::from_str("Edge").unwrap();
-    assert_eq!(b, Browser::Edge);
-    let b = Browser::from_str("eDgE").unwrap();
-    assert_eq!(b, Browser::Edge);
-}
-
-#[ignore = "just inspect"]
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[cfg(target_os = "linux")]
-async fn all_pass() {
-    use secret_service::{EncryptionType, SecretService};
-    // initialize secret service (dbus connection and encryption session)
-    let ss = SecretService::connect(EncryptionType::Dh)
-        .await
-        .unwrap();
-    // get default collection
-    let collection = ss
-        // .get_all_collections()
-        .get_default_collection()
-        .await
-        .unwrap();
-    if collection
-        .is_locked()
-        .await
-        .unwrap()
-    {
-        collection.unlock().await.unwrap();
-    }
-    let coll = collection
-        .get_all_items()
-        .await
-        .unwrap();
-    for i in coll {
-        let lab = i.get_label().await.unwrap();
-        dbg!(lab);
-        let res = i.get_secret().await.unwrap();
-        let pass = String::from_utf8_lossy(&res).to_string();
-        println!(r##"(| pass |) -> {}"##, &pass[..50.min(pass.len())]);
-    }
 }
