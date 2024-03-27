@@ -13,27 +13,38 @@ use miette::{bail, Result};
 #[derive(Default)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct BinaryCookies {
-    pub signature:    Vec<u8>,
-    pub num_pages:    u32,      // be
-    pub pages_offset: Vec<u32>, // be
-    pub pages:        Vec<Page>,
-    pub checksum:     Vec<u8>, // 8 byte
+    signature:    Vec<u8>,
+    num_pages:    u32,      // be
+    pages_offset: Vec<u32>, // be
+    pub pages:    Vec<Page>,
+    checksum:     Vec<u8>, // 8 byte
 }
 
 impl BinaryCookies {
+    pub fn pages(&self) -> impl Iterator<Item = &Page> {
+        self.pages.iter()
+    }
     /// iter all pages cookies
     pub fn iter_cookies(&self) -> impl Iterator<Item = &SafariCookie> {
         self.pages
             .iter()
             .flat_map(Page::iter_cookies)
     }
-    pub fn filter_by<P>(&self, p: P) -> Vec<&SafariCookie>
-    where
-        P: FnMut(&&SafariCookie) -> bool,
-    {
-        self.iter_cookies()
-            .filter(p)
-            .collect()
+
+    pub fn signature(&self) -> &[u8] {
+        self.signature.as_ref()
+    }
+
+    pub fn num_pages(&self) -> u32 {
+        self.num_pages
+    }
+
+    pub fn pages_offset(&self) -> &[u32] {
+        self.pages_offset.as_ref()
+    }
+
+    pub fn checksum(&self) -> &[u8] {
+        self.checksum.as_ref()
     }
 }
 
@@ -46,12 +57,28 @@ pub struct Page {
     num_cookies:     u32,      // le
     cookies_offsets: Vec<u32>, // le, N * `self.num_cookies`
     page_end:        Vec<u8>,  // Must be equal to []byte{0x00_00_00_00}
-    raw_cookies:     Vec<SafariCookie>,
+    pub cookies:     Vec<SafariCookie>,
 }
 
 impl Page {
     pub fn iter_cookies(&self) -> impl Iterator<Item = &SafariCookie> {
-        self.raw_cookies.iter()
+        self.cookies.iter()
+    }
+
+    pub fn pages_start(&self) -> &[u8] {
+        self.pages_start.as_ref()
+    }
+
+    pub fn num_cookies(&self) -> u32 {
+        self.num_cookies
+    }
+
+    pub fn cookies_offsets(&self) -> &[u32] {
+        self.cookies_offsets.as_ref()
+    }
+
+    pub fn page_end(&self) -> &[u8] {
+        self.page_end.as_ref()
     }
 }
 
@@ -132,7 +159,7 @@ impl BinaryCookies {
             num_cookies,
             cookies_offsets,
             page_end,
-            raw_cookies,
+            cookies: raw_cookies,
         };
         Ok(page)
     }

@@ -3,13 +3,15 @@ mod utils;
 
 use std::path::PathBuf;
 
-pub use items::cookie::entities::cookies::{
-    Column as ChromCkColumn, ColumnIter as ChromCkColumnIter,
+use items::cookie::{dao::CookiesQuery, entities::cookies};
+pub use items::cookie::{
+    entities::cookies::{Column as ChromCkColumn, ColumnIter as ChromCkColumnIter},
+    DecryptedCookies,
 };
-use items::cookie::{dao::CookiesQuery, entities::cookies, DecryptedCookies};
 use miette::{IntoDiagnostic, Result};
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::*;
 use sea_orm::sea_query::IntoCondition;
+use tokio::task;
 use utils::crypto::BrowserDecrypt;
 
 cfg_if::cfg_if!(
@@ -128,8 +130,8 @@ impl ChromiumGetter {
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
         self.crypto.decrypt(ciphertext)
     }
-    /// use rayon decrypt cookies
-    fn par_decrypt_cookies(&self, raw: Vec<cookies::Model>) -> Vec<DecryptedCookies> {
+    /// parallel decrypt cookies
+    pub fn par_decrypt_cookies(&self, raw: Vec<cookies::Model>) -> Vec<DecryptedCookies> {
         raw.into_par_iter()
             .map(|mut v| {
                 let res = self
@@ -141,6 +143,27 @@ impl ChromiumGetter {
                 cookies
             })
             .collect()
+    }
+
+    /// parallel decrypt cookies
+    /// and not blocking scheduling
+    pub async fn par_decrypt(&self, raw: Vec<cookies::Model>) -> Result<Vec<DecryptedCookies>> {
+        let crypto = self.crypto.clone();
+
+        task::spawn_blocking(move || {
+            raw.into_par_iter()
+                .map(|mut v| {
+                    let res = crypto
+                        .decrypt(&mut v.encrypted_value)
+                        .unwrap_or_default();
+                    let mut cookies = DecryptedCookies::from(v);
+                    cookies.set_encrypted_value(res);
+                    cookies
+                })
+                .collect()
+        })
+        .await
+        .into_diagnostic()
     }
 
     /// filter cookies
@@ -170,24 +193,24 @@ impl ChromiumGetter {
             .query
             .query_cookie_filter(filter)
             .await?;
-        Ok(self.par_decrypt_cookies(raw_ck))
+        self.par_decrypt(raw_ck).await
     }
     /// decrypt Cookies
     pub async fn get_cookies_by_host(&self, host: &str) -> Result<Vec<DecryptedCookies>> {
-        let raw_cookies = self
+        let raw_ck = self
             .query
             .query_cookie_by_host(host)
             .await?;
-        Ok(self.par_decrypt_cookies(raw_cookies))
+        self.par_decrypt(raw_ck).await
     }
 
     /// return all cookies
     pub async fn get_cookies_all(&self) -> Result<Vec<DecryptedCookies>> {
-        let raw_cookies = self
+        let raw_ck = self
             .query
             .query_all_cookie()
             .await?;
-        Ok(self.par_decrypt_cookies(raw_cookies))
+        self.par_decrypt(raw_ck).await
     }
 
     /// get `LEETCODE_SESSION` and `csrftoken` for leetcode
@@ -210,28 +233,26 @@ impl ChromiumGetter {
         for mut cookie in cookies {
             if cookie.name == "csrftoken" {
                 let cy = self.crypto.clone();
-                let csrf_hd = tokio::task::spawn_blocking(move || {
-                    match cy.decrypt(&mut cookie.encrypted_value) {
+                let csrf_hd =
+                    task::spawn_blocking(move || match cy.decrypt(&mut cookie.encrypted_value) {
                         Ok(it) => it,
                         Err(err) => {
                             tracing::warn!("decrypt csrf failed: {err}");
                             String::new()
                         },
-                    }
-                });
+                    });
                 hds.push((csrf_hd, CsrfSession::Csrf));
             }
             else if cookie.name == "LEETCODE_SESSION" {
                 let cy = self.crypto.clone();
-                let session_hd = tokio::task::spawn_blocking(move || {
-                    match cy.decrypt(&mut cookie.encrypted_value) {
+                let session_hd =
+                    task::spawn_blocking(move || match cy.decrypt(&mut cookie.encrypted_value) {
                         Ok(it) => it,
                         Err(err) => {
                             tracing::warn!("decrypt session failed: {err}");
                             String::new()
                         },
-                    }
-                });
+                    });
                 hds.push((session_hd, CsrfSession::Session));
             }
         }
