@@ -2,10 +2,29 @@
 
 <!--toc:start-->
 - [Decrypt Cookies](#decrypt-cookies)
+  - [Example](#example)
   - [TODO](#todo)
   - [TEST STATUS](#test-status)
   - [Thanks To](#thanks-to)
 <!--toc:end-->
+
+## Example
+
+```rust
+use decrypt_cookies::{Browser, ChromiumBuilder};
+
+#[tokio::main]
+async fn main() -> miette::Result<()> {
+    let chromium = ChromiumBuilder::new(Browser::Chromium)
+        .build()
+        .await?;
+    let all_cookies = chromium.get_cookies_all().await?;
+
+    dbg!(&all_cookies[0]);
+
+    Ok(())
+}
+```
 
 ## TODO
 

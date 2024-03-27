@@ -10,6 +10,8 @@ pub use firefox::{FirefoxBuilder, FirefoxGetter};
 use miette::Result;
 #[cfg(target_os = "macos")]
 pub use safari::SafariGetter;
+#[cfg(target_os = "macos")]
+pub use safari::SafariBuilder;
 
 /// get csrf and session
 ///
