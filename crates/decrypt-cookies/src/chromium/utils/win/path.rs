@@ -63,6 +63,8 @@ impl WinChromiumBase {
 }
 
 impl ChromiumPath for WinChromiumBase {
+    const COOKIES: &'static str = "Network/Cookies"; // sqlite3
+
     fn base(&self) -> &PathBuf {
         &self.base
     }
