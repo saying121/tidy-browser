@@ -4,7 +4,7 @@ use std::path::PathBuf;
 pub trait ChromiumPath {
     const BOOKMARKS: &'static str = "Bookmarks"; // json
     const COOKIES: &'static str = "Cookies"; // sqlite3
-    // const PROFILE_PICTURE: &'static str = "Edge Profile Picture.png";
+                                             // const PROFILE_PICTURE: &'static str = "Edge Profile Picture.png";
     const EXTENSION_COOKIES: &'static str = "Extension Cookies";
     // const FAVICONS: &'static str = "Favicons"; // sqlite3
     const HISTORY: &'static str = "History"; // sqlite3

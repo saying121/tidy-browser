@@ -19,8 +19,7 @@ impl WinFFBase {
             Browser::Librewolf => Self::LIBREWOLF_BASE,
             _ => Self::FIREFOX_BASE,
         };
-        let init =
-            dirs::data_dir().ok_or_else(|| miette::miette!("get data local dir failed"))?;
+        let init = dirs::data_dir().ok_or_else(|| miette::miette!("get data local dir failed"))?;
         let base = Self::helper(init, base).await?;
 
         Ok(Self { base })

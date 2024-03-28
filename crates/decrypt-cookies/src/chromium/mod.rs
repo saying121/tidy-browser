@@ -47,9 +47,9 @@ use crate::{chromium::utils::path::ChromiumPath, Browser, LeetCodeCookies};
 #[derive(Debug)]
 #[derive(Default)]
 pub struct ChromiumGetter {
-    browser: Browser,
-    cookies_query:   CookiesQuery,
-    crypto:  Decrypter,
+    browser:       Browser,
+    cookies_query: CookiesQuery,
+    crypto:        Decrypter,
 
     /// generate Default paths
     #[cfg(target_os = "linux")]

@@ -56,12 +56,7 @@ impl BrowserDecrypt for Decrypter {
         let mut key = [0_u8; 16];
         let iv = [b' '; 16];
 
-        pbkdf2_hmac::<sha1::Sha1>(
-            &self.pass_v10,
-            K_SALT,
-            K_ENCRYPTION_ITERATIONS,
-            &mut key,
-        );
+        pbkdf2_hmac::<sha1::Sha1>(&self.pass_v10, K_SALT, K_ENCRYPTION_ITERATIONS, &mut key);
 
         let decrypter = Aes128CbcDec::new(&key.into(), &iv.into());
 
