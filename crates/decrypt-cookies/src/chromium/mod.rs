@@ -1,6 +1,5 @@
+pub mod crypto;
 mod items;
-mod utils;
-
 use std::path::PathBuf;
 
 use items::cookie::{dao::CookiesQuery, entities::cookies};
@@ -12,23 +11,21 @@ use miette::{IntoDiagnostic, Result};
 use rayon::prelude::*;
 use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
 use tokio::task;
-use utils::crypto::BrowserDecrypt;
+
+use crate::{browser::info::ChromiumInfo, Browser, LeetCodeCookies};
 
 cfg_if::cfg_if!(
-    if #[cfg(target_os = "linux")] {
-        use utils::linux::crypto::Decrypter;
-        use utils::linux::path::LinuxChromiumBase;
-    } else if #[cfg(target_os = "macos")] {
-        use utils::macos::crypto::Decrypter;
-        use utils::macos::path::MacChromiumBase;
-    } else if #[cfg(target_os = "windows")] {
-        use utils::win::crypto::DecrypterBuilder;
-        use utils::win::crypto::Decrypter;
-        use utils::win::path::WinChromiumBase;
+    if #[cfg(target_os="linux")] {
+        use crypto::linux::Decrypter;
+        use crate::browser::info::linux::LinuxChromiumBase;
+    } else if #[cfg(target_os="macos")] {
+        use crypto::macos::Decrypter;
+        use crate::browser::info::macos::MacChromiumBase;
+    } else if #[cfg(target_os="windows")] {
+        use crypto::win::Decrypter;
+        use crate::browser::info::win::WinChromiumBase;
     }
 );
-
-use crate::{chromium::utils::path::ChromiumPath, Browser, LeetCodeCookies};
 
 /// Chromium based, get cookies, etc. and decrypt
 ///
@@ -51,21 +48,18 @@ pub struct ChromiumGetter {
     cookies_query: CookiesQuery,
     crypto:        Decrypter,
 
-    /// generate Default paths
     #[cfg(target_os = "linux")]
-    path: LinuxChromiumBase,
-    /// generate Default paths
-    #[cfg(target_os = "macos")]
-    path: MacChromiumBase,
-    /// generate Default paths
+    pub info: LinuxChromiumBase,
     #[cfg(target_os = "windows")]
-    path: WinChromiumBase,
+    pub info: WinChromiumBase,
+    #[cfg(target_os = "macos")]
+    pub info: MacChromiumBase,
 }
 
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq)]
 pub struct ChromiumBuilder {
     browser:          Browser,
     cookies_path:     Option<PathBuf>,
@@ -74,8 +68,12 @@ pub struct ChromiumBuilder {
 }
 
 impl ChromiumBuilder {
-    pub fn new(browser: Browser) -> Self {
-        Self { browser, ..Default::default() }
+    pub const fn new(browser: Browser) -> Self {
+        Self {
+            browser,
+            cookies_path: None,
+            local_state_path: None,
+        }
     }
     /// set cookies path
     pub fn cookies_path<P>(&mut self, path: P) -> &mut Self
@@ -93,27 +91,29 @@ impl ChromiumBuilder {
         self.local_state_path = Some(path.into());
         self
     }
-    pub async fn build(&mut self) -> Result<ChromiumGetter> {
+
+    pub async fn build(mut self) -> Result<ChromiumGetter> {
         cfg_if::cfg_if!(
-            if #[cfg(target_os = "linux")] {
-                let crypto = Decrypter::build(self.browser).await?;
-                let path = LinuxChromiumBase::new(self.browser);
-            } else if #[cfg(target_os = "macos")] {
-                let crypto = Decrypter::build(self.browser).await?;
-                let path = MacChromiumBase::new(self.browser);
-            } else if #[cfg(target_os = "windows")] {
-                let mut crypto = DecrypterBuilder::new(self.browser);
-                if let Some(path) = self.local_state_path.take() {
-                    crypto.local_state_path(path);
-                }
-                let crypto = crypto.build().await?;
-                let path = WinChromiumBase::new(self.browser);
+            if #[cfg(target_os="linux")] {
+                let info = LinuxChromiumBase::new(self.browser);
+                let crypto = crypto::linux::Decrypter::build(info.browser(), info.safe_storage()).await?;
+            } else if #[cfg(target_os="macos")] {
+                let info = MacChromiumBase::new(self.browser);
+                let crypto = crypto::macos::Decrypter::build(
+                    self.browser,
+                    self.info.safe_storage(),
+                    self.info.safe_name(),
+                )?;
+            } else if #[cfg(target_os="windows")] {
+                let info = WinChromiumBase::new(self.browser);
+                let mut crypto = crypto::win::Decrypter::build(self.browser, info.key());
             }
         );
+
         let query = CookiesQuery::new(
             self.cookies_path
                 .take()
-                .unwrap_or_else(|| path.cookies()),
+                .unwrap_or_else(|| info.cookies()),
         )
         .await?;
 
@@ -121,7 +121,7 @@ impl ChromiumBuilder {
             browser: self.browser,
             cookies_query: query,
             crypto,
-            path,
+            info,
         })
     }
 }
@@ -273,24 +273,6 @@ impl ChromiumGetter {
             }
         }
         Ok(csrf_token)
-    }
-}
-
-impl ChromiumGetter {
-    /// generate Default paths
-    #[cfg(target_os = "linux")]
-    pub const fn path(&self) -> &LinuxChromiumBase {
-        &self.path
-    }
-    /// generate Default paths
-    #[cfg(target_os = "macos")]
-    pub const fn path(&self) -> &MacChromiumBase {
-        &self.path
-    }
-    /// generate Default paths
-    #[cfg(target_os = "windows")]
-    pub const fn path(&self) -> &WinChromiumBase {
-        &self.path
     }
 
     pub const fn browser(&self) -> Browser {

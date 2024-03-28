@@ -35,7 +35,12 @@ async fn get_all_cookie_work() -> Result<()> {
             .await?;
         let a = chrmo.get_cookies_all().await?;
         for i in a.iter().take(6) {
-            println!("{}, {},{}", i.name, i.expires_utc, i.creation_utc);
+            println!(
+                "{}, {},{}",
+                i.name,
+                i.expires_utc.unwrap(),
+                i.creation_utc.unwrap()
+            );
         }
     }
 

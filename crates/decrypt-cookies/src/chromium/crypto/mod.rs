@@ -2,8 +2,5 @@
 pub mod linux;
 #[cfg(target_os = "macos")]
 pub mod macos;
-#[cfg(target_os = "windows")]
+#[cfg(target_os = "win")]
 pub mod win;
-
-pub mod crypto;
-pub mod path;

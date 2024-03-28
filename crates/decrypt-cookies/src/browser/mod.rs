@@ -1,4 +1,5 @@
 pub mod cookies;
+pub mod info;
 
 use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 
@@ -58,6 +59,7 @@ pub enum Browser {
 }
 
 impl Browser {
+    /// for fetch password
     #[cfg(target_os = "macos")]
     pub const fn safe_name(&self) -> &str {
         match self {
@@ -78,6 +80,7 @@ impl Browser {
         }
     }
 
+    /// for fetch password
     #[cfg(not(target_os = "windows"))]
     pub const fn storage(&self) -> &str {
         match self {
@@ -97,4 +100,9 @@ impl Browser {
             _ => concat!("Chrome", " Safe Storage"),
         }
     }
+}
+
+#[test]
+fn feature() {
+    let var = Browser::Chrome(None);
 }

@@ -1,4 +1,8 @@
-use std::{ffi::c_void, path::PathBuf, ptr};
+use std::{
+    ffi::c_void,
+    path::{Path, PathBuf},
+    ptr,
+};
 
 use aes_gcm::{
     aead::{generic_array::GenericArray, Aead},
@@ -10,26 +14,7 @@ use serde::{Deserialize, Serialize};
 use tokio::fs::read_to_string;
 use windows::Win32::{Foundation, Security::Cryptography};
 
-use crate::{
-    chromium::utils::{crypto::BrowserDecrypt, path::ChromiumPath},
-    Browser,
-};
-
-// https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=36
-/// AEAD key length in bytes.
-// const K_KEY_LENGTH: u32 = 256 / 8;
-
-// https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=39
-/// AEAD nonce length in bytes.
-const K_NONCE_LENGTH: usize = 96 / 8;
-
-// https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=41
-/// Version prefix for data encrypted with profile bound key.
-const K_ENCRYPTION_VERSION_PREFIX: &[u8] = b"v10";
-
-// https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=45
-/// Key prefix for a key encrypted with DPAPI.
-const K_DPAPIKEY_PREFIX: &[u8] = b"DPAPI";
+use crate::Browser;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -39,72 +24,35 @@ pub struct Decrypter {
     pass:    Vec<u8>,
     browser: Browser,
 }
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq)]
-pub struct DecrypterBuilder {
-    browser: Browser,
-    path:    Option<PathBuf>,
+
+impl Decrypter {
+    // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=36
+    /// AEAD key length in bytes.
+    // const K_KEY_LENGTH: u32 = 256 / 8;
+
+    // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=39
+    /// AEAD nonce length in bytes.
+    const K_NONCE_LENGTH: usize = 96 / 8;
+
+    // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=41
+    /// Version prefix for data encrypted with profile bound key.
+    const K_ENCRYPTION_VERSION_PREFIX: &[u8] = b"v10";
+
+    // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=45
+    /// Key prefix for a key encrypted with DPAPI.
+    const K_DPAPIKEY_PREFIX: &[u8] = b"DPAPI";
 }
 
-impl DecrypterBuilder {
-    pub fn new(browser: Browser) -> Self {
-        Self { browser, ..Default::default() }
-    }
-
-    /// set `local_state_path`
-    pub fn local_state_path<P>(&mut self, path: P) -> &mut Self
-    where
-        P: Into<PathBuf>,
-    {
-        self.path = Some(path.into());
-        self
-    }
-    pub async fn build(&mut self) -> Result<Decrypter> {
-        let pass = get_pass_helper(
-            self.path
-                .take()
-                .unwrap_or_else(|| {
-                    let base = super::path::WinChromiumBase::new(self.browser);
-                    base.into_key()
-                }),
-        )
-        .await?;
-
-        Ok(Decrypter { pass, browser: self.browser })
-    }
-}
-
-async fn get_pass_helper(path: PathBuf) -> Result<Vec<u8>> {
-    let string_str = read_to_string(path)
-        .await
-        .into_diagnostic()?;
-    let local_state: LocalState = serde_json::from_str(&string_str).into_diagnostic()?;
-    let encrypted_key = general_purpose::STANDARD
-        .decode(local_state.os_crypt.encrypted_key)
-        .into_diagnostic()?;
-    let mut key = encrypted_key[K_DPAPIKEY_PREFIX.len()..].to_vec();
-
-    let key = tokio::task::spawn_blocking(move || decrypt_with_dpapi(&mut key))
-        .await
-        .into_diagnostic()??;
-
-    Ok(key)
-}
-
-impl BrowserDecrypt for Decrypter {
+impl Decrypter {
     /// the method will use default `LocalState` path,
     /// custom that path use `DecrypterBuilder`
-    async fn build(browser: Browser) -> Result<Self> {
-        let pass = Self::get_pass(browser).await?;
+    pub async fn build(browser: Browser, key_path: impl AsRef<Path>) -> Result<Self> {
+        let pass = Self::get_pass(key_path).await?;
         Ok(Self { pass, browser })
     }
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=108
-    async fn get_pass(browser: Browser) -> Result<Vec<u8>> {
-        let base = super::path::WinChromiumBase::new(browser);
-        let path = base.key();
-        let string_str = read_to_string(path)
+    async fn get_pass(key_path: impl AsRef<Path>) -> Result<Vec<u8>> {
+        let string_str = read_to_string(key_path)
             .await
             .into_diagnostic()?;
         let local_state: LocalState = serde_json::from_str(&string_str).into_diagnostic()?;
@@ -121,17 +69,18 @@ impl BrowserDecrypt for Decrypter {
     }
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=213
-    fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
-        let pass = if ciphertext.starts_with(K_ENCRYPTION_VERSION_PREFIX) {
+    pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
+        let pass = if ciphertext.starts_with(Self::K_ENCRYPTION_VERSION_PREFIX) {
             self.pass.as_slice()
         }
         else {
             return String::from_utf8(decrypt_with_dpapi(ciphertext)?).into_diagnostic();
         };
+        let prefix_len = Self::K_ENCRYPTION_VERSION_PREFIX.len();
+        let nonce_len = Self::K_NONCE_LENGTH;
 
-        let nonce = &ciphertext
-            [K_ENCRYPTION_VERSION_PREFIX.len()..K_NONCE_LENGTH + K_ENCRYPTION_VERSION_PREFIX.len()];
-        let raw_ciphertext = &ciphertext[K_NONCE_LENGTH + K_ENCRYPTION_VERSION_PREFIX.len()..];
+        let nonce = &ciphertext[prefix_len..nonce_len + prefix_len];
+        let raw_ciphertext = &ciphertext[nonce_len + prefix_len..];
 
         let cipher = Aes256Gcm::new(GenericArray::from_slice(pass));
 

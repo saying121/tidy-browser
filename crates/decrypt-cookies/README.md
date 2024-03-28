@@ -1,12 +1,13 @@
 # Decrypt Cookies
 
 <!--toc:start-->
+
 - [Decrypt Cookies](#decrypt-cookies)
   - [Example](#example)
   - [TODO](#todo)
   - [TEST STATUS](#test-status)
   - [Thanks To](#thanks-to)
-<!--toc:end-->
+  <!--toc:end-->
 
 ## Example
 
@@ -25,6 +26,17 @@ async fn main() -> miette::Result<()> {
     Ok(())
 }
 ```
+
+## To add new
+
+### ChromiumBase
+
+- ./src/browser/info.rs `ChromiumInfo` trait,
+  `safe_name`, `storage` method, modify this.
+
+### FirefoxBase
+
+- ./src/browser/info.rs `FfInfo` trait, modify and impl.
 
 ## TODO
 

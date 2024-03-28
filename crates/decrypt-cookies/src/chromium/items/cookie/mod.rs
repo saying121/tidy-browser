@@ -14,8 +14,7 @@ pub struct DecryptedCookies {
     pub top_frame_site_key: String,
     pub name:               String,
     pub value:              String,
-    /// has been decrypted
-    pub encrypted_value:    Option<String>,
+    pub decrypted_value:    Option<String>,
     pub path:               String,
     pub expires_utc:        LocalResult<DateTime<Utc>>,
     pub is_secure:          bool,
@@ -32,7 +31,7 @@ pub struct DecryptedCookies {
 
 impl DecryptedCookies {
     pub fn set_encrypted_value(&mut self, encrypted_value: String) {
-        self.encrypted_value = Some(encrypted_value);
+        self.decrypted_value = Some(encrypted_value);
     }
 }
 
@@ -57,7 +56,7 @@ impl From<cookies::Model> for DecryptedCookies {
             top_frame_site_key: value.top_frame_site_key,
             name:               value.name,
             value:              value.value,
-            encrypted_value:    None,
+            decrypted_value:    None,
             path:               value.path,
             expires_utc:        value
                 .expires_utc
