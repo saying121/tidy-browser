@@ -1,4 +1,4 @@
-use chrono::{prelude::*, TimeZone, Utc};
+use chrono::{prelude::*, LocalResult, TimeZone, Utc};
 
 use self::entities::cookies;
 
@@ -7,27 +7,27 @@ pub mod entities;
 
 #[derive(Clone)]
 #[derive(Debug)]
-#[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct DecryptedCookies {
-    pub creation_utc:       DateTime<Utc>,
+    pub creation_utc:       LocalResult<DateTime<Utc>>,
     pub host_key:           String,
     pub top_frame_site_key: String,
     pub name:               String,
     pub value:              String,
+    /// has been decrypted
     pub encrypted_value:    Option<String>,
     pub path:               String,
-    pub expires_utc:        DateTime<Utc>,
+    pub expires_utc:        LocalResult<DateTime<Utc>>,
     pub is_secure:          bool,
     pub is_httponly:        bool,
-    pub last_access_utc:    DateTime<Utc>,
+    pub last_access_utc:    LocalResult<DateTime<Utc>>,
     pub has_expires:        bool,
     pub is_persistent:      bool,
     pub priority:           i32,
     pub samesite:           i32,
     pub source_scheme:      i32,
     pub source_port:        i32,
-    pub last_update_utc:    DateTime<Utc>,
+    pub last_update_utc:    LocalResult<DateTime<Utc>>,
 }
 
 impl DecryptedCookies {
@@ -37,14 +37,13 @@ impl DecryptedCookies {
 }
 
 trait I64ToDateTime {
-    fn micros_to_chromium_utc(&self) -> DateTime<Utc>;
+    fn micros_to_chromium_utc(&self) -> LocalResult<DateTime<Utc>>;
 }
 
 // https://source.chromium.org/chromium/chromium/src/+/main:base/time/time.h;l=5;
 impl I64ToDateTime for i64 {
-    fn micros_to_chromium_utc(&self) -> DateTime<Utc> {
+    fn micros_to_chromium_utc(&self) -> LocalResult<DateTime<Utc>> {
         Utc.timestamp_micros(self - 11_644_473_600 * 1_000_000)
-            .unwrap()
     }
 }
 

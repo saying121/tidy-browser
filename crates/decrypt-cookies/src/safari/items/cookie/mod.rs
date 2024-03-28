@@ -1,7 +1,4 @@
-use std::{
-    mem::replace,
-    path::{Path, PathBuf},
-};
+use std::path::PathBuf;
 
 use miette::{IntoDiagnostic, Result};
 
@@ -13,14 +10,14 @@ use crate::{
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq)]
 pub struct CookiesGetter {
-    pub binary_cookies: Option<BinaryCookies>,
+    pub binary_cookies: BinaryCookies,
 }
 
 impl CookiesGetter {
-    pub fn into_inner(&mut self) -> Option<BinaryCookies> {
-        self.binary_cookies.take()
+    pub fn into_inner(self) -> BinaryCookies {
+        self.binary_cookies
     }
 }
 
@@ -52,42 +49,36 @@ impl CookiesGetter {
             .into_diagnostic()?;
         let binary_cookies = BinaryCookies::parse(&content)?;
 
-        Ok(Self {
-            binary_cookies: Some(binary_cookies),
-        })
+        Ok(Self { binary_cookies })
     }
-    pub fn get_session_csrf(&self, host: &str) -> Option<LeetCodeCookies> {
+    pub fn get_session_csrf(&self, host: &str) -> LeetCodeCookies {
         let mut lc_cookies = LeetCodeCookies::default();
-        for ck in self
+        for ele in self
             .binary_cookies
-            .as_ref()?
             .iter_cookies()
+            .filter(|v| {
+                v.domain().contains(host)
+                    && (v.name().eq("csrftoken") || v.name().eq("LEETCODE_SESSION"))
+            })
         {
-            if ck.domain().contains(host) {
-                if ck.name() == "csrftoken" {
-                    lc_cookies.csrf = ck.value().to_owned();
-                }
-                else if ck.name() == "LEETCODE_SESSION" {
-                    lc_cookies.session = ck.value().to_owned();
-                }
+            if ck.name() == "csrftoken" {
+                lc_cookies.csrf = ck.value().to_owned();
+            }
+            else if ck.name() == "LEETCODE_SESSION" {
+                lc_cookies.session = ck.value().to_owned();
             }
         }
-        Some(lc_cookies)
+        lc_cookies
     }
-    pub fn ref_binary_cookies(&self) -> Option<&BinaryCookies> {
-        self.binary_cookies.as_ref()
+    pub const fn binary_cookies(&self) -> &BinaryCookies {
+        &self.binary_cookies
     }
-    pub fn all_cookies(&self) -> Option<Vec<&SafariCookie>> {
-        Some(
-            self.ref_binary_cookies()?
-                .iter_cookies()
-                .collect(),
-        )
+    pub fn all_cookies(&self) -> Vec<&SafariCookie> {
+        self.binary_cookies
+            .iter_cookies()
+            .collect()
     }
-    pub fn iter_cookies(&self) -> Option<impl Iterator<Item = &SafariCookie>> {
-        Some(
-            self.ref_binary_cookies()?
-                .iter_cookies(),
-        )
+    pub fn iter_cookies(&self) -> impl Iterator<Item = &SafariCookie> {
+        self.binary_cookies.iter_cookies()
     }
 }

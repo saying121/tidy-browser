@@ -15,7 +15,7 @@ pub use items::cookie::entities::moz_cookies::{
 };
 use miette::Result;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use sea_orm::sea_query::IntoCondition;
+use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
 
 #[cfg(target_os = "linux")]
 use self::linux::path::LinuxFFBase;
@@ -33,13 +33,15 @@ use crate::{Browser, LeetCodeCookies};
 #[derive(Debug)]
 #[derive(Default)]
 pub struct FirefoxGetter {
+    browser:       Browser,
     cookies_query: CookiesQuery,
+
     #[cfg(target_os = "linux")]
-    path:          linux::path::LinuxFFBase,
+    path: linux::path::LinuxFFBase,
     #[cfg(target_os = "macos")]
-    path:          macos::path::MacFFBase,
+    path: macos::path::MacFFBase,
     #[cfg(target_os = "windows")]
-    path:          win::path::WinFFBase,
+    path: win::path::WinFFBase,
 }
 
 #[derive(Clone)]
@@ -76,7 +78,11 @@ impl FirefoxBuilder {
                 .unwrap_or_else(|| path.cookies()),
         )
         .await?;
-        Ok(FirefoxGetter { cookies_query: query, path })
+        Ok(FirefoxGetter {
+            browser: self.browser,
+            cookies_query: query,
+            path,
+        })
     }
 }
 
@@ -141,7 +147,15 @@ impl FirefoxGetter {
     pub async fn get_session_csrf(&self, host: &str) -> Result<LeetCodeCookies> {
         let cookies = self
             .cookies_query
-            .query_cookie_by_host(host)
+            .query_cookie_filter(
+                MozCookiesColumn::Host
+                    .contains(host)
+                    .and(
+                        MozCookiesColumn::Name
+                            .eq("csrftoken")
+                            .or(MozCookiesColumn::Name.eq("LEETCODE_SESSION")),
+                    ),
+            )
             .await?;
 
         let mut res = LeetCodeCookies::default();
@@ -161,6 +175,10 @@ impl FirefoxGetter {
 }
 
 impl FirefoxGetter {
+    pub const fn browser(&self) -> Browser {
+        self.browser
+    }
+
     #[cfg(target_os = "linux")]
     pub const fn path(&self) -> &LinuxFFBase {
         &self.path

@@ -57,9 +57,9 @@ async fn ff_get_all_cookie_work() -> Result<()> {
         println!(
             "name: {}, last_accessed: {}, expiry: {}, creation_time: {}",
             i.name,
-            i.last_accessed.unwrap_or_default(),
-            i.expiry.unwrap_or_default(),
-            i.creation_time.unwrap_or_default(),
+            i.last_accessed.unwrap(),
+            i.expiry.unwrap(),
+            i.creation_time.unwrap(),
         );
     }
 

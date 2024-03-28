@@ -10,7 +10,7 @@ pub use items::cookie::{
 };
 use miette::{IntoDiagnostic, Result};
 use rayon::prelude::*;
-use sea_orm::sea_query::IntoCondition;
+use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
 use tokio::task;
 use utils::crypto::BrowserDecrypt;
 
@@ -48,7 +48,7 @@ use crate::{chromium::utils::path::ChromiumPath, Browser, LeetCodeCookies};
 #[derive(Default)]
 pub struct ChromiumGetter {
     browser: Browser,
-    query:   CookiesQuery,
+    cookies_query:   CookiesQuery,
     crypto:  Decrypter,
 
     /// generate Default paths
@@ -69,6 +69,7 @@ pub struct ChromiumGetter {
 pub struct ChromiumBuilder {
     browser:          Browser,
     cookies_path:     Option<PathBuf>,
+    /// in windows, it store passwd
     local_state_path: Option<PathBuf>,
 }
 
@@ -118,7 +119,7 @@ impl ChromiumBuilder {
 
         Ok(ChromiumGetter {
             browser: self.browser,
-            query,
+            cookies_query: query,
             crypto,
             path,
         })
@@ -190,7 +191,7 @@ impl ChromiumGetter {
         F: IntoCondition,
     {
         let raw_ck = self
-            .query
+            .cookies_query
             .query_cookie_filter(filter)
             .await?;
         self.par_decrypt(raw_ck).await
@@ -198,7 +199,7 @@ impl ChromiumGetter {
     /// decrypt Cookies
     pub async fn get_cookies_by_host(&self, host: &str) -> Result<Vec<DecryptedCookies>> {
         let raw_ck = self
-            .query
+            .cookies_query
             .query_cookie_by_host(host)
             .await?;
         self.par_decrypt(raw_ck).await
@@ -207,7 +208,7 @@ impl ChromiumGetter {
     /// return all cookies
     pub async fn get_cookies_all(&self) -> Result<Vec<DecryptedCookies>> {
         let raw_ck = self
-            .query
+            .cookies_query
             .query_all_cookie()
             .await?;
         self.par_decrypt(raw_ck).await
@@ -216,8 +217,16 @@ impl ChromiumGetter {
     /// get `LEETCODE_SESSION` and `csrftoken` for leetcode
     pub async fn get_cookies_session_csrf(&self, host: &str) -> Result<LeetCodeCookies> {
         let cookies = self
-            .query
-            .query_cookie_by_host(host)
+            .cookies_query
+            .query_cookie_filter(
+                ChromCkColumn::HostKey
+                    .contains(host)
+                    .and(
+                        ChromCkColumn::Name
+                            .eq("csrftoken")
+                            .or(ChromCkColumn::Name.eq("LEETCODE_SESSION")),
+                    ),
+            )
             .await?;
 
         let mut csrf_token = LeetCodeCookies::default();

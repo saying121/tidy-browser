@@ -8,10 +8,12 @@ pub use browser::{cookies::LeetCodeCookies, Browser};
 pub use chromium::{ChromiumBuilder, ChromiumGetter};
 pub use firefox::{FirefoxBuilder, FirefoxGetter};
 use miette::Result;
-#[cfg(target_os = "macos")]
-pub use safari::SafariGetter;
-#[cfg(target_os = "macos")]
-pub use safari::SafariBuilder;
+
+cfg_if::cfg_if!(
+    if #[cfg(target_os = "macos")] {
+        pub use safari::{SafariBuilder, SafariGetter};
+    }
+);
 
 /// get csrf and session
 ///
@@ -41,9 +43,7 @@ where
         #[cfg(target_os = "macos")]
         Browser::Safari => {
             let getter = safari::items::cookie::CookiesGetter::build::<&str>(None).await?;
-            getter
-                .get_session_csrf(host)
-                .ok_or_else(|| miette::miette!("empty cookies"))
+            getter.get_session_csrf(host)
         },
 
         chromium => {

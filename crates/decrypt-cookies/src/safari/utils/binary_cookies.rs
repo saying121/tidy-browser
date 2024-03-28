@@ -4,14 +4,14 @@
 //! <https://github.com/interstateone/BinaryCookies>
 
 use bytes::Buf;
-use chrono::prelude::{DateTime, TimeZone, Utc};
-use miette::{bail, Result};
+use chrono::{prelude::*, LocalResult, Utc};
+use miette::{bail, IntoDiagnostic, Result};
 
 /// raw file informations, with pages
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq)]
 pub struct BinaryCookies {
     signature:    Vec<u8>,
     num_pages:    u32,      // be
@@ -35,7 +35,7 @@ impl BinaryCookies {
         self.signature.as_ref()
     }
 
-    pub fn num_pages(&self) -> u32 {
+    pub const fn num_pages(&self) -> u32 {
         self.num_pages
     }
 
@@ -51,7 +51,7 @@ impl BinaryCookies {
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq)]
 pub struct Page {
     pages_start:     Vec<u8>,
     num_cookies:     u32,      // le
@@ -69,7 +69,7 @@ impl Page {
         self.pages_start.as_ref()
     }
 
-    pub fn num_cookies(&self) -> u32 {
+    pub const fn num_cookies(&self) -> u32 {
         self.num_cookies
     }
 
@@ -176,7 +176,9 @@ impl BinaryCookies {
 
         let cookie_flags = entry.get_u32_le();
 
-        let has_port = entry[..4].to_vec();
+        let has_port = entry[..4]
+            .try_into()
+            .into_diagnostic()?;
         entry.advance(4);
 
         let domain_offset = entry.get_u32_le();
@@ -191,17 +193,21 @@ impl BinaryCookies {
         }
         entry.advance(4);
 
-        let expires = f64::from_le_bytes(slice_to_arr8(&entry[..8]));
+        let expires = f64::from_le_bytes(
+            entry[..8]
+                .try_into()
+                .into_diagnostic()?,
+        );
         entry.advance(8);
-        let expires = chrono::Utc
-            .timestamp_opt(expires as i64 + 978_307_200, 0)
-            .unwrap();
+        let expires = Utc.timestamp_opt(expires as i64 + 978_307_200, 0);
 
-        let creation = f64::from_le_bytes(slice_to_arr8(&entry[..8]));
+        let creation = f64::from_le_bytes(
+            entry[..8]
+                .try_into()
+                .into_diagnostic()?,
+        );
         entry.advance(8);
-        let creation = chrono::Utc
-            .timestamp_opt(creation as i64 + 978_307_200, 0)
-            .unwrap();
+        let creation = Utc.timestamp_opt(creation as i64 + 978_307_200, 0);
 
         let comment = if comment_offset > 0 {
             let comment_len = (domain_offset - comment_offset) as usize;
@@ -258,21 +264,20 @@ impl BinaryCookies {
 /// alone cookies
 #[derive(Clone)]
 #[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq)]
 pub struct SafariCookie {
     // cookie_size:    u32, // LE_uint32	Cookie size. Number of bytes associated to the cookie
     version:        Vec<u8>, // byte    Unknown field possibly related to the cookie flags
     cookie_flags:   u32, // LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly
-    has_port:       Vec<u8>, // size:  4    byte    0 or 1
+    has_port:       [u8; 4], // size:  4    byte    0 or 1
     domain_offset:  u32, // LE_uint32    Cookie domain offset
     name_offset:    u32, // LE_uint32    Cookie name offset
     path_offset:    u32, // LE_uint32    Cookie path offset
     value_offset:   u32, // LE_uint32    Cookie value offset
     comment_offset: u32, // LE_uint32    Cookie comment offset
     // end_header:     Vec<u8>, /* 4    byte    Marks the end of a header. Must be equal to []byte{0x00000000} */
-    expires:        DateTime<Utc>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
-    creation:       DateTime<Utc>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
+    expires:        LocalResult<DateTime<Utc>>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
+    creation:       LocalResult<DateTime<Utc>>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
     comment:        String, /* N    LE_uint32    Cookie comment string. N = `self.domain_offset` - `self.comment_offset` */
     domain:         String, /* N    LE_uint32    Cookie domain string. N = `self.name_offset` - `self.domain_offset` */
     name:           String, /* N    LE_uint32    Cookie name string. N = `self.path_offset` - `self.name_offset` */
@@ -291,11 +296,11 @@ impl SafariCookie {
         self.cookie_flags & 0x4 == 0x4
     }
 
-    pub const fn creation(&self) -> DateTime<Utc> {
+    pub const fn creation(&self) -> LocalResult<DateTime<Utc>> {
         self.creation
     }
 
-    pub const fn expires(&self) -> DateTime<Utc> {
+    pub const fn expires(&self) -> LocalResult<DateTime<Utc>> {
         self.expires
     }
 }
@@ -352,12 +357,4 @@ impl SafariCookie {
     pub fn value(&self) -> &str {
         self.value.as_ref()
     }
-}
-
-fn slice_to_arr8(source: &[u8]) -> [u8; 8] {
-    let mut res = [0; 8];
-    for (i, v) in source.iter().enumerate() {
-        res[i] = *v;
-    }
-    res
 }
