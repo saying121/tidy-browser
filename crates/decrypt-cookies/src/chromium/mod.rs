@@ -105,7 +105,7 @@ impl ChromiumBuilder {
                 )?;
             } else if #[cfg(target_os="windows")] {
                 let info = WinChromiumBase::new(self.browser);
-                let mut crypto = crypto::win::Decrypter::build(self.browser, info.key());
+                let crypto = crypto::win::Decrypter::build(self.browser, info.key()).await?;
             }
         );
 

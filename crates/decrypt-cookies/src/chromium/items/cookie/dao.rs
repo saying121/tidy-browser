@@ -13,7 +13,6 @@ use super::entities::{
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(Clone, Debug, Default)]
 pub struct CookiesQuery {
     conn: DatabaseConnection,
 }

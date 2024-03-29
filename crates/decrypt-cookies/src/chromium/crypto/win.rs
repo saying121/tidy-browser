@@ -1,6 +1,6 @@
 use std::{
     ffi::c_void,
-    path::{Path, PathBuf},
+    path::Path ,
     ptr,
 };
 
@@ -36,11 +36,11 @@ impl Decrypter {
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=41
     /// Version prefix for data encrypted with profile bound key.
-    const K_ENCRYPTION_VERSION_PREFIX: &[u8] = b"v10";
+    const K_ENCRYPTION_VERSION_PREFIX: &'static [u8] = b"v10";
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=45
     /// Key prefix for a key encrypted with DPAPI.
-    const K_DPAPIKEY_PREFIX: &[u8] = b"DPAPI";
+    const K_DPAPIKEY_PREFIX: &'static [u8] = b"DPAPI";
 }
 
 impl Decrypter {
@@ -59,7 +59,7 @@ impl Decrypter {
         let encrypted_key = general_purpose::STANDARD
             .decode(local_state.os_crypt.encrypted_key)
             .into_diagnostic()?;
-        let mut key = encrypted_key[K_DPAPIKEY_PREFIX.len()..].to_vec();
+        let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
 
         let key = tokio::task::spawn_blocking(move || decrypt_with_dpapi(&mut key))
             .await
