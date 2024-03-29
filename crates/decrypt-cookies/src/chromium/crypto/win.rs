@@ -70,7 +70,7 @@ impl Decrypter {
             self.pass.as_slice()
         }
         else {
-            return String::from_utf8(decrypt_with_dpapi(ciphertext)?).into_diagnostic();
+            return Ok(String::from_utf8_lossy(decrypt_with_dpapi(ciphertext)?).to_string());
         };
         let prefix_len = Self::K_ENCRYPTION_VERSION_PREFIX.len();
         let nonce_len = Self::K_NONCE_LENGTH;
@@ -81,7 +81,7 @@ impl Decrypter {
         let cipher = Aes256Gcm::new(GenericArray::from_slice(pass));
 
         if let Ok(decrypted) = cipher.decrypt(nonce.into(), raw_ciphertext) {
-            return String::from_utf8(decrypted).into_diagnostic();
+            return Ok(String::from_utf8_lossy(decrypted).to_string());
         };
 
         miette::bail!("decrypt failed");

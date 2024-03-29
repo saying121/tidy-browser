@@ -54,14 +54,7 @@ impl Decrypter {
             (Self::PASSWORD_V10, Self::K_OBFUSCATION_PREFIX_V10.len())
         }
         else {
-            let plaintext = match String::from_utf8(be_decrypte.to_vec()) {
-                Ok(v) => v,
-                Err(e) => {
-                    tracing::warn!("From utf 8 failed use lossy string Err: {e}");
-                    String::from_utf8_lossy(be_decrypte).to_string()
-                },
-            };
-            return Ok(plaintext);
+            return Ok(String::from_utf8_lossy(be_decrypte).to_string());
         };
 
         let mut key = [0_u8; 16];
@@ -73,7 +66,7 @@ impl Decrypter {
         if let Ok(res) =
             decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..])
         {
-            return String::from_utf8(res.to_vec()).into_diagnostic();
+            return Ok(String::from_utf8_lossy(res).to_string());
         }
 
         miette::bail!("decrypt failed")
