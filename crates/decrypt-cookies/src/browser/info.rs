@@ -1,12 +1,26 @@
-use std::path::PathBuf;
+use std::{fs::create_dir_all, path::PathBuf};
 
 use miette::{IntoDiagnostic, Result};
 use tokio::fs::read_to_string;
 
 use crate::Browser;
 
+/// just impl `browser` method
+pub trait TempPath {
+    fn browser(&self) -> Browser;
+
+    /// for gen temp path
+    fn temp_path_prefix(&self) -> PathBuf {
+        let mut temp_path = dirs::cache_dir().expect("get cache_dir failed");
+        temp_path.push(format!("tidy_browser/{}", self.browser(),));
+        create_dir_all(&temp_path).expect("create temp path failed");
+
+        temp_path
+    }
+}
+
 /// just impl the `base` method
-pub trait ChromiumInfo {
+pub trait ChromiumInfo: TempPath {
     const BOOKMARKS: &'static str = "Bookmarks"; // json
     const COOKIES: &'static str = "Cookies"; // sqlite3
 
@@ -28,48 +42,91 @@ pub trait ChromiumInfo {
     const LOCAL_STATE: &'static str = "Local State"; // key, json, https://source.chromium.org/chromium/chromium/src/+/main:components/local_state/README.md
 
     fn base(&self) -> &PathBuf;
-    fn browser(&self) -> Browser;
 
-    // json, for windows
-    fn key(&self) -> PathBuf {
+    /// json, for windows fetch passwd
+    fn local_state(&self) -> PathBuf {
         let mut path = self.base().clone();
         path.pop();
         path.push(Self::LOCAL_STATE);
         path
     }
+    fn local_state_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::LOCAL_STATE)
+    }
+
     /// sqlite3
     fn credit(&self) -> PathBuf {
         self.base().join(Self::WEB_DATA)
     }
+    fn credit_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::WEB_DATA)
+    }
+
     /// leveldb
     fn session(&self) -> PathBuf {
         self.base()
             .join(Self::SESSION_STORAGE)
     }
+    fn session_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::SESSION_STORAGE)
+    }
+
     /// a directory
     fn extensions(&self) -> PathBuf {
         self.base().join(Self::EXTENSIONS)
     }
+    fn extensions_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::EXTENSIONS)
+    }
+
     /// sqlite3
     fn logindata(&self) -> PathBuf {
         self.base().join(Self::LOGIN_DATA)
     }
+    fn logindata_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::LOGIN_DATA)
+    }
+
     /// leveldb
     fn storage(&self) -> PathBuf {
         self.base()
             .join(Self::LOCAL_STORAGE)
     }
+    fn storage_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::LOCAL_STORAGE)
+    }
+
     /// json
     fn bookmarks(&self) -> PathBuf {
         self.base().join(Self::BOOKMARKS)
     }
+    fn bookmarks_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::BOOKMARKS)
+    }
+
     /// sqlite3
     fn history(&self) -> PathBuf {
         self.base().join(Self::HISTORY)
     }
+    fn history_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::HISTORY)
+    }
+
     /// sqlite3
     fn cookies(&self) -> PathBuf {
         self.base().join(Self::COOKIES)
+    }
+    fn cookies_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::COOKIES)
     }
 
     /// for fetch password
@@ -115,7 +172,7 @@ pub trait ChromiumInfo {
     }
 }
 
-pub trait FfInfo {
+pub trait FfInfo: TempPath {
     const COOKIES: &'static str = "cookies.sqlite";
     const DATAS: &'static str = "places.sqlite"; // Bookmarks, Downloads and Browsing History:
     const BOOKMARKBACKUPS: &'static str = "bookmarkbackups/bookmarks-date.jsonlz4";
@@ -133,25 +190,54 @@ pub trait FfInfo {
     fn extensions(&self) -> PathBuf {
         self.base().join(Self::EXTENSIONS)
     }
+    fn extensions_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::EXTENSIONS)
+    }
+
     /// json
     fn passwd(&self) -> PathBuf {
         self.base().join(Self::PASSWD)
     }
+    fn passwd_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::PASSWD)
+    }
+
     /// sqlite3
     fn storage(&self) -> PathBuf {
         self.base().join(Self::STORAGE)
     }
+    fn storage_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::STORAGE)
+    }
+
     /// sqlite3
     fn key(&self) -> PathBuf {
         self.base().join(Self::KEY)
     }
+    fn key_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::KEY)
+    }
+
     /// sqlite3
     fn datas(&self) -> PathBuf {
         self.base().join(Self::DATAS)
     }
+    fn datas_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::DATAS)
+    }
+
     /// sqlite3
     fn cookies(&self) -> PathBuf {
         self.base().join(Self::COOKIES)
+    }
+    fn cookies_temp(&self) -> PathBuf {
+        self.temp_path_prefix()
+            .join(Self::COOKIES)
     }
 
     fn helper(
@@ -204,7 +290,7 @@ pub mod linux {
 
     use miette::Result;
 
-    use super::{ChromiumInfo, FfInfo};
+    use super::{ChromiumInfo, FfInfo, TempPath};
     use crate::Browser;
 
     #[derive(Clone)]
@@ -216,12 +302,15 @@ pub mod linux {
         pub browser: Browser,
     }
 
+    impl TempPath for LinuxChromiumBase {
+        fn browser(&self) -> Browser {
+            self.browser
+        }
+    }
+
     impl ChromiumInfo for LinuxChromiumBase {
         fn base(&self) -> &PathBuf {
             &self.base
-        }
-        fn browser(&self) -> Browser {
-            self.browser
         }
     }
 
@@ -266,7 +355,14 @@ pub mod linux {
     #[derive(Default)]
     #[derive(PartialEq, Eq)]
     pub struct LinuxFFBase {
-        base: PathBuf,
+        base:    PathBuf,
+        browser: Browser,
+    }
+
+    impl TempPath for LinuxFFBase {
+        fn browser(&self) -> Browser {
+            self.browser
+        }
     }
 
     impl FfInfo for LinuxFFBase {
@@ -287,7 +383,7 @@ pub mod linux {
             };
             let base = Self::helper(init, base).await?;
 
-            Ok(Self { base })
+            Ok(Self { base, browser })
         }
     }
 }
@@ -298,7 +394,7 @@ pub mod macos {
 
     use miette::Result;
 
-    use super::{ChromiumInfo, FfInfo};
+    use super::{ChromiumInfo, FfInfo, TempPath};
     use crate::Browser;
 
     #[derive(Clone)]
@@ -308,6 +404,12 @@ pub mod macos {
     pub struct MacChromiumBase {
         pub base:    PathBuf,
         pub browser: Browser,
+    }
+
+    impl TempPath for MacChromiumBase {
+        fn browser(&self) -> Browser {
+            self.browser
+        }
     }
 
     impl MacChromiumBase {
@@ -349,9 +451,6 @@ pub mod macos {
         fn base(&self) -> &PathBuf {
             &self.base
         }
-        fn browser(&self) -> Browser {
-            self.browser
-        }
     }
 
     #[derive(Clone)]
@@ -360,6 +459,13 @@ pub mod macos {
     #[derive(PartialEq, Eq)]
     pub struct MacFFBase {
         pub base: PathBuf,
+        browser:  Browser,
+    }
+
+    impl TempPath for MacFFBase {
+        fn browser(&self) -> Browser {
+            self.browser
+        }
     }
 
     impl FfInfo for MacFFBase {
@@ -381,7 +487,7 @@ pub mod macos {
             };
             let base = Self::helper(init, base).await?;
 
-            Ok(Self { base })
+            Ok(Self { base, browser })
         }
     }
 }
@@ -390,7 +496,7 @@ pub mod macos {
 pub mod win {
     use std::path::PathBuf;
 
-    use super::{ChromiumInfo, FfInfo};
+    use super::{ChromiumInfo, FfInfo, TempPath};
     use crate::Browser;
 
     #[derive(Clone)]
@@ -400,6 +506,12 @@ pub mod win {
     pub struct WinChromiumBase {
         base:    PathBuf,
         browser: Browser,
+    }
+
+    impl TempPath for WinChromiumBase {
+        fn browser(&self) -> Browser {
+            self.browser
+        }
     }
 
     impl WinChromiumBase {
@@ -458,10 +570,7 @@ pub mod win {
         fn base(&self) -> &PathBuf {
             &self.base
         }
-        fn browser(&self) -> Browser {
-            self.browser
-        }
-        fn key(&self) -> PathBuf {
+        fn local_state(&self) -> PathBuf {
             // shit, quirky
             if self.browser == Browser::OperaGX {
                 self.base().join(Self::LOCAL_STATE)
@@ -480,7 +589,14 @@ pub mod win {
     #[derive(Default)]
     #[derive(PartialEq, Eq)]
     pub struct WinFFBase {
-        base: PathBuf,
+        base:    PathBuf,
+        browser: Browser,
+    }
+
+    impl TempPath for WinFFBase {
+        fn browser(&self) -> Browser {
+            self.browser
+        }
     }
 
     impl WinFFBase {
@@ -496,7 +612,7 @@ pub mod win {
                 dirs::data_dir().ok_or_else(|| miette::miette!("get data local dir failed"))?;
             let base = Self::helper(init, base).await?;
 
-            Ok(Self { base })
+            Ok(Self { base, browser })
         }
     }
 

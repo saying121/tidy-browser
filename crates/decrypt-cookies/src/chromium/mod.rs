@@ -10,9 +10,12 @@ pub use items::cookie::{
 use miette::{IntoDiagnostic, Result};
 use rayon::prelude::*;
 use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
-use tokio::task;
+use tokio::{fs, task};
 
-use crate::{browser::info::ChromiumInfo, Browser, LeetCodeCookies};
+use crate::{
+    browser::info::{ChromiumInfo, TempPath},
+    Browser, LeetCodeCookies,
+};
 
 cfg_if::cfg_if!(
     if #[cfg(target_os="linux")] {
@@ -91,30 +94,44 @@ impl ChromiumBuilder {
         self
     }
 
-    pub async fn build(mut self) -> Result<ChromiumGetter> {
+    pub async fn build(self) -> Result<ChromiumGetter> {
         cfg_if::cfg_if!(
             if #[cfg(target_os="linux")] {
                 let info = LinuxChromiumBase::new(self.browser);
-                let crypto = crypto::linux::Decrypter::build(info.browser(), info.safe_storage()).await?;
+                let crypto = Decrypter::build(info.browser(), info.safe_storage()).await?;
             } else if #[cfg(target_os="macos")] {
                 let info = MacChromiumBase::new(self.browser);
-                let crypto = crypto::macos::Decrypter::build(
+                let crypto = Decrypter::build(
                     self.browser,
                     info.safe_storage(),
                     info.safe_name(),
                 )?;
             } else if #[cfg(target_os="windows")] {
                 let info = WinChromiumBase::new(self.browser);
-                let crypto = crypto::win::Decrypter::build(self.browser, info.key()).await?;
+
+                let temp_key_path = info.local_state_temp();
+                fs::copy(
+                    self.local_state_path
+                        .unwrap_or_else(|| info.local_state()),
+                    &temp_key_path,
+                )
+                .await
+                .into_diagnostic()?;
+                let crypto = Decrypter::build(self.browser, temp_key_path).await?;
             }
         );
 
-        let query = CookiesQuery::new(
+        let temp_cookies_path = info.cookies_temp();
+
+        fs::copy(
             self.cookies_path
-                .take()
                 .unwrap_or_else(|| info.cookies()),
+            &temp_cookies_path,
         )
-        .await?;
+        .await
+        .into_diagnostic()?;
+
+        let query = CookiesQuery::new(temp_cookies_path).await?;
 
         Ok(ChromiumGetter {
             browser: self.browser,

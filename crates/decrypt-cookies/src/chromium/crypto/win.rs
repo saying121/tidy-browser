@@ -1,8 +1,4 @@
-use std::{
-    ffi::c_void,
-    path::Path ,
-    ptr,
-};
+use std::{ffi::c_void, path::Path, ptr};
 
 use aes_gcm::{
     aead::{generic_array::GenericArray, Aead},
