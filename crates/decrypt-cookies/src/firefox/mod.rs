@@ -29,11 +29,11 @@ pub struct FirefoxGetter {
     cookies_query: CookiesQuery,
 
     #[cfg(target_os = "linux")]
-    pub info: LinuxFFBase,
+    info: LinuxFFBase,
     #[cfg(target_os = "windows")]
-    pub info: WinFFBase,
+    info: WinFFBase,
     #[cfg(target_os = "macos")]
-    pub info: MacFFBase,
+    info: MacFFBase,
 }
 
 #[derive(Clone)]
@@ -167,5 +167,9 @@ impl FirefoxGetter {
 
     pub const fn browser(&self) -> Browser {
         self.browser
+    }
+
+    pub fn info(&self) -> &impl crate::browser::info::FfInfo {
+        &self.info
     }
 }

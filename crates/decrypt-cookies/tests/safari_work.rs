@@ -6,11 +6,3 @@ async fn safari_binary_cookies() {
         .build()
         .unwrap();
 }
-
-#[test]
-fn feature() {
-    let var = vec![1, 2, 4, 3];
-    let temp = &var[..];
-    let res: [i32; 4] = temp.into();
-    dbg!(res);
-}

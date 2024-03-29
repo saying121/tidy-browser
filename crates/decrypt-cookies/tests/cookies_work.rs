@@ -1,26 +1,7 @@
-use decrypt_cookies::{browser::Browser, get_cookie, ChromiumBuilder, FirefoxBuilder};
+use decrypt_cookies::{browser::Browser, ChromiumBuilder, FirefoxBuilder};
 use miette::Result;
 use strum::IntoEnumIterator;
 
-#[ignore = "need realy environment"]
-#[tokio::test]
-async fn get_cookie_work() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::WARN)
-        .with_test_writer()
-        .init();
-
-    let leetcode_cn = "leetcode.cn";
-    for browser in Browser::iter() {
-        dbg!(browser);
-        let edge = get_cookie(browser, leetcode_cn)
-            .await
-            .unwrap_or_default();
-        println!(r##"(| {leetcode_cn} |) -> {edge:#?}"##);
-    }
-
-    Ok(())
-}
 #[ignore = "need realy environment"]
 #[tokio::test]
 async fn get_all_cookie_work() -> Result<()> {

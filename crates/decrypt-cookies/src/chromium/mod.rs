@@ -49,11 +49,11 @@ pub struct ChromiumGetter {
     crypto:        Decrypter,
 
     #[cfg(target_os = "linux")]
-    pub info: LinuxChromiumBase,
+    pub info:      LinuxChromiumBase,
     #[cfg(target_os = "windows")]
-    pub info: WinChromiumBase,
+    pub info:      WinChromiumBase,
     #[cfg(target_os = "macos")]
-    pub info: MacChromiumBase,
+    pub info:      MacChromiumBase,
 }
 
 #[derive(Clone)]
@@ -121,7 +121,7 @@ impl ChromiumBuilder {
             browser: self.browser,
             cookies_query: query,
             crypto,
-            info,
+            info
         })
     }
 }
@@ -277,5 +277,9 @@ impl ChromiumGetter {
 
     pub const fn browser(&self) -> Browser {
         self.browser
+    }
+
+    pub fn info(&self) -> &impl crate::browser::info::ChromiumInfo {
+        &self.info
     }
 }
