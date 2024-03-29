@@ -2,10 +2,7 @@
 
 use sea_orm::entity::prelude::*;
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-#[derive(DeriveEntityModel)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, DeriveEntityModel)]
 #[sea_orm(table_name = "meta")]
 pub struct Model {
     #[sea_orm(
@@ -13,7 +10,7 @@ pub struct Model {
         auto_increment = false,
         column_type = "Binary(BlobSize::Blob(None))"
     )]
-    pub key:   Vec<u8>,
+    pub key: Vec<u8>,
     #[sea_orm(column_type = "Binary(BlobSize::Blob(None))", nullable)]
     pub value: Option<Vec<u8>>,
 }

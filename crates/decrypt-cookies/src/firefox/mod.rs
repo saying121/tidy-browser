@@ -21,11 +21,9 @@ cfg_if::cfg_if!(
     }
 );
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Clone, Debug, Default)]
 pub struct FirefoxGetter {
-    browser:       Browser,
+    browser: Browser,
     cookies_query: CookiesQuery,
 
     #[cfg(target_os = "linux")]
@@ -36,17 +34,18 @@ pub struct FirefoxGetter {
     info: MacFFBase,
 }
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Clone, Debug, Default)]
 pub struct FirefoxBuilder {
-    browser:      Browser,
+    browser: Browser,
     cookies_path: Option<PathBuf>,
 }
 
 impl FirefoxBuilder {
     pub fn new(browser: Browser) -> Self {
-        Self { browser, ..Default::default() }
+        Self {
+            browser,
+            ..Default::default()
+        }
     }
     /// set `cookies_path`
     pub fn cookies_path<P>(&mut self, ck_path: P) -> &mut Self
@@ -64,12 +63,8 @@ impl FirefoxBuilder {
         #[cfg(target_os = "windows")]
         let info = WinFFBase::new(self.browser).await?;
 
-        let query = CookiesQuery::new(
-            self.cookies_path
-                .take()
-                .unwrap_or_else(|| info.cookies()),
-        )
-        .await?;
+        let query =
+            CookiesQuery::new(self.cookies_path.take().unwrap_or_else(|| info.cookies())).await?;
         Ok(FirefoxGetter {
             browser: self.browser,
             cookies_query: query,
@@ -101,37 +96,19 @@ impl FirefoxGetter {
     where
         F: IntoCondition,
     {
-        let res = self
-            .cookies_query
-            .query_cookie_filter(filter)
-            .await?;
-        let res = res
-            .into_par_iter()
-            .map(MozCookies::from)
-            .collect();
+        let res = self.cookies_query.query_cookie_filter(filter).await?;
+        let res = res.into_par_iter().map(MozCookies::from).collect();
         Ok(res)
     }
 
     pub async fn get_cookies_all(&self) -> Result<Vec<MozCookies>> {
-        let res = self
-            .cookies_query
-            .query_all_cookie()
-            .await?;
-        let res = res
-            .into_par_iter()
-            .map(MozCookies::from)
-            .collect();
+        let res = self.cookies_query.query_all_cookie().await?;
+        let res = res.into_par_iter().map(MozCookies::from).collect();
         Ok(res)
     }
     pub async fn get_cookies_by_host(&self, host: &str) -> Result<Vec<MozCookies>> {
-        let res = self
-            .cookies_query
-            .query_cookie_by_host(host)
-            .await?;
-        let res = res
-            .into_par_iter()
-            .map(MozCookies::from)
-            .collect();
+        let res = self.cookies_query.query_cookie_by_host(host).await?;
+        let res = res.into_par_iter().map(MozCookies::from).collect();
         Ok(res)
     }
 
@@ -140,13 +117,11 @@ impl FirefoxGetter {
         let cookies = self
             .cookies_query
             .query_cookie_filter(
-                MozCookiesColumn::Host
-                    .contains(host)
-                    .and(
-                        MozCookiesColumn::Name
-                            .eq("csrftoken")
-                            .or(MozCookiesColumn::Name.eq("LEETCODE_SESSION")),
-                    ),
+                MozCookiesColumn::Host.contains(host).and(
+                    MozCookiesColumn::Name
+                        .eq("csrftoken")
+                        .or(MozCookiesColumn::Name.eq("LEETCODE_SESSION")),
+                ),
             )
             .await?;
 
@@ -156,8 +131,7 @@ impl FirefoxGetter {
             if let Some(s) = cookie.name {
                 if s == "csrftoken" {
                     res.csrf = cookie.value.unwrap_or_default();
-                }
-                else if s == "LEETCODE_SESSION" {
+                } else if s == "LEETCODE_SESSION" {
                     res.session = cookie.value.unwrap_or_default();
                 }
             }

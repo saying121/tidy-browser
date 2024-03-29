@@ -10,9 +10,7 @@ use super::entities::{
     prelude::*,
 };
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Clone, Debug, Default)]
 pub struct CookiesQuery {
     conn: DatabaseConnection,
 }
@@ -25,9 +23,7 @@ impl CookiesQuery {
     {
         let db_conn_str = format!("sqlite:{}?mode=rwc", path.as_ref().to_string_lossy());
 
-        let db = Database::connect(db_conn_str)
-            .await
-            .into_diagnostic()?;
+        let db = Database::connect(db_conn_str).await.into_diagnostic()?;
         Ok(Self { conn: db })
     }
 
@@ -57,10 +53,7 @@ impl CookiesQuery {
     }
     /// get raw Cookies
     pub async fn query_all_cookie(&self) -> Result<Vec<Model>> {
-        let res = CookiesDB::find()
-            .all(&self.conn)
-            .await
-            .into_diagnostic()?;
+        let res = CookiesDB::find().all(&self.conn).await.into_diagnostic()?;
 
         Ok(res)
     }

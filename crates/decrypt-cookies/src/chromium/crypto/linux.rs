@@ -14,13 +14,10 @@ type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 /// The UMA metric name for whether the false was decryptable with an empty key.
 // const K_METRIC_DECRYPTED_WITH_EMPTY_KEY: &[u8] = b"OSCrypt.Linux.DecryptedWithEmptyKey";
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Decrypter {
     pass_v11: Vec<u8>,
-    browser:  Browser,
+    browser: Browser,
 }
 
 impl Decrypter {
@@ -49,17 +46,15 @@ impl Decrypter {
                 self.pass_v11.as_slice(),
                 Self::K_OBFUSCATION_PREFIX_V11.len(),
             )
-        }
-        else if be_decrypte.starts_with(Self::K_OBFUSCATION_PREFIX_V10) {
+        } else if be_decrypte.starts_with(Self::K_OBFUSCATION_PREFIX_V10) {
             (Self::PASSWORD_V10, Self::K_OBFUSCATION_PREFIX_V10.len())
-        }
-        else {
+        } else {
             let plaintext = match String::from_utf8(be_decrypte.to_vec()) {
                 Ok(v) => v,
                 Err(e) => {
                     tracing::warn!("From utf 8 failed use lossy string Err: {e}");
                     String::from_utf8_lossy(be_decrypte).to_string()
-                },
+                }
             };
             return Ok(plaintext);
         };
@@ -86,37 +81,20 @@ impl Decrypter {
             .await
             .into_diagnostic()?;
         // get default collection
-        let collection = ss
-            .get_default_collection()
-            .await
-            .into_diagnostic()?;
+        let collection = ss.get_default_collection().await.into_diagnostic()?;
 
-        if collection
-            .is_locked()
-            .await
-            .into_diagnostic()?
-        {
-            collection
-                .unlock()
-                .await
-                .into_diagnostic()?;
+        if collection.is_locked().await.into_diagnostic()? {
+            collection.unlock().await.into_diagnostic()?;
         }
-        let coll = collection
-            .get_all_items()
-            .await
-            .into_diagnostic()?;
+        let coll = collection.get_all_items().await.into_diagnostic()?;
 
         let mut res = vec![];
         for item in coll {
-            let Ok(l) = item.get_label().await
-            else {
+            let Ok(l) = item.get_label().await else {
                 continue;
             };
             if l.as_str() == safe_storage {
-                res = item
-                    .get_secret()
-                    .await
-                    .into_diagnostic()?;
+                res = item.get_secret().await.into_diagnostic()?;
             }
         }
 

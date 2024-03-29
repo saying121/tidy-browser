@@ -2,42 +2,37 @@
 
 use sea_orm::entity::prelude::*;
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-#[derive(DeriveEntityModel)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, DeriveEntityModel)]
 #[sea_orm(table_name = "moz_cookies")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub id:                 i32,
+    pub id: i32,
     #[sea_orm(column_name = "originAttributes")]
-    pub origin_attributes:  String,
-    pub name:               Option<String>,
-    pub value:              Option<String>,
-    pub host:               Option<String>,
-    pub path:               Option<String>,
-    pub expiry:             Option<i64>,
+    pub origin_attributes: String,
+    pub name: Option<String>,
+    pub value: Option<String>,
+    pub host: Option<String>,
+    pub path: Option<String>,
+    pub expiry: Option<i64>,
     #[sea_orm(column_name = "lastAccessed")]
-    pub last_accessed:      Option<i64>,
+    pub last_accessed: Option<i64>,
     #[sea_orm(column_name = "creationTime")]
-    pub creation_time:      Option<i64>,
+    pub creation_time: Option<i64>,
     #[sea_orm(column_name = "isSecure")]
-    pub is_secure:          Option<i32>,
+    pub is_secure: Option<i32>,
     #[sea_orm(column_name = "isHttpOnly")]
-    pub is_http_only:       Option<i32>,
+    pub is_http_only: Option<i32>,
     #[sea_orm(column_name = "inBrowserElement")]
     pub in_browser_element: Option<i32>,
     #[sea_orm(column_name = "sameSite")]
-    pub same_site:          Option<i32>,
+    pub same_site: Option<i32>,
     #[sea_orm(column_name = "rawSameSite")]
-    pub raw_same_site:      Option<i32>,
+    pub raw_same_site: Option<i32>,
     #[sea_orm(column_name = "schemeMap")]
-    pub scheme_map:         Option<i32>,
+    pub scheme_map: Option<i32>,
 }
 
-#[derive(Copy, Clone)]
-#[derive(Debug)]
-#[derive(EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}

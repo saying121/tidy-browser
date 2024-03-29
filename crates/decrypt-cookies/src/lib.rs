@@ -24,36 +24,24 @@ where
 {
     let res = match borwser.into() {
         Browser::Firefox => {
-            let getter = FirefoxBuilder::new(Browser::Firefox)
-                .build()
-                .await?;
-            getter
-                .get_session_csrf(host)
-                .await?
-        },
+            let getter = FirefoxBuilder::new(Browser::Firefox).build().await?;
+            getter.get_session_csrf(host).await?
+        }
         Browser::Librewolf => {
-            let getter = FirefoxBuilder::new(Browser::Librewolf)
-                .build()
-                .await?;
-            getter
-                .get_session_csrf(host)
-                .await?
-        },
+            let getter = FirefoxBuilder::new(Browser::Librewolf).build().await?;
+            getter.get_session_csrf(host).await?
+        }
 
         #[cfg(target_os = "macos")]
         Browser::Safari => {
             let getter = safari::items::cookie::CookiesGetter::build::<&str>(None).await?;
             getter.get_session_csrf(host)
-        },
+        }
 
         chromium => {
-            let getter = ChromiumBuilder::new(chromium)
-                .build()
-                .await?;
-            getter
-                .get_cookies_session_csrf(host)
-                .await?
-        },
+            let getter = ChromiumBuilder::new(chromium).build().await?;
+            getter.get_cookies_session_csrf(host).await?
+        }
     };
 
     Ok(res)

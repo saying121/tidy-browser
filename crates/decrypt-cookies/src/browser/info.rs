@@ -43,8 +43,7 @@ pub trait ChromiumInfo {
     }
     /// leveldb
     fn session(&self) -> PathBuf {
-        self.base()
-            .join(Self::SESSION_STORAGE)
+        self.base().join(Self::SESSION_STORAGE)
     }
     /// a directory
     fn extensions(&self) -> PathBuf {
@@ -56,8 +55,7 @@ pub trait ChromiumInfo {
     }
     /// leveldb
     fn storage(&self) -> PathBuf {
-        self.base()
-            .join(Self::LOCAL_STORAGE)
+        self.base().join(Self::LOCAL_STORAGE)
     }
     /// json
     fn bookmarks(&self) -> PathBuf {
@@ -74,7 +72,7 @@ pub trait ChromiumInfo {
 
     /// for fetch password
     #[cfg(target_os = "macos")]
-    const fn safe_name(&self) -> &str {
+    fn safe_name(&self) -> &str {
         match self.browser() {
             Browser::Chromium => "Chromium",
             Browser::Chrome => "Chrome",
@@ -162,21 +160,13 @@ pub trait FfInfo {
         ini_path.push(format!("{}/profiles.ini", base));
         async move {
             if !ini_path.exists() {
-                miette::bail!(
-                    "{} not exists",
-                    ini_path
-                        .to_str()
-                        .unwrap_or_default()
-                );
+                miette::bail!("{} not exists", ini_path.to_str().unwrap_or_default());
             }
-            let str = read_to_string(ini_path)
-                .await
-                .into_diagnostic()?;
+            let str = read_to_string(ini_path).await.into_diagnostic()?;
             let ini_file = ini::Ini::load_from_str(&str).into_diagnostic()?;
             let mut section = String::new();
             for (sec, prop) in ini_file {
-                let Some(sec) = sec
-                else {
+                let Some(sec) = sec else {
                     continue;
                 };
                 if sec.starts_with("Install") {
@@ -207,12 +197,9 @@ pub mod linux {
     use super::{ChromiumInfo, FfInfo};
     use crate::Browser;
 
-    #[derive(Clone)]
-    #[derive(Debug)]
-    #[derive(Default)]
-    #[derive(PartialEq, Eq)]
+    #[derive(Clone, Debug, Default, PartialEq, Eq)]
     pub struct LinuxChromiumBase {
-        pub base:    PathBuf,
+        pub base: PathBuf,
         pub browser: Browser,
     }
 
@@ -248,7 +235,7 @@ pub mod linux {
                 _ => {
                     tracing::warn!("linux Chromium base: {browser} not support fallback Chrome");
                     Self::CHROME_LINUX
-                },
+                }
             };
             let mut res = dirs::config_dir().expect("get config dir failed");
             res.push(base);
@@ -261,10 +248,7 @@ pub mod linux {
         }
     }
 
-    #[derive(Clone)]
-    #[derive(Debug)]
-    #[derive(Default)]
-    #[derive(PartialEq, Eq)]
+    #[derive(Clone, Debug, Default, PartialEq, Eq)]
     pub struct LinuxFFBase {
         base: PathBuf,
     }
@@ -298,15 +282,12 @@ pub mod macos {
 
     use miette::Result;
 
-    use super::{super::ChromiumInfo, FfInfo};
+    use super::{ChromiumInfo, FfInfo};
     use crate::Browser;
 
-    #[derive(Clone)]
-    #[derive(Debug)]
-    #[derive(Default)]
-    #[derive(PartialEq, Eq)]
+    #[derive(Clone, Debug, Default, PartialEq, Eq)]
     pub struct MacChromiumBase {
-        pub base:    PathBuf,
+        pub base: PathBuf,
         pub browser: Browser,
     }
 
@@ -338,10 +319,13 @@ pub mod macos {
                 _ => {
                     tracing::warn!("linux Chromium base: {browser} not support fallback Chrome");
                     Self::CHROME_MAC
-                },
+                }
             };
             cookie_dir.push(v);
-            Self { base: cookie_dir, browser }
+            Self {
+                base: cookie_dir,
+                browser,
+            }
         }
     }
 
@@ -354,10 +338,7 @@ pub mod macos {
         }
     }
 
-    #[derive(Clone)]
-    #[derive(Debug)]
-    #[derive(Default)]
-    #[derive(PartialEq, Eq)]
+    #[derive(Clone, Debug, Default, PartialEq, Eq)]
     pub struct MacFFBase {
         pub base: PathBuf,
     }
@@ -393,12 +374,9 @@ pub mod win {
     use super::{ChromiumInfo, FfInfo};
     use crate::Browser;
 
-    #[derive(Clone)]
-    #[derive(Debug)]
-    #[derive(Default)]
-    #[derive(PartialEq, Eq)]
+    #[derive(Clone, Debug, Default, PartialEq, Eq)]
     pub struct WinChromiumBase {
-        base:    PathBuf,
+        base: PathBuf,
         browser: Browser,
     }
 
@@ -425,8 +403,7 @@ pub mod win {
         pub fn new(browser: Browser) -> Self {
             let mut cookie_dir = if matches!(browser, Browser::Opera | Browser::OperaGX) {
                 dirs::data_dir().expect("get config dir failed")
-            }
-            else {
+            } else {
                 dirs::data_local_dir().expect("get config dir failed")
             };
 
@@ -444,11 +421,14 @@ pub mod win {
                 _ => {
                     tracing::warn!("{browser} not support fallback Chrome.");
                     Self::CHROME_WIN
-                },
+                }
             };
             cookie_dir.push(path_base);
 
-            Self { base: cookie_dir, browser }
+            Self {
+                base: cookie_dir,
+                browser,
+            }
         }
     }
 
@@ -465,8 +445,7 @@ pub mod win {
             // shit, quirky
             if self.browser == Browser::OperaGX {
                 self.base().join(Self::LOCAL_STATE)
-            }
-            else {
+            } else {
                 let mut path = self.base().clone();
                 path.pop();
                 path.push(Self::LOCAL_STATE);
@@ -475,10 +454,7 @@ pub mod win {
         }
     }
 
-    #[derive(Clone)]
-    #[derive(Debug)]
-    #[derive(Default)]
-    #[derive(PartialEq, Eq)]
+    #[derive(Clone, Debug, Default, PartialEq, Eq)]
     pub struct WinFFBase {
         base: PathBuf,
     }

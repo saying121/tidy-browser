@@ -9,17 +9,11 @@ pub use utils::binary_cookies::*;
 
 use crate::LeetCodeCookies;
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SafariGetter {
     pub cookie_getter: CookiesGetter,
 }
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SafariBuilder {
     cookies_path: Option<PathBuf>,
 }
@@ -46,8 +40,7 @@ impl SafariGetter {
         self.cookie_getter.all_cookies()
     }
     pub fn get_session_csrf(&self, host: &str) -> LeetCodeCookies {
-        self.cookie_getter
-            .get_session_csrf(host)
+        self.cookie_getter.get_session_csrf(host)
     }
     pub const fn binary_cookies(&self) -> &BinaryCookies {
         self.cookie_getter.binary_cookies()

@@ -1,4 +1,4 @@
-use decrypt_cookies::{get_cookie, Browser};
+use decrypt_cookies::{get_cookie, Browser, LeetCodeCookies};
 use miette::Result;
 use strum::IntoEnumIterator;
 
@@ -13,9 +13,13 @@ async fn get_cookie_work() -> Result<()> {
     let leetcode_cn = "leetcode.cn";
     for browser in Browser::iter() {
         dbg!(browser);
-        let edge = get_cookie(browser, leetcode_cn)
-            .await
-            .unwrap_or_default();
+        let edge = match get_cookie(browser, leetcode_cn).await {
+            Ok(v) => v,
+            Err(err) => {
+                println!("{err}");
+                LeetCodeCookies::default()
+            }
+        };
         println!(r##"(| {leetcode_cn} |) -> {edge:#?}"##);
     }
 

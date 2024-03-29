@@ -7,10 +7,7 @@ use crate::{
     LeetCodeCookies,
 };
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CookiesGetter {
     pub binary_cookies: BinaryCookies,
 }
@@ -35,8 +32,7 @@ impl CookiesGetter {
         let mut cookie_path;
         if let Some(path) = cookies_path {
             cookie_path = path.into();
-        }
-        else {
+        } else {
             cookie_path = dirs::home_dir().expect("get home dir failed");
             cookie_path.push(Self::COOKIES);
             if !cookie_path.exists() {
@@ -44,27 +40,20 @@ impl CookiesGetter {
                 cookie_path.push(Self::COOKIES_OLD);
             }
         }
-        let content = tokio::fs::read(cookie_path)
-            .await
-            .into_diagnostic()?;
+        let content = tokio::fs::read(cookie_path).await.into_diagnostic()?;
         let binary_cookies = BinaryCookies::parse(&content)?;
 
         Ok(Self { binary_cookies })
     }
     pub fn get_session_csrf(&self, host: &str) -> LeetCodeCookies {
         let mut lc_cookies = LeetCodeCookies::default();
-        for ele in self
-            .binary_cookies
-            .iter_cookies()
-            .filter(|v| {
-                v.domain().contains(host)
-                    && (v.name().eq("csrftoken") || v.name().eq("LEETCODE_SESSION"))
-            })
-        {
+        for ck in self.binary_cookies.iter_cookies().filter(|v| {
+            v.domain().contains(host)
+                && (v.name().eq("csrftoken") || v.name().eq("LEETCODE_SESSION"))
+        }) {
             if ck.name() == "csrftoken" {
                 lc_cookies.csrf = ck.value().to_owned();
-            }
-            else if ck.name() == "LEETCODE_SESSION" {
+            } else if ck.name() == "LEETCODE_SESSION" {
                 lc_cookies.session = ck.value().to_owned();
             }
         }
@@ -74,9 +63,7 @@ impl CookiesGetter {
         &self.binary_cookies
     }
     pub fn all_cookies(&self) -> Vec<&SafariCookie> {
-        self.binary_cookies
-            .iter_cookies()
-            .collect()
+        self.binary_cookies.iter_cookies().collect()
     }
     pub fn iter_cookies(&self) -> impl Iterator<Item = &SafariCookie> {
         self.binary_cookies.iter_cookies()
