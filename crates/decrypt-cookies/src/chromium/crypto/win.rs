@@ -16,9 +16,12 @@ use windows::Win32::{Foundation, Security::Cryptography};
 
 use crate::Browser;
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq)]
 pub struct Decrypter {
-    pass: Vec<u8>,
+    pass:    Vec<u8>,
     browser: Browser,
 }
 
@@ -49,7 +52,9 @@ impl Decrypter {
     }
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=108
     async fn get_pass(key_path: impl AsRef<Path>) -> Result<Vec<u8>> {
-        let string_str = read_to_string(key_path).await.into_diagnostic()?;
+        let string_str = read_to_string(key_path)
+            .await
+            .into_diagnostic()?;
         let local_state: LocalState = serde_json::from_str(&string_str).into_diagnostic()?;
         let encrypted_key = general_purpose::STANDARD
             .decode(local_state.os_crypt.encrypted_key)
@@ -67,7 +72,8 @@ impl Decrypter {
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
         let pass = if ciphertext.starts_with(Self::K_ENCRYPTION_VERSION_PREFIX) {
             self.pass.as_slice()
-        } else {
+        }
+        else {
             return String::from_utf8(decrypt_with_dpapi(ciphertext)?).into_diagnostic();
         };
         let prefix_len = Self::K_ENCRYPTION_VERSION_PREFIX.len();
@@ -86,11 +92,20 @@ impl Decrypter {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq)]
+#[derive(Deserialize, Serialize)]
 struct LocalState {
     pub os_crypt: OsCrypt,
 }
-#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
+
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq)]
+#[derive(Deserialize, Serialize)]
 struct OsCrypt {
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=33
     // const K_OS_CRYPT_AUDIT_ENABLED_PREF_NAME: &[u8] = b"os_crypt.audit_enabled";
@@ -110,10 +125,7 @@ pub fn decrypt_with_dpapi(ciphertext: &mut [u8]) -> Result<Vec<u8>> {
         cbData: ciphertext.len() as u32,
         pbData: ciphertext.as_mut_ptr(),
     };
-    let mut output = Cryptography::CRYPT_INTEGER_BLOB {
-        cbData: 0,
-        pbData: ptr::null_mut(),
-    };
+    let mut output = Cryptography::CRYPT_INTEGER_BLOB { cbData: 0, pbData: ptr::null_mut() };
 
     unsafe {
         let _: Result<_, miette::Report> = match Cryptography::CryptUnprotectData(

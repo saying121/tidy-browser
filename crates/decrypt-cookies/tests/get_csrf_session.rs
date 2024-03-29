@@ -18,7 +18,7 @@ async fn get_cookie_work() -> Result<()> {
             Err(err) => {
                 println!("{err}");
                 LeetCodeCookies::default()
-            }
+            },
         };
         println!(r##"(| {leetcode_cn} |) -> {edge:#?}"##);
     }

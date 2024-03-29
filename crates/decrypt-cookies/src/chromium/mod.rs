@@ -40,11 +40,13 @@ cfg_if::cfg_if!(
 ///     .get_cookies_session_csrf(host)
 ///     .await?
 /// ```
-#[derive(Clone, Debug, Default)]
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
 pub struct ChromiumGetter {
-    browser: Browser,
+    browser:       Browser,
     cookies_query: CookiesQuery,
-    crypto: Decrypter,
+    crypto:        Decrypter,
 
     #[cfg(target_os = "linux")]
     pub info: LinuxChromiumBase,
@@ -53,11 +55,13 @@ pub struct ChromiumGetter {
     #[cfg(target_os = "macos")]
     pub info: MacChromiumBase,
 }
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq)]
 pub struct ChromiumBuilder {
-    browser: Browser,
-    cookies_path: Option<PathBuf>,
+    browser:          Browser,
+    cookies_path:     Option<PathBuf>,
     /// in windows, it store passwd
     local_state_path: Option<PathBuf>,
 }
@@ -105,8 +109,12 @@ impl ChromiumBuilder {
             }
         );
 
-        let query =
-            CookiesQuery::new(self.cookies_path.take().unwrap_or_else(|| info.cookies())).await?;
+        let query = CookiesQuery::new(
+            self.cookies_path
+                .take()
+                .unwrap_or_else(|| info.cookies()),
+        )
+        .await?;
 
         Ok(ChromiumGetter {
             browser: self.browser,
@@ -145,7 +153,9 @@ impl ChromiumGetter {
         task::spawn_blocking(move || {
             raw.into_par_iter()
                 .map(|mut v| {
-                    let res = crypto.decrypt(&mut v.encrypted_value).unwrap_or_default();
+                    let res = crypto
+                        .decrypt(&mut v.encrypted_value)
+                        .unwrap_or_default();
                     let mut cookies = DecryptedCookies::from(v);
                     cookies.set_encrypted_value(res);
                     cookies
@@ -179,18 +189,27 @@ impl ChromiumGetter {
     where
         F: IntoCondition,
     {
-        let raw_ck = self.cookies_query.query_cookie_filter(filter).await?;
+        let raw_ck = self
+            .cookies_query
+            .query_cookie_filter(filter)
+            .await?;
         self.par_decrypt(raw_ck).await
     }
     /// decrypt Cookies
     pub async fn get_cookies_by_host(&self, host: &str) -> Result<Vec<DecryptedCookies>> {
-        let raw_ck = self.cookies_query.query_cookie_by_host(host).await?;
+        let raw_ck = self
+            .cookies_query
+            .query_cookie_by_host(host)
+            .await?;
         self.par_decrypt(raw_ck).await
     }
 
     /// return all cookies
     pub async fn get_cookies_all(&self) -> Result<Vec<DecryptedCookies>> {
-        let raw_ck = self.cookies_query.query_all_cookie().await?;
+        let raw_ck = self
+            .cookies_query
+            .query_all_cookie()
+            .await?;
         self.par_decrypt(raw_ck).await
     }
 
@@ -199,11 +218,13 @@ impl ChromiumGetter {
         let cookies = self
             .cookies_query
             .query_cookie_filter(
-                ChromCkColumn::HostKey.contains(host).and(
-                    ChromCkColumn::Name
-                        .eq("csrftoken")
-                        .or(ChromCkColumn::Name.eq("LEETCODE_SESSION")),
-                ),
+                ChromCkColumn::HostKey
+                    .contains(host)
+                    .and(
+                        ChromCkColumn::Name
+                            .eq("csrftoken")
+                            .or(ChromCkColumn::Name.eq("LEETCODE_SESSION")),
+                    ),
             )
             .await?;
 
@@ -224,10 +245,11 @@ impl ChromiumGetter {
                         Err(err) => {
                             tracing::warn!("decrypt csrf failed: {err}");
                             String::new()
-                        }
+                        },
                     });
                 hds.push((csrf_hd, CsrfSession::Csrf));
-            } else if cookie.name == "LEETCODE_SESSION" {
+            }
+            else if cookie.name == "LEETCODE_SESSION" {
                 let cy = self.crypto.clone();
                 let session_hd =
                     task::spawn_blocking(move || match cy.decrypt(&mut cookie.encrypted_value) {
@@ -235,7 +257,7 @@ impl ChromiumGetter {
                         Err(err) => {
                             tracing::warn!("decrypt session failed: {err}");
                             String::new()
-                        }
+                        },
                     });
                 hds.push((session_hd, CsrfSession::Session));
             }

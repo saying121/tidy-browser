@@ -3,20 +3,11 @@ pub mod info;
 
 use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 
-#[derive(
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Default,
-    Debug,
-    EnumIter,
-    Display,
-    EnumString,
-    AsRefStr,
-)]
+#[derive(Clone, Copy)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default)]
+#[derive(Debug)]
+#[derive(EnumIter, Display, EnumString, AsRefStr)]
 pub enum Browser {
     /// win, mac, linux
     #[default]

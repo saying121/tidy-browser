@@ -6,17 +6,26 @@
 async fn all_pass() {
     use secret_service::{EncryptionType, SecretService};
     // initialize secret service (dbus connection and encryption session)
-    let ss = SecretService::connect(EncryptionType::Dh).await.unwrap();
+    let ss = SecretService::connect(EncryptionType::Dh)
+        .await
+        .unwrap();
     // get default collection
     let collection = ss
         // .get_all_collections()
         .get_default_collection()
         .await
         .unwrap();
-    if collection.is_locked().await.unwrap() {
+    if collection
+        .is_locked()
+        .await
+        .unwrap()
+    {
         collection.unlock().await.unwrap();
     }
-    let coll = collection.get_all_items().await.unwrap();
+    let coll = collection
+        .get_all_items()
+        .await
+        .unwrap();
     for i in coll {
         let lab = i.get_label().await.unwrap();
         dbg!(lab);

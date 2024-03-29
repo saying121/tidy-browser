@@ -8,13 +8,16 @@ use chrono::{prelude::*, LocalResult, Utc};
 use miette::{bail, IntoDiagnostic, Result};
 
 /// raw file informations, with pages
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq)]
 pub struct BinaryCookies {
-    signature: Vec<u8>,
-    num_pages: u32,         // be
+    signature:    Vec<u8>,
+    num_pages:    u32,      // be
     pages_offset: Vec<u32>, // be
-    pub pages: Vec<Page>,
-    checksum: Vec<u8>, // 8 byte
+    pub pages:    Vec<Page>,
+    checksum:     Vec<u8>, // 8 byte
 }
 
 impl BinaryCookies {
@@ -23,7 +26,9 @@ impl BinaryCookies {
     }
     /// iter all pages cookies
     pub fn iter_cookies(&self) -> impl Iterator<Item = &SafariCookie> {
-        self.pages.iter().flat_map(Page::iter_cookies)
+        self.pages
+            .iter()
+            .flat_map(Page::iter_cookies)
     }
 
     pub fn signature(&self) -> &[u8] {
@@ -43,13 +48,16 @@ impl BinaryCookies {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq)]
 pub struct Page {
-    pages_start: Vec<u8>,
-    num_cookies: u32,          // le
+    pages_start:     Vec<u8>,
+    num_cookies:     u32,      // le
     cookies_offsets: Vec<u32>, // le, N * `self.num_cookies`
-    page_end: Vec<u8>,         // Must be equal to []byte{0x00_00_00_00}
-    pub cookies: Vec<SafariCookie>,
+    page_end:        Vec<u8>,  // Must be equal to []byte{0x00_00_00_00}
+    pub cookies:     Vec<SafariCookie>,
 }
 
 impl Page {
@@ -168,7 +176,9 @@ impl BinaryCookies {
 
         let cookie_flags = entry.get_u32_le();
 
-        let has_port = entry[..4].try_into().into_diagnostic()?;
+        let has_port = entry[..4]
+            .try_into()
+            .into_diagnostic()?;
         entry.advance(4);
 
         let domain_offset = entry.get_u32_le();
@@ -183,11 +193,19 @@ impl BinaryCookies {
         }
         entry.advance(4);
 
-        let expires = f64::from_le_bytes(entry[..8].try_into().into_diagnostic()?);
+        let expires = f64::from_le_bytes(
+            entry[..8]
+                .try_into()
+                .into_diagnostic()?,
+        );
         entry.advance(8);
         let expires = Utc.timestamp_opt(expires as i64 + 978_307_200, 0);
 
-        let creation = f64::from_le_bytes(entry[..8].try_into().into_diagnostic()?);
+        let creation = f64::from_le_bytes(
+            entry[..8]
+                .try_into()
+                .into_diagnostic()?,
+        );
         entry.advance(8);
         let creation = Utc.timestamp_opt(creation as i64 + 978_307_200, 0);
 
@@ -196,7 +214,8 @@ impl BinaryCookies {
             let comment = entry[..comment_len - 1].to_vec(); // c-string, end with 0
             entry.advance(comment_len);
             String::from_utf8(comment).unwrap_or_default()
-        } else {
+        }
+        else {
             String::new()
         };
 
@@ -243,25 +262,27 @@ impl BinaryCookies {
 }
 
 /// alone cookies
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(PartialEq, Eq)]
 pub struct SafariCookie {
     // cookie_size:    u32, // LE_uint32	Cookie size. Number of bytes associated to the cookie
-    version: Vec<u8>,   // byte    Unknown field possibly related to the cookie flags
-    cookie_flags: u32,  // LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly
-    has_port: [u8; 4],  // size:  4    byte    0 or 1
-    domain_offset: u32, // LE_uint32    Cookie domain offset
-    name_offset: u32,   // LE_uint32    Cookie name offset
-    path_offset: u32,   // LE_uint32    Cookie path offset
-    value_offset: u32,  // LE_uint32    Cookie value offset
+    version:        Vec<u8>, // byte    Unknown field possibly related to the cookie flags
+    cookie_flags:   u32, // LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly
+    has_port:       [u8; 4], // size:  4    byte    0 or 1
+    domain_offset:  u32, // LE_uint32    Cookie domain offset
+    name_offset:    u32, // LE_uint32    Cookie name offset
+    path_offset:    u32, // LE_uint32    Cookie path offset
+    value_offset:   u32, // LE_uint32    Cookie value offset
     comment_offset: u32, // LE_uint32    Cookie comment offset
     // end_header:     Vec<u8>, /* 4    byte    Marks the end of a header. Must be equal to []byte{0x00000000} */
-    expires: LocalResult<DateTime<Utc>>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
-    creation: LocalResult<DateTime<Utc>>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
-    comment: String, /* N    LE_uint32    Cookie comment string. N = `self.domain_offset` - `self.comment_offset` */
-    domain: String, /* N    LE_uint32    Cookie domain string. N = `self.name_offset` - `self.domain_offset` */
-    name: String, /* N    LE_uint32    Cookie name string. N = `self.path_offset` - `self.name_offset` */
-    path: String, /* N    LE_uint32    Cookie path string. N = `self.value_offset` - `self.path_offset` */
-    value: String, /* N    LE_uint32    Cookie value string. N = `self.cookie_size` - `self.value_offset` */
+    expires:        LocalResult<DateTime<Utc>>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
+    creation:       LocalResult<DateTime<Utc>>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
+    comment:        String, /* N    LE_uint32    Cookie comment string. N = `self.domain_offset` - `self.comment_offset` */
+    domain:         String, /* N    LE_uint32    Cookie domain string. N = `self.name_offset` - `self.domain_offset` */
+    name:           String, /* N    LE_uint32    Cookie name string. N = `self.path_offset` - `self.name_offset` */
+    path:           String, /* N    LE_uint32    Cookie path string. N = `self.value_offset` - `self.path_offset` */
+    value:          String, /* N    LE_uint32    Cookie value string. N = `self.cookie_size` - `self.value_offset` */
 }
 
 impl SafariCookie {

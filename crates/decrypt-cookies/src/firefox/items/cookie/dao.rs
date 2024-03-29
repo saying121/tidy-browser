@@ -12,7 +12,9 @@ use super::entities::{
 };
 
 /// query firefox based cookies
-#[derive(Clone, Debug, Default)]
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
 pub struct CookiesQuery {
     conn: DatabaseConnection,
 }
@@ -26,7 +28,9 @@ impl CookiesQuery {
 
         debug!("database dir: {}", &db_conn_str);
 
-        let db = Database::connect(db_conn_str).await.into_diagnostic()?;
+        let db = Database::connect(db_conn_str)
+            .await
+            .into_diagnostic()?;
         Ok(Self { conn: db })
     }
 
@@ -52,7 +56,10 @@ impl CookiesQuery {
         Ok(res)
     }
     pub async fn query_all_cookie(&self) -> Result<Vec<Model>> {
-        let res = MozCookies::find().all(&self.conn).await.into_diagnostic()?;
+        let res = MozCookies::find()
+            .all(&self.conn)
+            .await
+            .into_diagnostic()?;
 
         Ok(res)
     }

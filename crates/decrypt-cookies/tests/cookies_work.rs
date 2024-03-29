@@ -11,7 +11,9 @@ async fn get_all_cookie_work() -> Result<()> {
         .init();
 
     for browser in Browser::iter() {
-        let chrmo = ChromiumBuilder::new(browser).build().await?;
+        let chrmo = ChromiumBuilder::new(browser)
+            .build()
+            .await?;
         let a = chrmo.get_cookies_all().await?;
         for i in a.iter().take(6) {
             println!(
@@ -33,7 +35,9 @@ async fn ff_get_all_cookie_work() -> Result<()> {
         .with_test_writer()
         .init();
 
-    let ff = FirefoxBuilder::new(Browser::Firefox).build().await?;
+    let ff = FirefoxBuilder::new(Browser::Firefox)
+        .build()
+        .await?;
     let a = ff.get_cookies_all().await?;
     for i in a.iter().take(6) {
         println!(

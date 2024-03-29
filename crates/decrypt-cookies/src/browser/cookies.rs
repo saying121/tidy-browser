@@ -1,8 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Default, Clone, Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Clone)]
+#[derive(Serialize, Deserialize)]
+#[derive(Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct LeetCodeCookies {
-    pub csrf: String,
+    pub csrf:    String,
     pub session: String,
 }
 

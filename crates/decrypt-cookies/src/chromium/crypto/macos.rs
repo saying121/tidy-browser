@@ -9,9 +9,12 @@ use crate::Browser;
 // const K_DERIVED_KEY_SIZE_IN_BITS: u32 = 128;
 type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq)]
 pub struct Decrypter {
-    browser: Browser,
+    browser:  Browser,
     pass_v10: Vec<u8>,
 }
 
