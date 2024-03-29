@@ -582,6 +582,9 @@ pub mod win {
                 path
             }
         }
+        fn cookies_temp(&self) -> PathBuf {
+            self.temp_path_prefix().join("Cookies")
+        }
     }
 
     #[derive(Clone)]

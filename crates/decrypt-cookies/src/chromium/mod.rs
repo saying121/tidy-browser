@@ -13,7 +13,7 @@ use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
 use tokio::{fs, task};
 
 use crate::{
-    browser::info::{ChromiumInfo, TempPath},
+    browser::info::ChromiumInfo,
     Browser, LeetCodeCookies,
 };
 
