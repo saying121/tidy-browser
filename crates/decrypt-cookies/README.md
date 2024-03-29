@@ -32,7 +32,7 @@ async fn main() -> miette::Result<()> {
 ### ChromiumBase
 
 - ./src/browser/info.rs `ChromiumInfo` trait,
-  `safe_name`, `storage` method, modify this.
+  `safe_name`, `storage` method, modify and impl.
 
 ### FirefoxBase
 
@@ -40,7 +40,6 @@ async fn main() -> miette::Result<()> {
 
 ## TODO
 
-- The database/file can sometimes be locked.
 - Decrypt passwd etc.
 
 ## TEST STATUS
@@ -49,50 +48,50 @@ async fn main() -> miette::Result<()> {
 
 |  Browser  | Cookies | passwd | Test Date  |
 | :-------: | :-----: | :----: | :--------: |
-|  Firefox  |   🔑    |   🚫   | 2024-03-25 |
-| Librewolf |   🔑    |   🚫   | 2024-03-25 |
-|  Chrome   |   🔑    |   🚫   | 2024-03-25 |
-|   Edge    |   🔑    |   🚫   | 2024-03-25 |
-| Chromium  |   🔑    |   🚫   | 2024-03-25 |
-|   Brave   |   🔑    |   🚫   | 2024-03-25 |
-|  Yandex   |   🔑    |   🚫   | 2024-03-25 |
-|  Vivaldi  |   🔑    |   🚫   | 2024-03-25 |
-|   Opera   |   🔑    |   🚫   | 2024-03-25 |
+|  Firefox  |   🔑    |   🚫   | 2024-03-29 |
+| Librewolf |   🔑    |   🚫   | 2024-03-29 |
+|  Chrome   |   🔑    |   🚫   | 2024-03-29 |
+|   Edge    |   🔑    |   🚫   | 2024-03-29 |
+| Chromium  |   🔑    |   🚫   | 2024-03-29 |
+|   Brave   |   🔑    |   🚫   | 2024-03-29 |
+|  Yandex   |   🔑    |   🚫   | 2024-03-29 |
+|  Vivaldi  |   🔑    |   🚫   | 2024-03-29 |
+|   Opera   |   🔑    |   🚫   | 2024-03-29 |
 
 - Windows:
 
 |  Browser  |     Cookies     | passwd | Test Date  |
 | :-------: | :-------------: | :----: | :--------: |
-|  Firefox  |       🔑        |   🚫   | 2024-03-25 |
-| Librewolf |       🔑        |   🚫   | 2024-03-25 |
-|  Chrome   |       🔑        |   🚫   | 2024-03-25 |
-|   Edge    |       🔑        |   🚫   | 2024-03-25 |
-| Chromium  |       🔑        |   🚫   | 2024-03-25 |
-|   Brave   |       🔑        |   🚫   | 2024-03-25 |
-|  Yandex   |       🔑        |   🚫   | 2024-03-25 |
-|  Vivaldi  |       🔑        |   🚫   | 2024-03-25 |
-|   Opera   |       🔑        |   🚫   | 2024-03-25 |
-|  OperaGX  |       🔑        |   🚫   | 2024-03-25 |
-|  CocCoc   |       🔑        |   🚫   | 2024-03-25 |
+|  Firefox  |       🔑        |   🚫   | 2024-03-29 |
+| Librewolf |       🔑        |   🚫   | 2024-03-29 |
+|  Chrome   |       🔑        |   🚫   | 2024-03-29 |
+|   Edge    |       🔑        |   🚫   | 2024-03-29 |
+| Chromium  |       🔑        |   🚫   | 2024-03-29 |
+|   Brave   |       🔑        |   🚫   | 2024-03-29 |
+|  Yandex   |       🔑        |   🚫   | 2024-03-29 |
+|  Vivaldi  |       🔑        |   🚫   | 2024-03-29 |
+|   Opera   |       🔑        |   🚫   | 2024-03-29 |
+|  OperaGX  |       🔑        |   🚫   | 2024-03-29 |
+|  CocCoc   |       🔑        |   🚫   | 2024-03-29 |
 |    Arc    | 🚫(not support) |   🚫   |            |
 
 - Macos:
 
 |  Browser  |   Cookies    | passwd | Test Date  |
 | :-------: | :----------: | :----: | :--------: |
-|  Firefox  |      🔑      |   🚫   | 2024-03-25 |
-| Librewolf |      🔑      |   🚫   | 2024-03-25 |
-|  Chrome   |      🔑      |   🚫   | 2024-03-25 |
-|   Edge    |      🔑      |   🚫   | 2024-03-25 |
-| Chromium  |      🔑      |   🚫   | 2024-03-25 |
-|   Brave   |      🔑      |   🚫   | 2024-03-25 |
-|  Yandex   |      🔑      |   🚫   | 2024-03-25 |
-|  Vivaldi  |      🔑      |   🚫   | 2024-03-25 |
-|   Opera   |      🔑      |   🚫   | 2024-03-25 |
-|  OperaGX  |      🔑      |   🚫   | 2024-03-25 |
-|  CocCoc   |      🔑      |   🚫   | 2024-03-25 |
+|  Firefox  |      🔑      |   🚫   | 2024-03-29 |
+| Librewolf |      🔑      |   🚫   | 2024-03-29 |
+|  Chrome   |      🔑      |   🚫   | 2024-03-29 |
+|   Edge    |      🔑      |   🚫   | 2024-03-29 |
+| Chromium  |      🔑      |   🚫   | 2024-03-29 |
+|   Brave   |      🔑      |   🚫   | 2024-03-29 |
+|  Yandex   |      🔑      |   🚫   | 2024-03-29 |
+|  Vivaldi  |      🔑      |   🚫   | 2024-03-29 |
+|   Opera   |      🔑      |   🚫   | 2024-03-29 |
+|  OperaGX  |      🔑      |   🚫   | 2024-03-29 |
+|  CocCoc   |      🔑      |   🚫   | 2024-03-29 |
 |    Arc    | 🚫(not test) |   🚫   |            |
-|  safari   |      🔑      |   🚫   | 2024-03-25 |
+|  safari   |      🔑      |   🚫   | 2024-03-29 |
 
 ## Thanks To
 

@@ -12,10 +12,7 @@ use rayon::prelude::*;
 use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
 use tokio::{fs, task};
 
-use crate::{
-    browser::info::ChromiumInfo,
-    Browser, LeetCodeCookies,
-};
+use crate::{browser::info::ChromiumInfo, Browser, LeetCodeCookies};
 
 cfg_if::cfg_if!(
     if #[cfg(target_os="linux")] {
@@ -96,17 +93,17 @@ impl ChromiumBuilder {
 
     pub async fn build(self) -> Result<ChromiumGetter> {
         cfg_if::cfg_if!(
-            if #[cfg(target_os="linux")] {
+            if #[cfg(target_os = "linux")] {
                 let info = LinuxChromiumBase::new(self.browser);
-                let crypto = Decrypter::build(info.browser(), info.safe_storage()).await?;
-            } else if #[cfg(target_os="macos")] {
+                let crypto = Decrypter::build(self.browser, info.safe_storage()).await?;
+            } else if #[cfg(target_os = "macos")] {
                 let info = MacChromiumBase::new(self.browser);
                 let crypto = Decrypter::build(
                     self.browser,
                     info.safe_storage(),
                     info.safe_name(),
                 )?;
-            } else if #[cfg(target_os="windows")] {
+            } else if #[cfg(target_os = "windows")] {
                 let info = WinChromiumBase::new(self.browser);
 
                 let temp_key_path = info.local_state_temp();
@@ -120,7 +117,6 @@ impl ChromiumBuilder {
                 let crypto = Decrypter::build(self.browser, temp_key_path).await?;
             }
         );
-
         let temp_cookies_path = info.cookies_temp();
 
         fs::copy(
