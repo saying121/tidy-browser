@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
 use miette::{IntoDiagnostic, Result};
 use pbkdf2::pbkdf2_hmac;
 use secret_service::{EncryptionType, SecretService};
+use tokio::sync::OnceCell;
 
 use crate::Browser;
 
@@ -19,13 +22,13 @@ type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
-    pass_v11: Vec<u8>,
+    pass_v11: &'static [u8],
     browser:  Browser,
 }
 
 impl Decrypter {
-    pub fn pass_v11(&self) -> &[u8] {
-        self.pass_v11.as_ref()
+    pub const fn pass_v11(&self) -> &[u8] {
+        self.pass_v11
     }
 
     pub const fn browser(&self) -> Browser {
@@ -33,22 +36,76 @@ impl Decrypter {
     }
 }
 
-// OPTIMIZE: lazy initialize pass_v11?
+static ALL_PASSWD: OnceCell<HashMap<&'static str, &'static [u8]>> = OnceCell::const_new();
+
+async fn get_pass_once() -> &'static HashMap<&'static str, &'static [u8]> {
+    ALL_PASSWD
+        .get_or_init(|| async {
+            get_all_pass()
+                .await
+                .unwrap_or_default()
+        })
+        .await
+}
+
+/// from `secret_service` get all password
+async fn get_all_pass() -> Result<HashMap<&'static str, &'static [u8]>> {
+    // initialize secret service (dbus connection and encryption session)
+    let ss = SecretService::connect(EncryptionType::Dh)
+        .await
+        .into_diagnostic()?;
+    // get default collection
+    let collection = ss
+        .get_default_collection()
+        .await
+        .into_diagnostic()?;
+
+    if collection
+        .is_locked()
+        .await
+        .into_diagnostic()?
+    {
+        collection
+            .unlock()
+            .await
+            .into_diagnostic()?;
+    }
+    let coll = collection
+        .get_all_items()
+        .await
+        .into_diagnostic()?;
+
+    let mut res = HashMap::new();
+    for item in coll {
+        let Ok(label) = item.get_label().await
+        else {
+            continue;
+        };
+        let Ok(s) = item.get_secret().await
+        else {
+            continue;
+        };
+        let l: &'static str = label.leak();
+        let s: &'static [u8] = s.leak();
+        res.insert(l, s);
+    }
+
+    Ok(res)
+}
+
 impl Decrypter {
     pub async fn build(browser: Browser, safe_storage: &str) -> Result<Self> {
-        let pass_v11 = Self::get_pass(safe_storage)
+        let pass_v11 = get_pass_once()
             .await
-            .unwrap_or_else(|_| Self::PASSWORD_V10.to_vec());
+            .get(safe_storage)
+            .map_or_else(|| Self::PASSWORD_V10, |v| *v);
         Ok(Self { pass_v11, browser })
     }
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=72
     pub fn decrypt(&self, be_decrypte: &mut [u8]) -> Result<String> {
         let (pass, prefix_len) = if be_decrypte.starts_with(Self::K_OBFUSCATION_PREFIX_V11) {
-            (
-                self.pass_v11.as_slice(),
-                Self::K_OBFUSCATION_PREFIX_V11.len(),
-            )
+            (self.pass_v11, Self::K_OBFUSCATION_PREFIX_V11.len())
         }
         else if be_decrypte.starts_with(Self::K_OBFUSCATION_PREFIX_V10) {
             (Self::PASSWORD_V10, Self::K_OBFUSCATION_PREFIX_V10.len())
@@ -70,50 +127,6 @@ impl Decrypter {
         }
 
         miette::bail!("decrypt failed")
-    }
-
-    /// from `secret_service` get password
-    async fn get_pass(safe_storage: &str) -> Result<Vec<u8>> {
-        // initialize secret service (dbus connection and encryption session)
-        let ss = SecretService::connect(EncryptionType::Dh)
-            .await
-            .into_diagnostic()?;
-        // get default collection
-        let collection = ss
-            .get_default_collection()
-            .await
-            .into_diagnostic()?;
-
-        if collection
-            .is_locked()
-            .await
-            .into_diagnostic()?
-        {
-            collection
-                .unlock()
-                .await
-                .into_diagnostic()?;
-        }
-        let coll = collection
-            .get_all_items()
-            .await
-            .into_diagnostic()?;
-
-        let mut res = vec![];
-        for item in coll {
-            let Ok(l) = item.get_label().await
-            else {
-                continue;
-            };
-            if l.as_str() == safe_storage {
-                res = item
-                    .get_secret()
-                    .await
-                    .into_diagnostic()?;
-            }
-        }
-
-        Ok(res)
     }
 }
 

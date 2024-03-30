@@ -4,9 +4,8 @@ use decrypt_cookies::{get_cookie, Browser, LeetCodeCookies};
 use miette::{IntoDiagnostic, Result};
 use strum::IntoEnumIterator;
 
-#[ignore = "need realy environment"]
-#[tokio::test(flavor = "multi_thread", worker_threads = 10)]
-async fn get_cookie_work() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::WARN)
         .with_test_writer()
