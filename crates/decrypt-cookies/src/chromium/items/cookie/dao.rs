@@ -19,10 +19,7 @@ pub struct CookiesQuery {
 
 impl CookiesQuery {
     /// * `browser`: `edge`, `chrome`
-    pub async fn new<P>(path: P) -> Result<Self>
-    where
-        P: AsRef<Path>,
-    {
+    pub async fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let db_conn_str = format!("sqlite:{}?mode=rwc", path.as_ref().to_string_lossy());
 
         let db = Database::connect(db_conn_str)
@@ -36,32 +33,26 @@ impl CookiesQuery {
     where
         F: IntoCondition,
     {
-        let res = CookiesDB::find()
+        CookiesDB::find()
             .filter(filter)
             .all(&self.conn)
             .await
-            .into_diagnostic()?;
-
-        Ok(res)
+            .into_diagnostic()
     }
 
     /// get raw Cookies
     pub async fn query_cookie_by_host(&self, host: &str) -> Result<Vec<Model>> {
-        let res = CookiesDB::find()
+        CookiesDB::find()
             .filter(cookies::Column::HostKey.contains(host))
             .all(&self.conn)
             .await
-            .into_diagnostic()?;
-
-        Ok(res)
+            .into_diagnostic()
     }
     /// get raw Cookies
     pub async fn query_all_cookie(&self) -> Result<Vec<Model>> {
-        let res = CookiesDB::find()
+        CookiesDB::find()
             .all(&self.conn)
             .await
-            .into_diagnostic()?;
-
-        Ok(res)
+            .into_diagnostic()
     }
 }

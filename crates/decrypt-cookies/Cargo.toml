@@ -1,14 +1,15 @@
 [package]
-name        = "decrypt-cookies"
-version     = "0.4.2"
-description = "A decrypt browser crate"
-license     = "LGPL-3.0-or-later"
-edition     = { workspace = true }
-authors     = { workspace = true }
-homepage    = { workspace = true }
-repository  = { workspace = true }
-keywords    = ["cookies", "decrypt", "Chromium", "Firefox", "Safari"]
-categories  = ["asynchronous", "authentication", "cryptography", "encoding"]
+name         = "decrypt-cookies"
+version      = "0.4.2"
+description  = "A decrypt browser crate"
+license      = "LGPL-3.0-or-later"
+edition      = { workspace = true }
+authors      = { workspace = true }
+homepage     = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["cookies", "decrypt", "Chromium", "Firefox", "Safari"]
+categories   = ["asynchronous", "authentication", "cryptography", "encoding"]
+rust-version = "1.77"
 
 exclude = ["tests/", "examples"]
 

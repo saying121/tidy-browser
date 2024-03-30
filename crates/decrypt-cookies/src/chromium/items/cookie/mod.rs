@@ -1,6 +1,7 @@
-use chrono::{prelude::*, LocalResult, TimeZone, Utc};
+use chrono::{prelude::*, LocalResult, Utc};
 
 use self::entities::cookies;
+use super::I64ToChromiumDateTime;
 
 pub mod dao;
 pub mod entities;
@@ -32,17 +33,6 @@ pub struct DecryptedCookies {
 impl DecryptedCookies {
     pub fn set_encrypted_value(&mut self, encrypted_value: String) {
         self.decrypted_value = Some(encrypted_value);
-    }
-}
-
-trait I64ToDateTime {
-    fn micros_to_chromium_utc(&self) -> LocalResult<DateTime<Utc>>;
-}
-
-// https://source.chromium.org/chromium/chromium/src/+/main:base/time/time.h;l=5;
-impl I64ToDateTime for i64 {
-    fn micros_to_chromium_utc(&self) -> LocalResult<DateTime<Utc>> {
-        Utc.timestamp_micros(self - 11_644_473_600 * 1_000_000)
     }
 }
 

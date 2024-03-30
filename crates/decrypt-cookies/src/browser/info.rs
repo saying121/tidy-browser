@@ -85,7 +85,12 @@ pub trait ChromiumInfo: TempPath {
 
     /// sqlite3
     fn logindata(&self) -> PathBuf {
-        self.base().join(Self::LOGIN_DATA)
+        match self.browser() {
+            Browser::Yandex => self
+                .base()
+                .join("Ya Passman Data"),
+            _ => self.base().join(Self::LOGIN_DATA),
+        }
     }
     fn logindata_temp(&self) -> PathBuf {
         self.temp_path_prefix()
@@ -583,7 +588,8 @@ pub mod win {
             }
         }
         fn cookies_temp(&self) -> PathBuf {
-            self.temp_path_prefix().join("Cookies")
+            self.temp_path_prefix()
+                .join("Cookies")
         }
     }
 
