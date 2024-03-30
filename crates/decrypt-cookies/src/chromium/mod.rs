@@ -1,11 +1,12 @@
 pub mod crypto;
+pub mod local_state;
 mod items;
 use std::path::PathBuf;
 
-use items::cookie::{dao::CookiesQuery, entities::cookies};
+use items::cookie::{cookie_dao::CookiesQuery, cookie_entities::cookies};
 pub use items::{
     cookie::{
-        entities::cookies::{Column as ChromCkColumn, ColumnIter as ChromCkColumnIter},
+        cookie_entities::cookies::{Column as ChromCkColumn, ColumnIter as ChromCkColumnIter},
         DecryptedCookies,
     },
     passwd::{

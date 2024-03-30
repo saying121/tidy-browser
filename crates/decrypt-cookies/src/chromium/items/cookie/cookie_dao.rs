@@ -5,7 +5,7 @@ use sea_orm::{
     sea_query::IntoCondition, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter,
 };
 
-use super::entities::{
+use super::cookie_entities::{
     cookies::{self, Model},
     prelude::*,
 };

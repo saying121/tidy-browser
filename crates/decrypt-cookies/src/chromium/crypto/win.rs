@@ -6,11 +6,10 @@ use aes_gcm::{
 };
 use base64::{engine::general_purpose, Engine};
 use miette::{IntoDiagnostic, Result};
-use serde::{Deserialize, Serialize};
 use tokio::fs::read_to_string;
 use windows::Win32::{Foundation, Security::Cryptography};
 
-use crate::Browser;
+use crate::{chromium::local_state::LocalState, Browser};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -42,7 +41,7 @@ impl Decrypter {
 impl Decrypter {
     /// the method will use default `LocalState` path,
     /// custom that path use `DecrypterBuilder`
-    pub async fn build(browser: Browser, key_path: impl AsRef<Path>) -> Result<Self> {
+    pub async fn build<A: AsRef<Path>>(browser: Browser, key_path: A) -> Result<Self> {
         let pass = Self::get_pass(key_path).await?;
         Ok(Self { pass, browser })
     }
@@ -70,7 +69,7 @@ impl Decrypter {
             self.pass.as_slice()
         }
         else {
-            return Ok(String::from_utf8_lossy(decrypt_with_dpapi(ciphertext)?).to_string());
+            return Ok(String::from_utf8_lossy(&decrypt_with_dpapi(ciphertext)?).to_string());
         };
         let prefix_len = Self::K_ENCRYPTION_VERSION_PREFIX.len();
         let nonce_len = Self::K_NONCE_LENGTH;
@@ -81,38 +80,11 @@ impl Decrypter {
         let cipher = Aes256Gcm::new(GenericArray::from_slice(pass));
 
         if let Ok(decrypted) = cipher.decrypt(nonce.into(), raw_ciphertext) {
-            return Ok(String::from_utf8_lossy(decrypted).to_string());
+            return Ok(String::from_utf8_lossy(&decrypted).to_string());
         };
 
         miette::bail!("decrypt failed");
     }
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq)]
-#[derive(Deserialize, Serialize)]
-struct LocalState {
-    pub os_crypt: OsCrypt,
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq)]
-#[derive(Deserialize, Serialize)]
-struct OsCrypt {
-    // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=33
-    // const K_OS_CRYPT_AUDIT_ENABLED_PREF_NAME: &[u8] = b"os_crypt.audit_enabled";
-    /// Whether or not an attempt has been made to enable audit for the DPAPI
-    /// encryption backing the random key.
-    pub audit_enabled: bool,
-
-    // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=29
-    // const K_OS_CRYPT_ENCRYPTED_KEY_PREF_NAME: &[u8] = b"os_crypt.encrypted_key";
-    /// Contains base64 random key encrypted with DPAPI.
-    pub encrypted_key: String,
 }
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=81

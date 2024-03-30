@@ -1,10 +1,10 @@
 use chrono::{prelude::*, LocalResult, Utc};
 
-use self::entities::cookies;
+use self::cookie_entities::cookies;
 use super::I64ToChromiumDateTime;
 
-pub mod dao;
-pub mod entities;
+pub mod cookie_dao;
+pub mod cookie_entities;
 
 #[derive(Clone)]
 #[derive(Debug)]

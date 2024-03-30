@@ -211,7 +211,7 @@ impl BinaryCookies {
 
         let comment = if comment_offset > 0 {
             let comment_len = (domain_offset - comment_offset) as usize;
-            let comment = entry[..comment_len - 1].to_vec(); // c-string, end with 0
+            let comment = &entry[..comment_len - 1]; // c-string, end with 0
             entry.advance(comment_len);
             String::from_utf8_lossy(comment).to_string()
         }
@@ -220,22 +220,22 @@ impl BinaryCookies {
         };
 
         let domin_len = (name_offset - domain_offset) as usize;
-        let domain = entry[..domin_len - 1].to_vec(); // c-string, end with 0
+        let domain = &entry[..domin_len - 1]; // c-string, end with 0
         entry.advance(domin_len);
         let domain = String::from_utf8_lossy(domain).to_string();
 
         let name_len = (path_offset - name_offset) as usize;
-        let name = entry[..name_len - 1].to_vec(); // c-string, end with 0
+        let name = &entry[..name_len - 1]; // c-string, end with 0
         entry.advance(name_len);
         let name = String::from_utf8_lossy(name).to_string();
 
         let path_len = (value_offset - path_offset) as usize;
-        let path = entry[..path_len - 1].to_vec(); // c-string, end with 0
+        let path = &entry[..path_len - 1]; // c-string, end with 0
         entry.advance(path_len);
         let path = String::from_utf8_lossy(path).to_string();
 
         let value_len = (cookie_size - value_offset) as usize;
-        let value = entry[..value_len - 1].to_vec(); // c-string, end with 0
+        let value = &entry[..value_len - 1]; // c-string, end with 0
         entry.advance(value_len);
         let value = String::from_utf8_lossy(value).to_string();
 
