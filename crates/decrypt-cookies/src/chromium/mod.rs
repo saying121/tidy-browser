@@ -209,7 +209,8 @@ impl ChromiumGetter {
     ///     let res = edge_getter
     ///         .get_logins_filter(ChromLoginColumn::OriginUrl.contains("google.com"))
     ///         .await
-    ///         .unwrap();
+    ///         .unwrap_or_default();
+    ///     dbg!(res);
     /// }
     /// ```
     pub async fn get_logins_filter<F>(&self, filter: F) -> Result<Vec<LoginData>>
@@ -264,7 +265,8 @@ impl ChromiumGetter {
     ///     let res = edge_getter
     ///         .get_cookies_filter(ChromCkColumn::HostKey.contains("google.com"))
     ///         .await
-    ///         .unwrap();
+    ///         .unwrap_or_default();
+    ///     dbg!(res);
     /// }
     /// ```
     pub async fn get_cookies_filter<F>(&self, filter: F) -> Result<Vec<DecryptedCookies>>

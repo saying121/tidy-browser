@@ -89,12 +89,13 @@ impl FirefoxGetter {
     ///
     /// # Example
     /// ```rust
-    /// use decrypt_cookies::{firefox::MozCookiesColumn, Browser, FirefoxGetter};
+    /// use decrypt_cookies::{firefox::MozCookiesColumn, Browser, FirefoxBuilder};
     /// use sea_orm::ColumnTrait;
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let ffget = FirefoxGetter::build(Browser::Firefox)
+    ///     let ffget = FirefoxBuilder::new(Browser::Firefox)
+    ///         .build()
     ///         .await
     ///         .unwrap();
     ///     let res = ffget
