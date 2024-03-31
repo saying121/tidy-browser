@@ -37,7 +37,7 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu-')
         run: |
           sudo apt update
-          sudo apt install -y libdbus-1-0 libsecret-1-0
+          sudo apt install -y libdbus-1-dev libsecret-1-dev gnome-keyring
       - run: |
           cargo test
 
