@@ -1,3 +1,4 @@
+#[ignore]
 #[cfg(target_os = "macos")]
 #[tokio::test(flavor = "multi_thread", worker_threads = 10)]
 async fn safari_binary_cookies() {

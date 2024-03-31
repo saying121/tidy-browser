@@ -1,5 +1,4 @@
-use chrono::offset::LocalResult;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{offset::LocalResult, DateTime, TimeZone, Utc};
 
 pub mod cookie;
 pub mod passwd;

@@ -5,7 +5,7 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "password_notes")]
 pub struct Model {
-    #[sea_orm(primary_key,auto_increment=true)]
+    #[sea_orm(primary_key, auto_increment = true)]
     pub id:           i32,
     pub parent_id:    i32,
     pub key:          String,

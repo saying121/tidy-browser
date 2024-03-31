@@ -1,6 +1,7 @@
 use decrypt_cookies::{Browser, ChromiumBuilder};
 use strum::IntoEnumIterator;
 
+#[ignore = "need realy environment"]
 #[tokio::test]
 async fn passwd() {
     let edge_getter = ChromiumBuilder::new(Browser::Edge)
@@ -26,6 +27,7 @@ async fn passwd() {
     }
 }
 
+#[ignore = "need realy environment"]
 #[tokio::test]
 async fn passwd_browsers() {
     for ele in Browser::iter() {

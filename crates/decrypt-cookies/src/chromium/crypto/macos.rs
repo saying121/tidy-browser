@@ -43,7 +43,7 @@ impl Decrypter {
         let entry = keyring::Entry::new(safe_storage, safe_name).into_diagnostic()?;
         entry
             .get_password()
-            .map(|v| v.into_bytes())
+            .map(String::into_bytes)
             .into_diagnostic()
     }
 

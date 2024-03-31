@@ -86,9 +86,7 @@ pub trait ChromiumInfo: TempPath {
     /// sqlite3
     fn logindata(&self) -> PathBuf {
         match self.browser() {
-            Browser::Yandex => self
-                .base()
-                .join("Ya Passman Data"),
+            Browser::Yandex => self.base().join("Ya Passman Data"),
             _ => self.base().join(Self::LOGIN_DATA),
         }
     }

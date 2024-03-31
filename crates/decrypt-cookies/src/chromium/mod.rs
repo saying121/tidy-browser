@@ -1,6 +1,6 @@
 pub mod crypto;
-pub mod local_state;
 mod items;
+pub mod local_state;
 use std::path::PathBuf;
 
 use items::cookie::{cookie_dao::CookiesQuery, cookie_entities::cookies};

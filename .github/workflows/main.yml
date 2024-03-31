@@ -33,7 +33,7 @@ jobs:
       - run: cargo test
 
   clippy:
-    name: check rust action
+    name: Clippy rust
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

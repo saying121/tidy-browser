@@ -5,7 +5,7 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "logins_edge_extended")]
 pub struct Model {
-    #[sea_orm(primary_key,auto_increment=true)]
+    #[sea_orm(primary_key, auto_increment = true)]
     pub id:                    i32,
     pub source:                String,
     pub strength_alert_status: i32,

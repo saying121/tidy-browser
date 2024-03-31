@@ -1,6 +1,5 @@
 #![allow(clippy::string_slice)]
 
-#[ignore = "just inspect"]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[cfg(target_os = "linux")]
 async fn all_pass() {
