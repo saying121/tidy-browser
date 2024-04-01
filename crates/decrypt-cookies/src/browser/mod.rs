@@ -1,6 +1,7 @@
 pub mod cookies;
 pub mod info;
 
+use strum::{EnumProperty, IntoEnumIterator};
 use strum_macros::{AsRefStr, Display, EnumIter, EnumProperty, EnumString};
 
 #[derive(Clone, Copy)]
@@ -11,51 +12,78 @@ use strum_macros::{AsRefStr, Display, EnumIter, EnumProperty, EnumString};
 pub enum Browser {
     /// win, mac, linux
     #[default]
-    #[strum(ascii_case_insensitive, props(Base = "firefox"))]
+    #[strum(ascii_case_insensitive, props(Based = "firefox"))]
     Firefox,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive, props(Base = "firefox"))]
+    #[strum(ascii_case_insensitive, props(Based = "firefox"))]
     Librewolf,
 
     /// win, mac, linux
-    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
+    #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Chrome,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
+    #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Edge,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
+    #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Chromium,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
+    #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Brave,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
+    #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Yandex,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
+    #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Vivaldi,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
+    #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Opera,
     /// win, mac
     #[cfg(not(target_os = "linux"))]
-    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
+    #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     OperaGX,
     /// win, mac
     #[cfg(not(target_os = "linux"))]
-    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
+    #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     CocCoc,
     /// win, mac, ?
     // #[cfg(not(target_os = "linux"))]
     #[cfg(target_os = "macos")]
-    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
+    #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Arc,
 
     /// mac
     #[cfg(target_os = "macos")]
-    #[strum(ascii_case_insensitive, props(Base = "safari"))]
+    #[strum(ascii_case_insensitive, props(Based = "safari"))]
     Safari,
+}
+
+impl Browser {
+    pub fn is_chromium_base(self) -> bool {
+        self.get_str("Based")
+            .map_or(false, |base| base.eq_ignore_ascii_case("chromium"))
+    }
+    pub fn is_firefox_base(self) -> bool {
+        self.get_str("Based")
+            .map_or(false, |base| base.eq_ignore_ascii_case("firefox"))
+    }
+    pub fn chromiums() -> Vec<Self> {
+        Self::iter()
+            .filter(|v| {
+                v.get_str("Based")
+                    .map_or(false, |base| base.eq_ignore_ascii_case("chromium"))
+            })
+            .collect()
+    }
+    pub fn firefoxs() -> Vec<Self> {
+        Self::iter()
+            .filter(|v| {
+                v.get_str("Based")
+                    .map_or(false, |base| base.eq_ignore_ascii_case("firefox"))
+            })
+            .collect()
+    }
 }
 
 impl Browser {

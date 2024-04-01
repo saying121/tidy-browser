@@ -45,8 +45,15 @@ pub struct FirefoxBuilder {
 }
 
 impl FirefoxBuilder {
+    /// # Panics
+    ///
+    /// When you use not Firefox based browser
     pub fn new(browser: Browser) -> Self {
-        Self { browser, ..Default::default() }
+        assert!(
+            browser.is_firefox_base(),
+            "Firefox based not support: {browser}"
+        );
+        Self { browser, cookies_path: None }
     }
     /// set `cookies_path`
     pub fn cookies_path<P>(&mut self, ck_path: P) -> &mut Self
@@ -88,7 +95,7 @@ impl FirefoxGetter {
     /// filter by condition
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,ignore
     /// use decrypt_cookies::{firefox::MozCookiesColumn, Browser, FirefoxBuilder};
     /// use sea_orm::ColumnTrait;
     ///

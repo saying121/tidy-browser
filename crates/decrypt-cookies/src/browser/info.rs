@@ -149,7 +149,7 @@ pub trait ChromiumInfo: TempPath {
             Browser::CocCoc => "CocCoc",
             #[cfg(not(target_os = "linux"))]
             Browser::Arc => "Arc",
-            _ => "Chrome",
+            _ => panic!("safe storage not support: {}", self.browser()),
         }
     }
 
@@ -157,20 +157,20 @@ pub trait ChromiumInfo: TempPath {
     #[cfg(not(target_os = "windows"))]
     fn safe_storage(&self) -> &str {
         match self.browser() {
-            Browser::Chromium => concat!("Chromium", " Safe Storage"),
-            Browser::Chrome => concat!("Chrome", " Safe Storage"),
-            Browser::Edge => concat!("Microsoft Edge", " Safe Storage"),
-            Browser::Brave => concat!("Brave", " Safe Storage"),
-            Browser::Yandex => concat!("Yandex", " Safe Storage"),
-            Browser::Vivaldi => concat!("Vivaldi", " Safe Storage"),
-            Browser::Opera => concat!("Opera", " Safe Storage"),
+            Browser::Chromium => "Chromium Safe Storage",
+            Browser::Chrome => "Chrome Safe Storage",
+            Browser::Edge => "Microsoft Edge Safe Storage",
+            Browser::Brave => "Brave Safe Storage",
+            Browser::Yandex => "Yandex Safe Storage",
+            Browser::Vivaldi => "Vivaldi Safe Storage",
+            Browser::Opera => "Opera Safe Storage",
             #[cfg(not(target_os = "linux"))]
-            Browser::OperaGX => concat!("Opera", " Safe Storage"),
+            Browser::OperaGX => "Opera Safe Storage",
             #[cfg(not(target_os = "linux"))]
-            Browser::CocCoc => concat!("CocCoc", " Safe Storage"),
+            Browser::CocCoc => "CocCoc Safe Storage",
             #[cfg(not(target_os = "linux"))]
-            Browser::Arc => concat!("Arc", " Safe Storage"),
-            _ => concat!("Chrome", " Safe Storage"),
+            Browser::Arc => "Arc Safe Storage",
+            _ => panic!("safe storage not support: {}", self.browser()),
         }
     }
 }
@@ -321,7 +321,6 @@ pub mod linux {
     impl LinuxChromiumBase {
         pub const EDGE_LINUX: &'static str = "microsoft-edge/Default";
         pub const CHROME_LINUX: &'static str = "google-chrome/Default";
-        // const CHROME_BASE_P1: &'static str = "google-chrome/Profile 1";
         pub const OPERA_LINUX: &'static str = "opera/Default";
         pub const BRAVE_LINUX: &'static str = "BraveSoftware/Brave-Browser/Default";
         pub const CHROMIUM_LINUX: &'static str = "chromium/Default";
@@ -337,17 +336,10 @@ pub mod linux {
                 Browser::Yandex => Self::YANDEX_LINUX,
                 Browser::Vivaldi => Self::VIVALDI_LINUX,
                 Browser::Opera => Self::OPERA_LINUX,
-                _ => {
-                    tracing::warn!("linux Chromium base: {browser} not support fallback Chrome");
-                    Self::CHROME_LINUX
-                },
+                _ => panic!("Linux Chromium base not support: {browser}"),
             };
             let mut res = dirs::config_dir().expect("get config dir failed");
             res.push(base);
-            // if !res.exists() && browser == Browser::Chrome {
-            //     res = dirs::config_dir().expect("get config dir failed");
-            //     res.push(Self::CHROME_BASE_P1)
-            // }
 
             Self { base: res, browser }
         }
@@ -382,7 +374,8 @@ pub mod linux {
             let init = dirs::home_dir().ok_or_else(|| miette::miette!("get home dir failed"))?;
             let base = match browser {
                 Browser::Librewolf => Self::LIBREWOLF_BASE,
-                _ => Self::FF_BASE,
+                Browser::Firefox => Self::FF_BASE,
+                _ => panic!("Linux Firefox base not support: {browser}"),
             };
             let base = Self::helper(init, base).await?;
 
@@ -440,10 +433,7 @@ pub mod macos {
                 Browser::OperaGX => Self::OPERAGX_MAC,
                 Browser::CocCoc => Self::COCCOC_MAC,
                 Browser::Arc => Self::ARC_MAC,
-                _ => {
-                    tracing::warn!("linux Chromium base: {browser} not support fallback Chrome");
-                    Self::CHROME_MAC
-                },
+                _ => panic!("MacOs Chromium base not support: {browser}"),
             };
             cookie_dir.push(v);
             Self { base: cookie_dir, browser }
@@ -486,7 +476,8 @@ pub mod macos {
                 .ok_or_else(|| miette::miette!("get config local dir failed"))?;
             let base = match browser {
                 Browser::Librewolf => Self::LIBREWOLF_BASE,
-                _ => Self::FIREFOX_BASE,
+                Browser::Firefox => Self::FIREFOX_BASE,
+                _ => panic!("MacOs Firefox base not support: {browser}"),
             };
             let base = Self::helper(init, base).await?;
 
@@ -498,6 +489,8 @@ pub mod macos {
 #[cfg(target_os = "windows")]
 pub mod win {
     use std::path::PathBuf;
+
+    use miette::Result;
 
     use super::{ChromiumInfo, FfInfo, TempPath};
     use crate::Browser;
@@ -556,10 +549,7 @@ pub mod win {
                 Browser::OperaGX => Self::OPERAGX_WIN,
                 Browser::CocCoc => Self::COCCOC_WIN,
                 // Browser::Arc => Self::ARC_WIN,
-                _ => {
-                    tracing::warn!("{browser} not support fallback Chrome.");
-                    Self::CHROME_WIN
-                },
+                _ => panic!("Windows Chromium base not support: {browser}."),
             };
             cookie_dir.push(path_base);
 
@@ -610,10 +600,11 @@ pub mod win {
         const FIREFOX_BASE: &'static str = r"Mozilla\Firefox";
         const LIBREWOLF_BASE: &'static str = "librewolf";
 
-        pub async fn new(browser: Browser) -> miette::Result<Self> {
+        pub async fn new(browser: Browser) -> Result<Self> {
             let base = match browser {
                 Browser::Librewolf => Self::LIBREWOLF_BASE,
-                _ => Self::FIREFOX_BASE,
+                Browser::Firefox => Self::FIREFOX_BASE,
+                _ => panic!("Windows Firefox base not support: {browser}"),
             };
             let init =
                 dirs::data_dir().ok_or_else(|| miette::miette!("get data local dir failed"))?;

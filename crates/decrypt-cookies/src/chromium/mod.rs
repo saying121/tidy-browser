@@ -78,7 +78,14 @@ pub struct ChromiumBuilder {
 }
 
 impl ChromiumBuilder {
-    pub const fn new(browser: Browser) -> Self {
+    /// # Panics
+    ///
+    /// When you use not Chromium based browser
+    pub fn new(browser: Browser) -> Self {
+        assert!(
+            browser.is_chromium_base(),
+            "Chromium based not support: {browser}"
+        );
         Self {
             browser,
             cookies_path: None,
