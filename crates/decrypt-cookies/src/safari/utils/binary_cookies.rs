@@ -7,6 +7,27 @@ use bytes::Buf;
 use chrono::{prelude::*, LocalResult, Utc};
 use miette::{bail, IntoDiagnostic, Result};
 
+use crate::browser::info::BrowserTime;
+
+trait I64ToSafariTime: BrowserTime {
+    fn to_utc(&self) -> DateTime<Utc>;
+}
+impl I64ToSafariTime for i64 {
+    fn to_utc(&self) -> DateTime<Utc> {
+        let min = Self::MIN_TIME.timestamp();
+        let max = BrowserTime::MIN_TIME.timestamp();
+        let expires = {
+            let time = expires as i64 + 978_307_200;
+            if time < min || max > max {
+                BrowserTime::MIN_TIME
+            }
+            else {
+                Utc.timestamp_opt(time, 0).unwrap()
+            }
+        };
+    }
+}
+
 /// raw file informations, with pages
 #[derive(Clone)]
 #[derive(Debug)]
@@ -199,7 +220,7 @@ impl BinaryCookies {
                 .into_diagnostic()?,
         );
         entry.advance(8);
-        let expires = Utc.timestamp_opt(expires as i64 + 978_307_200, 0);
+        let expires = (expires as i64 + 978_307_200).to_utc();
 
         let creation = f64::from_le_bytes(
             entry[..8]
@@ -207,7 +228,7 @@ impl BinaryCookies {
                 .into_diagnostic()?,
         );
         entry.advance(8);
-        let creation = Utc.timestamp_opt(creation as i64 + 978_307_200, 0);
+        let creation = (creation as i64 + 978_307_200).to_utc();
 
         let comment = if comment_offset > 0 {
             let comment_len = (domain_offset - comment_offset) as usize;
@@ -276,8 +297,8 @@ pub struct SafariCookie {
     value_offset:   u32, // LE_uint32    Cookie value offset
     comment_offset: u32, // LE_uint32    Cookie comment offset
     // end_header:     Vec<u8>, /* 4    byte    Marks the end of a header. Must be equal to []byte{0x00000000} */
-    expires:        LocalResult<DateTime<Utc>>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
-    creation:       LocalResult<DateTime<Utc>>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
+    expires:        DateTime<Utc>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
+    creation:       DateTime<Utc>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
     comment:        String, /* N    LE_uint32    Cookie comment string. N = `self.domain_offset` - `self.comment_offset` */
     domain:         String, /* N    LE_uint32    Cookie domain string. N = `self.name_offset` - `self.domain_offset` */
     name:           String, /* N    LE_uint32    Cookie name string. N = `self.path_offset` - `self.name_offset` */
@@ -296,11 +317,11 @@ impl SafariCookie {
         self.cookie_flags & 0x4 == 0x4
     }
 
-    pub const fn creation(&self) -> LocalResult<DateTime<Utc>> {
+    pub const fn creation(&self) -> DateTime<Utc> {
         self.creation
     }
 
-    pub const fn expires(&self) -> LocalResult<DateTime<Utc>> {
+    pub const fn expires(&self) -> DateTime<Utc> {
         self.expires
     }
 }

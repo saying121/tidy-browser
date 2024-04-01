@@ -33,11 +33,11 @@ dirs = { workspace = true }
 
 cfg-if = { version = "^1" }
 
-strum        = { version = "^0.26" }
+strum        = { workspace = true }
 strum_macros = { version = "^0.26" }
 
-aes-gcm = { version = "^0.10" }
-base64  = { version = "^0.22" }
+aes-gcm    = { version = "^0.10" }
+base64     = { version = "^0.22" }
 serde_json = { version = "^1" }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))'.dependencies]

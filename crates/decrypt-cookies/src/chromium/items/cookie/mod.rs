@@ -1,4 +1,4 @@
-use chrono::{prelude::*, LocalResult, Utc};
+use chrono::{prelude::*, Utc};
 
 use self::cookie_entities::cookies;
 use super::I64ToChromiumDateTime;
@@ -10,24 +10,24 @@ pub mod cookie_entities;
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
 pub struct DecryptedCookies {
-    pub creation_utc:       LocalResult<DateTime<Utc>>,
+    pub creation_utc:       DateTime<Utc>,
     pub host_key:           String,
     pub top_frame_site_key: String,
     pub name:               String,
     pub value:              String,
     pub decrypted_value:    Option<String>,
     pub path:               String,
-    pub expires_utc:        LocalResult<DateTime<Utc>>,
+    pub expires_utc:        DateTime<Utc>,
     pub is_secure:          bool,
     pub is_httponly:        bool,
-    pub last_access_utc:    LocalResult<DateTime<Utc>>,
+    pub last_access_utc:    DateTime<Utc>,
     pub has_expires:        bool,
     pub is_persistent:      bool,
     pub priority:           i32,
     pub samesite:           i32,
     pub source_scheme:      i32,
     pub source_port:        i32,
-    pub last_update_utc:    LocalResult<DateTime<Utc>>,
+    pub last_update_utc:    DateTime<Utc>,
 }
 
 impl DecryptedCookies {

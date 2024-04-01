@@ -29,3 +29,5 @@ flamegraph/
 flamegraph.svg
 perf.data*
 /temp
+
+results/

@@ -1,4 +1,4 @@
-use chrono::{offset::LocalResult, DateTime, Utc};
+use chrono::{DateTime, Utc};
 
 use self::login_data_entities::logins;
 use super::I64ToChromiumDateTime;
@@ -18,7 +18,7 @@ pub struct LoginData {
     pub password_value:           Option<String>,
     pub submit_element:           String,
     pub signon_realm:             String,
-    pub date_created:             LocalResult<DateTime<Utc>>,
+    pub date_created:             DateTime<Utc>,
     pub blacklisted_by_user:      i32,
     pub scheme:                   i32,
     pub password_type:            i32,
@@ -31,9 +31,9 @@ pub struct LoginData {
     pub generation_upload_status: i32,
     pub possible_username_pairs:  Option<Vec<u8>>,
     pub id:                       i32,
-    pub date_last_used:           LocalResult<DateTime<Utc>>,
+    pub date_last_used:           DateTime<Utc>,
     // pub moving_blocked_for:             Option<Vec<u8>>,
-    pub date_password_modified:   LocalResult<DateTime<Utc>>,
+    pub date_password_modified:   DateTime<Utc>,
     // pub sender_email:                   String,
     // pub sender_name:                    String,
     // NOTE: i'm not sure what it do

@@ -16,12 +16,7 @@ async fn chromium_get_all_cookie_work() -> Result<()> {
             .await?;
         let a = chrmo.get_cookies_all().await?;
         for i in a.iter().take(6) {
-            println!(
-                "{}, {},{}",
-                i.name,
-                i.expires_utc.unwrap(),
-                i.creation_utc.unwrap()
-            );
+            println!("{}, {},{}", i.name, i.expires_utc, i.creation_utc);
         }
     }
 
@@ -42,10 +37,7 @@ async fn ff_get_all_cookie_work() -> Result<()> {
     for i in a.iter().take(6) {
         println!(
             "name: {}, last_accessed: {}, expiry: {}, creation_time: {}",
-            i.name,
-            i.last_accessed.unwrap(),
-            i.expiry.unwrap(),
-            i.creation_time.unwrap(),
+            i.name, i.last_accessed, i.expiry, i.creation_time,
         );
     }
 

@@ -30,9 +30,9 @@ async fn passwd() {
 #[ignore = "need realy environment"]
 #[tokio::test]
 async fn passwd_browsers() {
-    for ele in Browser::iter().skip_while(|v| !v.is_chromium_base()) {
-        dbg!(ele);
-        let getter = ChromiumBuilder::new(ele)
+    for browser in Browser::iter().skip_while(|v| !v.is_chromium_base()) {
+        dbg!(browser);
+        let getter = ChromiumBuilder::new(browser)
             .build()
             .await
             .unwrap();

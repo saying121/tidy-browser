@@ -19,7 +19,7 @@ panic         = "abort"
 
 
 [workspace.dependencies]
-tokio   = { version = "^1", features = ["macros"] }
+tokio = { version = "^1", features = ["macros"] }
 # futures = { version = "^0.3", default_features = false }
 
 sea-orm = { version = "^0.12", default_features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
@@ -33,6 +33,10 @@ miette = { version = "^7", default_features = true }
 
 serde      = { version = "^1", default_features = false, features = ["derive"] }
 serde_json = { version = "^1", default_features = false }
+
+strum = { version = "^0.26" }
+
+decrypt-cookies = { path = "./crates/decrypt-cookies", version = "^0.5" }
 
 [workspace.lints.rust]
 temporary_cstring_as_ptr = "deny"
@@ -49,9 +53,9 @@ wildcard_dependencies             = "warn"
 
 # missing_errors_doc                        = "warn"
 # missing_panics_doc                        = "warn"
-unnecessary_safety_doc        = "warn"
-doc_link_with_quotes          = "warn"
-doc_markdown                  = "warn"
+unnecessary_safety_doc = "warn"
+doc_link_with_quotes   = "warn"
+doc_markdown           = "warn"
 # empty_line_after_doc_comments = "warn"
 
 string_slice          = "warn"

@@ -1,9 +1,17 @@
 use std::{fs::create_dir_all, path::PathBuf};
 
+use chrono::{DateTime, Utc};
 use miette::{IntoDiagnostic, Result};
 use tokio::fs::read_to_string;
 
 use crate::Browser;
+
+pub trait BrowserTime {
+    const MAX_TIME: DateTime<Utc> = chrono::DateTime::<Utc>::MAX_UTC;
+    const MIN_TIME: DateTime<Utc> = chrono::DateTime::<Utc>::MIN_UTC;
+}
+
+impl BrowserTime for i64 {}
 
 /// just impl `browser` method
 pub trait TempPath {

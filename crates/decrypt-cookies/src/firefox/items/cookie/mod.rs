@@ -1,6 +1,7 @@
-use chrono::{DateTime, LocalResult, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 
 use self::entities::moz_cookies;
+use super::I64ToMozTime;
 
 pub mod dao;
 pub mod entities;
@@ -15,30 +16,15 @@ pub struct MozCookies {
     pub value:              String,
     pub host:               String,
     pub path:               String,
-    pub expiry:             LocalResult<DateTime<Utc>>,
-    pub last_accessed:      LocalResult<DateTime<Utc>>,
-    pub creation_time:      LocalResult<DateTime<Utc>>,
+    pub expiry:             DateTime<Utc>,
+    pub last_accessed:      DateTime<Utc>,
+    pub creation_time:      DateTime<Utc>,
     pub is_secure:          bool,
     pub is_http_only:       bool,
     pub in_browser_element: i32,
     pub same_site:          i32,
     pub raw_same_site:      i32,
     pub scheme_map:         i32,
-}
-
-// reference: https://support.moonpoint.com/network/web/browser/firefox/sqlite_cookies.php
-trait I64ToMozTime {
-    fn micros_to_moz_utc(&self) -> LocalResult<DateTime<Utc>>;
-    fn secs_to_moz_utc(&self) -> LocalResult<DateTime<Utc>>;
-}
-
-impl I64ToMozTime for i64 {
-    fn micros_to_moz_utc(&self) -> LocalResult<DateTime<Utc>> {
-        Utc.timestamp_micros(*self)
-    }
-    fn secs_to_moz_utc(&self) -> LocalResult<DateTime<Utc>> {
-        Utc.timestamp_opt(*self, 0)
-    }
 }
 
 impl From<moz_cookies::Model> for MozCookies {

@@ -1,5 +1,4 @@
 use decrypt_cookies::{Browser, ChromiumBuilder};
-use strum::IntoEnumIterator;
 
 #[tokio::test]
 async fn can_compile() {
