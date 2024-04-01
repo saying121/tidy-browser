@@ -2,13 +2,13 @@ pub mod cookies;
 pub mod info;
 
 use strum::{EnumProperty, IntoEnumIterator};
-use strum_macros::{AsRefStr, Display, EnumIter, EnumProperty, EnumString};
+use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 
 #[derive(Clone, Copy)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(Default)]
 #[derive(Debug)]
-#[derive(EnumIter, Display, EnumString, AsRefStr, EnumProperty)]
+#[derive(EnumIter, Display, EnumString, AsRefStr, strum_macros::EnumProperty)]
 pub enum Browser {
     /// win, mac, linux
     #[default]
