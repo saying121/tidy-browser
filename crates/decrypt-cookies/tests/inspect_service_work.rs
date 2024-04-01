@@ -1,5 +1,6 @@
 #![allow(clippy::string_slice)]
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[cfg(target_os = "linux")]
 async fn all_pass() {
@@ -8,7 +9,6 @@ async fn all_pass() {
     let ss = SecretService::connect(EncryptionType::Dh)
         .await
         .unwrap();
-    // get default collection
     let collection = ss
         // .get_all_collections()
         .get_default_collection()
@@ -27,9 +27,10 @@ async fn all_pass() {
         .unwrap();
     for i in coll {
         let lab = i.get_label().await.unwrap();
-        dbg!(lab);
         let res = i.get_secret().await.unwrap();
         let pass = String::from_utf8_lossy(&res).to_string();
-        println!(r##"(| pass |) -> {}"##, &pass[..50.min(pass.len())]);
+        println!(r##"lab: {lab} "##);
+        println!(r##"pass: {}"##, &pass[..50.min(pass.len())]);
+        println!("================================");
     }
 }

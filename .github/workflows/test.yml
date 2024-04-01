@@ -33,11 +33,11 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - name: Install Dependencies
-        if: startsWith(matrix.os, 'ubuntu-')
-        run: |
-          sudo apt update
-          sudo apt install -y libdbus-1-dev libsecret-1-dev gnome-keyring
+      # - name: Install Dependencies
+      #   if: startsWith(matrix.os, 'ubuntu-')
+      #   run: |
+      #     sudo apt update
+      #     sudo apt install -y libdbus-1-dev libsecret-1-dev gnome-keyring
       - run: |
           cargo test
 
