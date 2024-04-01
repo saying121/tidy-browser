@@ -19,7 +19,7 @@ impl I64ToSafariTime for i64 {
 
         let time = self + 978_307_200;
 
-        if time < min || max > max {
+        if time < min || time > max {
             Self::MIN_TIME
         }
         else {
