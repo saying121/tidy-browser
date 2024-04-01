@@ -101,7 +101,7 @@ impl FirefoxGetter {
     ///     let res = ffget
     ///         .get_cookies_filter(MozCookiesColumn::Host.contains("mozilla.com"))
     ///         .await
-    ///         .unwrap();
+    ///         .unwrap_or_default();
     /// }
     /// ```
     pub async fn get_cookies_filter<F>(&self, filter: F) -> Result<Vec<MozCookies>>

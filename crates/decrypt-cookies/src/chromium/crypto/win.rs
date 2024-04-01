@@ -99,14 +99,14 @@ pub fn decrypt_with_dpapi(ciphertext: &mut [u8]) -> Result<Vec<u8>> {
         let _: Result<_, miette::Report> = match Cryptography::CryptUnprotectData(
             &input,
             Some(ptr::null_mut()),
-            Some(ptr::null_mut()),
-            Some(ptr::null_mut()),
-            Some(ptr::null_mut()),
+            Some(ptr::null()),
+            Some(ptr::null()),
+            Some(ptr::null()),
             0,
             &mut output,
         ) {
             Ok(()) => Ok(()),
-            Err(_) => miette::bail!("CryptUnprotectData failed"),
+            Err(err) => miette::bail!("CryptUnprotectData failed: {err}"),
         };
     }
     if output.pbData.is_null() {

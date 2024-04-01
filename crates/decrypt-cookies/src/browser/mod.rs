@@ -1,60 +1,60 @@
 pub mod cookies;
 pub mod info;
 
-use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
+use strum_macros::{AsRefStr, Display, EnumIter, EnumProperty, EnumString};
 
 #[derive(Clone, Copy)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(Default)]
 #[derive(Debug)]
-#[derive(EnumIter, Display, EnumString, AsRefStr)]
+#[derive(EnumIter, Display, EnumString, AsRefStr, EnumProperty)]
 pub enum Browser {
     /// win, mac, linux
     #[default]
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "firefox"))]
     Firefox,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "firefox"))]
     Librewolf,
 
     /// win, mac, linux
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
     Chrome,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
     Edge,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
     Chromium,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
     Brave,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
     Yandex,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
     Vivaldi,
     /// win, mac, linux
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
     Opera,
     /// win, mac
     #[cfg(not(target_os = "linux"))]
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
     OperaGX,
     /// win, mac
     #[cfg(not(target_os = "linux"))]
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
     CocCoc,
     /// win, mac, ?
     // #[cfg(not(target_os = "linux"))]
     #[cfg(target_os = "macos")]
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "chromium"))]
     Arc,
 
     /// mac
     #[cfg(target_os = "macos")]
-    #[strum(ascii_case_insensitive)]
+    #[strum(ascii_case_insensitive, props(Base = "safari"))]
     Safari,
 }
 

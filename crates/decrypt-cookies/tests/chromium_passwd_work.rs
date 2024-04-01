@@ -4,7 +4,7 @@ use strum::IntoEnumIterator;
 #[ignore = "need realy environment"]
 #[tokio::test]
 async fn passwd() {
-    let edge_getter = ChromiumBuilder::new(Browser::Edge)
+    let edge_getter = ChromiumBuilder::new(Browser::Yandex)
         .build()
         .await
         .unwrap();
@@ -58,7 +58,10 @@ async fn passwd_browsers() {
                         .unwrap_or_default()
                 );
             },
-            None => continue,
+            None => {
+                println!("=============");
+                continue;
+            },
         };
         println!("=============");
     }

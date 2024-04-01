@@ -101,6 +101,16 @@ impl Decrypter {
             .map_or_else(|| Self::PASSWORD_V10, |v| *v);
         Ok(Self { pass_v11, browser })
     }
+    // pub fn decrypt_yandex_password(&self, be_decrypte: &mut [u8]) -> Result<String> {
+    //     use aes_gcm::{
+    //         aead::{generic_array::GenericArray, Aead},
+    //         Aes256Gcm, KeyInit,
+    //     };
+    //
+    //     let cipher = Aes256Gcm::new(GenericArray::from_slice(Self::PASSWORD_V10));
+    //
+    //     miette::bail!("decrypt failed")
+    // }
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=72
     pub fn decrypt(&self, be_decrypte: &mut [u8]) -> Result<String> {
@@ -155,4 +165,47 @@ impl Decrypter {
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=35
     /// Constant for Symmetric key derivation.
     const K_ENCRYPTION_ITERATIONS: u32 = 1;
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use base64::{engine::general_purpose, Engine};
+    use tokio::fs::read_to_string;
+
+    use super::*;
+    use crate::chromium::local_state::YandexLocalState;
+    async fn yandex_passwd(path: PathBuf) -> Result<Vec<u8>> {
+        let string_str = read_to_string(path)
+            .await
+            .into_diagnostic()?;
+        let local_state: YandexLocalState = serde_json::from_str(&string_str).into_diagnostic()?;
+        let encrypted_key = general_purpose::STANDARD
+            .decode(
+                local_state
+                    .os_crypt
+                    .checker_state
+                    .encrypted_data,
+            )
+            .into_diagnostic()?;
+        Ok(encrypted_key)
+    }
+    #[ignore = "need realy environment"]
+    #[tokio::test]
+    async fn yandex_passwd_work() {
+        use crate::{browser::info::ChromiumInfo, ChromiumBuilder};
+        let yandex_getter = ChromiumBuilder::new(Browser::Yandex)
+            .build()
+            .await
+            .unwrap();
+        let mut pss = yandex_passwd(yandex_getter.info().local_state())
+            .await
+            .unwrap();
+        let pass = yandex_getter
+            .decrypt(&mut pss)
+            .unwrap();
+
+        assert_eq!(&pass, "0");
+    }
 }

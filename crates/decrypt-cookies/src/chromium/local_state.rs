@@ -26,3 +26,36 @@ pub struct OsCrypt {
     /// Contains base64 random key encrypted with DPAPI.
     pub encrypted_key: String,
 }
+
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Deserialize, Serialize)]
+pub struct YandexLocalState {
+    #[serde(default)]
+    pub audit_enabled: bool,
+    pub os_crypt:      YandexOsCrypt,
+}
+
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Deserialize, Serialize)]
+pub struct YandexOsCrypt {
+    pub checker_state: CheckerState,
+    /// DPAPI
+    #[serde(default)]
+    pub encrypted_key: String,
+}
+
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Deserialize, Serialize)]
+pub struct CheckerState {
+    pub counter:        i32,
+    pub encrypted_data: String,
+}

@@ -36,6 +36,10 @@ cfg-if = { version = "^1" }
 strum        = { version = "^0.26" }
 strum_macros = { version = "^0.26" }
 
+aes-gcm = { version = "^0.10" }
+base64  = { version = "^0.22" }
+serde_json = { version = "^1" }
+
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))'.dependencies]
 secret-service = { version = "^3", default_features = true, features = ["rt-tokio-crypto-rust"] }
 
@@ -53,9 +57,6 @@ pbkdf2 = { version = "0.12.2", features = ["sha1"] }
 sha1   = { version = "0.10.6" }
 
 [target.'cfg(windows)'.dependencies]
-serde_json = { version = "^1" }
-base64     = { version = "^0.22" }
-aes-gcm    = { version = "^0.10" }
 
 windows = { version = "^0.54", features = [
     "Win32_Security_Cryptography",
