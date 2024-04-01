@@ -7,7 +7,7 @@ pub use items::cookie::CookiesGetter;
 use miette::Result;
 pub use utils::binary_cookies::*;
 
-use crate::LeetCodeCookies;
+use crate::{Browser, LeetCodeCookies};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -23,11 +23,15 @@ pub struct SafariGetter {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct SafariBuilder {
     cookies_path: Option<PathBuf>,
+    browser:      Browser,
 }
 
 impl SafariBuilder {
     pub const fn new() -> Self {
-        Self { cookies_path: None }
+        Self {
+            cookies_path: None,
+            browser:      Browser::Safari,
+        }
     }
     pub fn cookies_path<P>(&mut self, path: P) -> &mut Self
     where
@@ -39,6 +43,10 @@ impl SafariBuilder {
     pub async fn build(&mut self) -> Result<SafariGetter> {
         let cookie_getter = CookiesGetter::build(self.cookies_path.take()).await?;
         Ok(SafariGetter { cookie_getter })
+    }
+
+    pub fn browser(&self) -> Browser {
+        self.browser
     }
 }
 

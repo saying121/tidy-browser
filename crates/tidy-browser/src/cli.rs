@@ -161,7 +161,7 @@ async fn write_firefox_cookies(getter: &FirefoxGetter) -> Result<()> {
 #[cfg(target_os = "macos")]
 async fn write_safari_cookies(getter: &SafariGetter) -> Result<()> {
     println!("{} cookies", getter.browser());
-    let head  = b"Host,Name,Path,Value,CreationTime,LastAccessed,Expiry,IsSecure,IsHttpOnly,OriginAttributes";
+    let head = b"Domain,Name,Path,Value,Creation,Expires,IsSecure,IsHttpOnly,Comment";
     let mut buf_writer = open_file(getter.browser(), "cookies").await?;
     buf_writer
         .write_all(head)
@@ -170,15 +170,15 @@ async fn write_safari_cookies(getter: &SafariGetter) -> Result<()> {
     let cks = getter.all_cookies();
     for ck in cks {
         let ck_str = format!(
-            "{},{},{},{},{},{},{},{},{},{}\n",
+            "{},{},{},{},{},{},{},{},{}\n",
             ck.domain(),
             ck.name(),
             ck.path(),
             ck.value(),
+            ck.creation(),
             ck.expires(),
             ck.is_secure(),
             ck.is_httponly(),
-            ck.creation(),
             ck.comment(),
         );
         buf_writer
@@ -230,10 +230,19 @@ pub async fn run() -> Result<()> {
             #[cfg(target_os = "macos")]
             Browser::Safari => {
                 use decrypt_cookies::SafariBuilder;
-                let getter = SafariBuilder::new()
-                    .build()
-                    .await?;
-                write_safari_cookies(&getter)
+                let hd = tokio::spawn(async move {
+                    let getter = SafariBuilder::new()
+                        .build()
+                        .await?;
+                    match write_safari_cookies(&getter).await {
+                        Ok(()) => {},
+                        Err(err) => {
+                            tracing::warn!("{browser} wrong: {err}");
+                            return;
+                        },
+                    };
+                });
+                jds.push(hd);
             },
 
             browser => {
