@@ -45,7 +45,7 @@ impl SafariBuilder {
         Ok(SafariGetter { cookie_getter })
     }
 
-    pub fn browser(&self) -> Browser {
+    pub const fn browser(&self) -> Browser {
         self.browser
     }
 }
