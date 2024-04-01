@@ -231,9 +231,13 @@ pub async fn run() -> Result<()> {
             Browser::Safari => {
                 use decrypt_cookies::SafariBuilder;
                 let hd = tokio::spawn(async move {
-                    let getter = SafariBuilder::new()
-                        .build()
-                        .await?;
+                    let getter = match SafariBuilder::new().build().await {
+                        Ok(it) => it,
+                        Err(err) => {
+                            tracing::warn!("{browser} wrong: {err}");
+                            return;
+                        },
+                    };
                     match write_safari_cookies(&getter).await {
                         Ok(()) => {},
                         Err(err) => {

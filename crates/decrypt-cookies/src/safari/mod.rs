@@ -15,6 +15,7 @@ use crate::{Browser, LeetCodeCookies};
 #[derive(PartialEq, Eq)]
 pub struct SafariGetter {
     pub cookie_getter: CookiesGetter,
+    browser:           Browser,
 }
 
 #[derive(Clone)]
@@ -23,15 +24,11 @@ pub struct SafariGetter {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct SafariBuilder {
     cookies_path: Option<PathBuf>,
-    browser:      Browser,
 }
 
 impl SafariBuilder {
     pub const fn new() -> Self {
-        Self {
-            cookies_path: None,
-            browser:      Browser::Safari,
-        }
+        Self { cookies_path: None }
     }
     pub fn cookies_path<P>(&mut self, path: P) -> &mut Self
     where
@@ -42,11 +39,10 @@ impl SafariBuilder {
     }
     pub async fn build(&mut self) -> Result<SafariGetter> {
         let cookie_getter = CookiesGetter::build(self.cookies_path.take()).await?;
-        Ok(SafariGetter { cookie_getter })
-    }
-
-    pub const fn browser(&self) -> Browser {
-        self.browser
+        Ok(SafariGetter {
+            cookie_getter,
+            browser: Browser::Safari,
+        })
     }
 }
 
@@ -60,5 +56,9 @@ impl SafariGetter {
     }
     pub const fn binary_cookies(&self) -> &BinaryCookies {
         self.cookie_getter.binary_cookies()
+    }
+
+    pub const fn browser(&self) -> Browser {
+        self.browser
     }
 }
