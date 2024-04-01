@@ -240,10 +240,7 @@ pub async fn run() -> Result<()> {
                     };
                     match write_safari_cookies(&getter).await {
                         Ok(()) => {},
-                        Err(err) => {
-                            tracing::warn!("{browser} wrong: {err}");
-                            return;
-                        },
+                        Err(err) => tracing::warn!("{browser} wrong: {err}"),
                     };
                 });
                 jds.push(hd);
