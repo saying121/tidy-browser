@@ -4,7 +4,7 @@
 //! <https://github.com/interstateone/BinaryCookies>
 
 use bytes::Buf;
-use chrono::{prelude::*, LocalResult, Utc};
+use chrono::{prelude::*, Utc};
 use miette::{bail, IntoDiagnostic, Result};
 
 use crate::browser::info::BrowserTime;
@@ -15,16 +15,16 @@ trait I64ToSafariTime: BrowserTime {
 impl I64ToSafariTime for i64 {
     fn to_utc(&self) -> DateTime<Utc> {
         let min = Self::MIN_TIME.timestamp();
-        let max = BrowserTime::MIN_TIME.timestamp();
-        let expires = {
-            let time = expires as i64 + 978_307_200;
-            if time < min || max > max {
-                BrowserTime::MIN_TIME
-            }
-            else {
-                Utc.timestamp_opt(time, 0).unwrap()
-            }
-        };
+        let max = Self::MAX_TIME.timestamp();
+
+        let time = self + 978_307_200;
+
+        if time < min || max > max {
+            Self::MIN_TIME
+        }
+        else {
+            Utc.timestamp_opt(time, 0).unwrap()
+        }
     }
 }
 
@@ -220,7 +220,7 @@ impl BinaryCookies {
                 .into_diagnostic()?,
         );
         entry.advance(8);
-        let expires = (expires as i64 + 978_307_200).to_utc();
+        let expires = (expires as i64).to_utc();
 
         let creation = f64::from_le_bytes(
             entry[..8]
@@ -228,7 +228,7 @@ impl BinaryCookies {
                 .into_diagnostic()?,
         );
         entry.advance(8);
-        let creation = (creation as i64 + 978_307_200).to_utc();
+        let creation = (creation as i64).to_utc();
 
         let comment = if comment_offset > 0 {
             let comment_len = (domain_offset - comment_offset) as usize;
