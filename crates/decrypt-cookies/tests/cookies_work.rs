@@ -1,20 +1,16 @@
 use decrypt_cookies::{browser::Browser, ChromiumBuilder, FirefoxBuilder};
 use miette::Result;
-use strum::{EnumProperty, IntoEnumIterator};
+use strum::IntoEnumIterator;
 
 #[ignore = "need realy environment"]
 #[tokio::test]
-async fn get_all_cookie_work() -> Result<()> {
+async fn chromium_get_all_cookie_work() -> Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::WARN)
         .with_test_writer()
         .init();
 
-    for browser in Browser::iter().skip_while(|v| {
-        !v.get_str("Based")
-            .unwrap()
-            .eq_ignore_ascii_case("chromium")
-    }) {
+    for browser in Browser::iter().skip_while(|v| !v.is_chromium_base()) {
         let chrmo = ChromiumBuilder::new(browser)
             .build()
             .await?;

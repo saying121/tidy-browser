@@ -39,7 +39,8 @@ jobs:
       #     sudo apt update
       #     sudo apt install -y libdbus-1-dev libsecret-1-dev gnome-keyring
       - run: |
-          cargo test
+          cargo install cargo-nextest
+          cargo nextest run
 
   clippy:
     name: Clippy rust

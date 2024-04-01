@@ -1,13 +1,9 @@
 use decrypt_cookies::{Browser, ChromiumBuilder};
-use strum::{EnumProperty, IntoEnumIterator};
+use strum::IntoEnumIterator;
 
 #[tokio::test]
 async fn can_compile() {
-    for ele in Browser::iter().skip_while(|v| {
-        !v.get_str("Based")
-            .unwrap()
-            .eq_ignore_ascii_case("chromium")
-    }) {
+    for ele in Browser::iter().skip_while(|v| !v.is_chromium_base()) {
         dbg!(ele);
         let Ok(getter) = ChromiumBuilder::new(ele)
             .build()
