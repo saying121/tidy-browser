@@ -4,6 +4,7 @@ use decrypt_cookies::Browser;
 fn browsers() {
     let a = Browser::chromiums();
     for ele in a {
+        dbg!(ele);
         assert_ne!(ele, Browser::Librewolf);
         assert_ne!(ele, Browser::Firefox);
         #[cfg(target_os = "macos")]

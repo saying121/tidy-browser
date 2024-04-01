@@ -3,7 +3,7 @@ use strum::IntoEnumIterator;
 
 #[tokio::test]
 async fn can_compile() {
-    for ele in Browser::iter().skip_while(|v| !v.is_chromium_base()) {
+    for ele in Browser::chromiums() {
         dbg!(ele);
         let Ok(getter) = ChromiumBuilder::new(ele)
             .build()
