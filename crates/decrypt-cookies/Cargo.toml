@@ -1,6 +1,6 @@
 [package]
 name         = "decrypt-cookies"
-version      = "0.5.1"
+version      = "0.5.2"
 description  = "A decrypt browser crate"
 license      = "LGPL-3.0-or-later"
 edition      = { workspace = true }
@@ -36,10 +36,6 @@ cfg-if = { version = "^1" }
 strum        = { workspace = true }
 strum_macros = { version = "^0.26" }
 
-aes-gcm    = { version = "^0.10" }
-base64     = { version = "^0.22" }
-serde_json = { version = "^1" }
-
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))'.dependencies]
 secret-service = { version = "^3", default_features = true, features = ["rt-tokio-crypto-rust"] }
 
@@ -57,7 +53,9 @@ pbkdf2 = { version = "0.12.2", features = ["sha1"] }
 sha1   = { version = "0.10.6" }
 
 [target.'cfg(windows)'.dependencies]
-
+aes-gcm    = { version = "^0.10" }
+base64     = { version = "^0.22" }
+serde_json = { version = "^1" }
 windows = { version = "^0.54", features = [
     "Win32_Security_Cryptography",
     # "Win32_Foundation",

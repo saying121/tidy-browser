@@ -167,45 +167,45 @@ impl Decrypter {
     const K_ENCRYPTION_ITERATIONS: u32 = 1;
 }
 
-#[cfg(test)]
-mod tests {
-    use std::path::PathBuf;
-
-    use base64::{engine::general_purpose, Engine};
-    use tokio::fs::read_to_string;
-
-    use super::*;
-    use crate::chromium::local_state::YandexLocalState;
-    async fn yandex_passwd(path: PathBuf) -> Result<Vec<u8>> {
-        let string_str = read_to_string(path)
-            .await
-            .into_diagnostic()?;
-        let local_state: YandexLocalState = serde_json::from_str(&string_str).into_diagnostic()?;
-        let encrypted_key = general_purpose::STANDARD
-            .decode(
-                local_state
-                    .os_crypt
-                    .checker_state
-                    .encrypted_data,
-            )
-            .into_diagnostic()?;
-        Ok(encrypted_key)
-    }
-    #[ignore = "need realy environment"]
-    #[tokio::test]
-    async fn yandex_passwd_work() {
-        use crate::{browser::info::ChromiumInfo, ChromiumBuilder};
-        let yandex_getter = ChromiumBuilder::new(Browser::Yandex)
-            .build()
-            .await
-            .unwrap();
-        let mut pss = yandex_passwd(yandex_getter.info().local_state())
-            .await
-            .unwrap();
-        let pass = yandex_getter
-            .decrypt(&mut pss)
-            .unwrap();
-
-        assert_eq!(&pass, "0");
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use std::path::PathBuf;
+//
+//     use base64::{engine::general_purpose, Engine};
+//     use tokio::fs::read_to_string;
+//
+//     use super::*;
+//     use crate::chromium::local_state::YandexLocalState;
+//     async fn yandex_passwd(path: PathBuf) -> Result<Vec<u8>> {
+//         let string_str = read_to_string(path)
+//             .await
+//             .into_diagnostic()?;
+//         let local_state: YandexLocalState = serde_json::from_str(&string_str).into_diagnostic()?;
+//         let encrypted_key = general_purpose::STANDARD
+//             .decode(
+//                 local_state
+//                     .os_crypt
+//                     .checker_state
+//                     .encrypted_data,
+//             )
+//             .into_diagnostic()?;
+//         Ok(encrypted_key)
+//     }
+//     #[ignore = "need realy environment"]
+//     #[tokio::test]
+//     async fn yandex_passwd_work() {
+//         use crate::{browser::info::ChromiumInfo, ChromiumBuilder};
+//         let yandex_getter = ChromiumBuilder::new(Browser::Yandex)
+//             .build()
+//             .await
+//             .unwrap();
+//         let mut pss = yandex_passwd(yandex_getter.info().local_state())
+//             .await
+//             .unwrap();
+//         let pass = yandex_getter
+//             .decrypt(&mut pss)
+//             .unwrap();
+//
+//         assert_eq!(&pass, "0");
+//     }
+// }
