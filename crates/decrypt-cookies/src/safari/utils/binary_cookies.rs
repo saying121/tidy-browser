@@ -288,22 +288,22 @@ impl BinaryCookies {
 #[derive(PartialEq, Eq)]
 pub struct SafariCookie {
     // cookie_size:    u32, // LE_uint32	Cookie size. Number of bytes associated to the cookie
-    version:        Vec<u8>, // byte    Unknown field possibly related to the cookie flags
-    cookie_flags:   u32, // LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly
-    has_port:       [u8; 4], // size:  4    byte    0 or 1
-    domain_offset:  u32, // LE_uint32    Cookie domain offset
-    name_offset:    u32, // LE_uint32    Cookie name offset
-    path_offset:    u32, // LE_uint32    Cookie path offset
-    value_offset:   u32, // LE_uint32    Cookie value offset
-    comment_offset: u32, // LE_uint32    Cookie comment offset
+    pub version:        Vec<u8>, // byte    Unknown field possibly related to the cookie flags
+    cookie_flags:       u32, /* LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly */
+    pub has_port:       [u8; 4], // size:  4    byte    0 or 1
+    pub domain_offset:  u32, // LE_uint32    Cookie domain offset
+    pub name_offset:    u32, // LE_uint32    Cookie name offset
+    pub path_offset:    u32, // LE_uint32    Cookie path offset
+    pub value_offset:   u32, // LE_uint32    Cookie value offset
+    pub comment_offset: u32, // LE_uint32    Cookie comment offset
     // end_header:     Vec<u8>, /* 4    byte    Marks the end of a header. Must be equal to []byte{0x00000000} */
-    expires:        DateTime<Utc>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
-    creation:       DateTime<Utc>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
-    comment:        String, /* N    LE_uint32    Cookie comment string. N = `self.domain_offset` - `self.comment_offset` */
-    domain:         String, /* N    LE_uint32    Cookie domain string. N = `self.name_offset` - `self.domain_offset` */
-    name:           String, /* N    LE_uint32    Cookie name string. N = `self.path_offset` - `self.name_offset` */
-    path:           String, /* N    LE_uint32    Cookie path string. N = `self.value_offset` - `self.path_offset` */
-    value:          String, /* N    LE_uint32    Cookie value string. N = `self.cookie_size` - `self.value_offset` */
+    pub expires:        DateTime<Utc>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
+    pub creation:       DateTime<Utc>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
+    pub comment:        String, /* N    LE_uint32    Cookie comment string. N = `self.domain_offset` - `self.comment_offset` */
+    pub domain:         String, /* N    LE_uint32    Cookie domain string. N = `self.name_offset` - `self.domain_offset` */
+    pub name:           String, /* N    LE_uint32    Cookie name string. N = `self.path_offset` - `self.name_offset` */
+    pub path:           String, /* N    LE_uint32    Cookie path string. N = `self.value_offset` - `self.path_offset` */
+    pub value:          String, /* N    LE_uint32    Cookie value string. N = `self.cookie_size` - `self.value_offset` */
 }
 
 impl SafariCookie {
