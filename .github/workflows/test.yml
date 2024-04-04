@@ -10,13 +10,11 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout/@v2
-      - uses: actions-rs/toolchain/@v1
+      - uses: actions/checkout/@v4
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: nightly # my rustfmt config use many nightly features
-          override: true
-      - run: rustup component add rustfmt
+          components: rustfmt,cargo
       - run: cargo fmt --all -- --check
 
   test:
@@ -27,12 +25,10 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [stable]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout/@v4
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: stable
-          override: true
       # - name: Install Dependencies
       #   if: startsWith(matrix.os, 'ubuntu-')
       #   run: |
@@ -50,12 +46,9 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [stable]
     steps:
-      # 在 $GITHUB_WORKSPACE 下 checks-out 当前仓库，这样当前作业就可以访问该仓库
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout/@v4
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: stable
-          override: true
-      - run: rustup component add clippy
+          components: clippy
       - run: cargo clippy -- -D warnings
