@@ -2,14 +2,14 @@
 name         = "decrypt-cookies"
 version      = "0.5.2"
 description  = "A decrypt browser crate"
-license      = "LGPL-3.0-or-later"
+license      = { workspace = true }
 edition      = { workspace = true }
 authors      = { workspace = true }
 homepage     = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["cookies", "decrypt", "Chromium", "Firefox", "Safari"]
-categories   = ["asynchronous", "authentication", "cryptography", "encoding"]
-rust-version = "1.77"
+keywords     = { workspace = true }
+categories   = { workspace = true }
+rust-version = { workspace = true }
 
 exclude = ["tests/", "examples"]
 
@@ -27,7 +27,7 @@ tracing = { workspace = true }
 
 serde = { workspace = true }
 
-rust-ini = { version = "0.21" } # firefox
+rust-ini = { version = "^0.21" } # firefox
 
 dirs = { workspace = true }
 
@@ -47,10 +47,10 @@ keyring = { version = "^2", default_features = false, features = [
 ] } # It is not working as expected on Linux.
 
 [target.'cfg(not(windows))'.dependencies]
-aes    = { version = "0.8.3" }
-cbc    = { version = "0.1.2" }
-pbkdf2 = { version = "0.12.2", features = ["sha1"] }
-sha1   = { version = "0.10.6" }
+aes    = { version = "^0.8" }
+cbc    = { version = "^0.1" }
+pbkdf2 = { version = "^0.12", features = ["sha1"] }
+sha1   = { version = "^0.10" }
 
 [target.'cfg(windows)'.dependencies]
 aes-gcm    = { version = "^0.10" }

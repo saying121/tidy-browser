@@ -2,8 +2,11 @@
 edition      = "2021"
 authors      = ["saying121 <saying121@outlook.com>"]
 homepage     = "https://github.com/saying121/tidy-browser"
-rust-version = "1.78"
+rust-version = "1.77"
+license      = "LGPL-3.0-or-later"
 repository   = "https://github.com/saying121/tidy-browser"
+keywords     = ["cookies", "decrypt", "Chromium", "Firefox", "Safari"]
+categories   = ["asynchronous", "authentication", "cryptography", "encoding"]
 
 [workspace]
 members  = ["crates/*"]
