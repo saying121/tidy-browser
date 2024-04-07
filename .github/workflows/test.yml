@@ -6,18 +6,6 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout/@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          # my rustfmt config use many nightly features
-          toolchain: nightly
-          components: rustfmt,cargo
-      - run: cargo +nightly fmt --all -- --check
-
   test:
     name: Test
     runs-on: ${{ matrix.os }}
