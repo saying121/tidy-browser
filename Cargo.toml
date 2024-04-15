@@ -294,5 +294,7 @@ naive_bytecount                 = "warn"
 negative_feature_names          = "warn"
 no_effect_underscore_binding    = "warn"
 
+cargo_common_metadata = "warn"
+
 # exhaustive_enums   = "warn"
 # exhaustive_structs = "warn"

@@ -44,7 +44,9 @@ async fn main() -> miette::Result<()> {
 
 ## TEST STATUS
 
-> [!NOTE These are the latest status updates, not the released status. Please check out the newest tag for the released status.]
+> [!NOTE]
+> These are the latest status updates, not the released status.
+> Please check out the newest tag for the released status.
 
 - Linux:
 
@@ -95,6 +97,6 @@ async fn main() -> miette::Result<()> {
 |    Arc    | 🚫(not test) |   🚫   |           |
 |  safari   |      🔑      |   🚫   | 2024-04-1 |
 
-## Thanks To
+## Credits
 
-[HackBrowserData](https://github.com/moonD4rk/HackBrowserData)
+- [HackBrowserData](https://github.com/moonD4rk/HackBrowserData)
