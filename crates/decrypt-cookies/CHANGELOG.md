@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.3] - 2024-04-19
 
-Feat: check expiry.
-Fix(firefox): `secs_to_moz_utc` method.
+- Feat: check expiry.
+- Fix(firefox): `secs_to_moz_utc` method.
 
 ## [0.5.2] - 2024-04-02
 
