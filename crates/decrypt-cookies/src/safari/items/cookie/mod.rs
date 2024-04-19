@@ -63,16 +63,16 @@ impl CookiesGetter {
             })
         {
             if ck.name() == "csrftoken" {
-                if Utc::now()>ck.expires {
-                    lc_cookies.expiry=true;
+                if Utc::now() > ck.expires {
+                    lc_cookies.expiry = true;
                     break;
                 }
 
                 lc_cookies.csrf = ck.value().to_owned();
             }
             else if ck.name() == "LEETCODE_SESSION" {
-                if Utc::now()>ck.expires {
-                    lc_cookies.expiry=true;
+                if Utc::now() > ck.expires {
+                    lc_cookies.expiry = true;
                     break;
                 }
 
