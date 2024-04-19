@@ -1,6 +1,7 @@
 pub mod items;
 use std::path::PathBuf;
 
+use chrono::Utc;
 pub use items::cookie::entities::moz_cookies::{
     Column as MozCookiesColumn, ColumnIter as MozCookiesColumnIter,
 };
@@ -8,7 +9,10 @@ use miette::{IntoDiagnostic, Result};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
 
-use self::items::cookie::{dao::CookiesQuery, MozCookies};
+use self::items::{
+    cookie::{dao::CookiesQuery, MozCookies},
+    I64ToMozTime,
+};
 use crate::{browser::info::FfInfo, Browser, LeetCodeCookies};
 
 cfg_if::cfg_if!(
@@ -169,9 +173,27 @@ impl FirefoxGetter {
         for cookie in cookies {
             if let Some(s) = cookie.name {
                 if s == "csrftoken" {
+                    let expir = cookie
+                        .expiry
+                        .unwrap_or_default()
+                        .secs_to_moz_utc();
+                    if Utc::now() > expir {
+                        res.expiry = true;
+                        break;
+                    }
+
                     res.csrf = cookie.value.unwrap_or_default();
                 }
                 else if s == "LEETCODE_SESSION" {
+                    let expir = cookie
+                        .expiry
+                        .unwrap_or_default()
+                        .secs_to_moz_utc();
+                    if Utc::now() > expir {
+                        res.expiry = true;
+                        break;
+                    }
+
                     res.session = cookie.value.unwrap_or_default();
                 }
             }

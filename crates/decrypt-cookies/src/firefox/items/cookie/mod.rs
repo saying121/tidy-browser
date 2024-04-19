@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 
 use self::entities::moz_cookies;
 use super::I64ToMozTime;
+use crate::browser::cookies::CookiesInfo;
 
 pub mod dao;
 pub mod entities;
@@ -25,6 +26,12 @@ pub struct MozCookies {
     pub same_site:          i32,
     pub raw_same_site:      i32,
     pub scheme_map:         i32,
+}
+
+impl CookiesInfo for MozCookies {
+    fn is_expiry(&self) -> bool {
+        self.expiry > chrono::Utc::now()
+    }
 }
 
 impl From<moz_cookies::Model> for MozCookies {

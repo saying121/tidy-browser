@@ -18,21 +18,13 @@ cfg_if::cfg_if!(
 /// get csrf and session
 ///
 /// * `borwser`: firefox, librewolf, edge, chrome
-pub async fn get_cookie<T>(borwser: T, host: &str) -> Result<LeetCodeCookies>
+pub async fn get_cookie<T>(browser: T, host: &str) -> Result<LeetCodeCookies>
 where
-    T: Into<Browser>,
+    T: Into<Browser> + Clone,
 {
-    let res = match borwser.into() {
-        Browser::Firefox => {
-            let getter = FirefoxBuilder::new(Browser::Firefox)
-                .build()
-                .await?;
-            getter
-                .get_session_csrf(host)
-                .await?
-        },
-        Browser::Librewolf => {
-            let getter = FirefoxBuilder::new(Browser::Librewolf)
+    let res = match browser.clone().into() {
+        Browser::Firefox | Browser::Librewolf => {
+            let getter = FirefoxBuilder::new(browser.into())
                 .build()
                 .await?;
             getter

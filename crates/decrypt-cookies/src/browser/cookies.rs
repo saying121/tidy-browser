@@ -7,11 +7,13 @@ use serde::{Deserialize, Serialize};
 pub struct LeetCodeCookies {
     pub csrf:    String,
     pub session: String,
+    #[serde(skip)]
+    pub expiry:  bool,
 }
 
 impl LeetCodeCookies {
     pub fn is_completion(&self) -> bool {
-        !(self.csrf.is_empty() || self.session.is_empty())
+        !(self.expiry || self.csrf.is_empty() || self.session.is_empty())
     }
 }
 
@@ -19,4 +21,8 @@ impl std::fmt::Display for LeetCodeCookies {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         format!("LEETCODE_SESSION={};csrftoken={};", self.session, self.csrf).fmt(f)
     }
+}
+
+pub trait CookiesInfo {
+    fn is_expiry(&self) -> bool;
 }

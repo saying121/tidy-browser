@@ -5,7 +5,7 @@ use crate::browser::info::BrowserTime;
 pub mod cookie;
 pub mod passwd;
 
-trait I64ToChromiumDateTime {
+pub(super) trait I64ToChromiumDateTime {
     fn micros_to_chromium_utc(&self) -> DateTime<Utc>;
 }
 
@@ -13,13 +13,11 @@ trait I64ToChromiumDateTime {
 impl I64ToChromiumDateTime for i64 {
     fn micros_to_chromium_utc(&self) -> DateTime<Utc> {
         let unix_timestamp = self - 11_644_473_600 * 1_000_000;
-        if unix_timestamp < Self::MIN_TIME.timestamp_micros()
-            || unix_timestamp > Self::MAX_TIME.timestamp_micros()
-        {
-            return Self::MIN_TIME;
-        }
 
-        Utc.timestamp_micros(unix_timestamp)
-            .unwrap()
+        Utc.timestamp_micros(unix_timestamp.clamp(
+            Self::MIN_TIME.timestamp_micros(),
+            Self::MAX_TIME.timestamp_micros(),
+        ))
+        .unwrap()
     }
 }

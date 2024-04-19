@@ -1,7 +1,8 @@
-use chrono::{prelude::*, Utc};
+use chrono::prelude::*;
 
 use self::cookie_entities::cookies;
 use super::I64ToChromiumDateTime;
+use crate::browser::cookies::CookiesInfo;
 
 pub mod cookie_dao;
 pub mod cookie_entities;
@@ -28,6 +29,15 @@ pub struct DecryptedCookies {
     pub source_scheme:      i32,
     pub source_port:        i32,
     pub last_update_utc:    DateTime<Utc>,
+}
+
+impl CookiesInfo for DecryptedCookies {
+    fn is_expiry(&self) -> bool {
+        if self.has_expires {
+            return true;
+        }
+        Utc::now() > self.expires_utc
+    }
 }
 
 impl DecryptedCookies {

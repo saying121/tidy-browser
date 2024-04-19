@@ -5,7 +5,8 @@ description  = "A decrypt browser crate"
 license      = { workspace = true }
 edition      = { workspace = true }
 authors      = { workspace = true }
-homepage     = { workspace = true }
+# homepage     = { workspace = true }
+homepage     = "https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies"
 repository   = { workspace = true }
 keywords     = { workspace = true }
 categories   = { workspace = true }

@@ -7,24 +7,20 @@ use bytes::Buf;
 use chrono::{prelude::*, Utc};
 use miette::{bail, IntoDiagnostic, Result};
 
-use crate::browser::info::BrowserTime;
+use crate::browser::{cookies::CookiesInfo, info::BrowserTime};
 
 trait I64ToSafariTime: BrowserTime {
     fn to_utc(&self) -> DateTime<Utc>;
 }
 impl I64ToSafariTime for i64 {
     fn to_utc(&self) -> DateTime<Utc> {
-        let min = Self::MIN_TIME.timestamp();
-        let max = Self::MAX_TIME.timestamp();
-
         let time = self + 978_307_200;
 
-        if time < min || time > max {
-            Self::MIN_TIME
-        }
-        else {
-            Utc.timestamp_opt(time, 0).unwrap()
-        }
+        Utc.timestamp_opt(
+            time.clamp(Self::MIN_TIME.timestamp(), Self::MAX_TIME.timestamp()),
+            0,
+        )
+        .unwrap()
     }
 }
 
@@ -304,6 +300,12 @@ pub struct SafariCookie {
     pub name:           String, /* N    LE_uint32    Cookie name string. N = `self.path_offset` - `self.name_offset` */
     pub path:           String, /* N    LE_uint32    Cookie path string. N = `self.value_offset` - `self.path_offset` */
     pub value:          String, /* N    LE_uint32    Cookie value string. N = `self.cookie_size` - `self.value_offset` */
+}
+
+impl CookiesInfo for SafariCookie {
+    fn is_expiry(&self) -> bool {
+        self.expires > chrono::Utc::now()
+    }
 }
 
 impl SafariCookie {

@@ -3,6 +3,7 @@ mod items;
 pub mod local_state;
 use std::path::PathBuf;
 
+use chrono::prelude::Utc;
 use items::cookie::{cookie_dao::CookiesQuery, cookie_entities::cookies};
 pub use items::{
     cookie::{
@@ -20,7 +21,9 @@ use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
 use tokio::{fs, task};
 
 use self::items::passwd::{login_data_dao::LoginDataQuery, login_data_entities::logins};
-use crate::{browser::info::ChromiumInfo, Browser, LeetCodeCookies};
+use crate::{
+    browser::info::ChromiumInfo, chromium::items::I64ToChromiumDateTime, Browser, LeetCodeCookies,
+};
 
 cfg_if::cfg_if!(
     if #[cfg(target_os="linux")] {
@@ -335,6 +338,14 @@ impl ChromiumGetter {
         }
         for mut cookie in cookies {
             if cookie.name == "csrftoken" {
+                let expir = cookie
+                    .expires_utc
+                    .micros_to_chromium_utc();
+                if Utc::now() > expir {
+                    csrf_token.expiry = true;
+                    break;
+                }
+
                 let cy = self.crypto.clone();
                 let csrf_hd =
                     task::spawn_blocking(move || match cy.decrypt(&mut cookie.encrypted_value) {
@@ -347,6 +358,14 @@ impl ChromiumGetter {
                 hds.push((csrf_hd, CsrfSession::Csrf));
             }
             else if cookie.name == "LEETCODE_SESSION" {
+                let expir = cookie
+                    .expires_utc
+                    .micros_to_chromium_utc();
+                if Utc::now() > expir {
+                    csrf_token.expiry = true;
+                    break;
+                }
+
                 let cy = self.crypto.clone();
                 let session_hd =
                     task::spawn_blocking(move || match cy.decrypt(&mut cookie.encrypted_value) {
