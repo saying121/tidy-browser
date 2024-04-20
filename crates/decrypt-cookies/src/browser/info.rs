@@ -6,19 +6,19 @@ use tokio::fs::read_to_string;
 
 use crate::Browser;
 
-#[cfg(any(target_os = "linux",target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 const CHROMIUM_SAFE: &str = "Chromium Safe Storage";
-#[cfg(any(target_os = "linux",target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 const CHROME_SAFE: &str = "Chrome Safe Storage";
-#[cfg(any(target_os = "linux",target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 const EDGE_SAFE: &str = "Microsoft Edge Safe Storage";
-#[cfg(any(target_os = "linux",target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 const BRAVE_SAFE: &str = "Brave Safe Storage";
-#[cfg(any(target_os = "linux",target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 const YANDEX_SAFE: &str = "Yandex Safe Storage";
-#[cfg(any(target_os = "linux",target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 const VIVALDI_SAFE: &str = "Vivaldi Safe Storage";
-#[cfg(any(target_os = "linux",target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 const OPERA_SAFE: &str = "Opera Safe Storage";
 #[cfg(target_os = "macos")]
 const OPERAGX_SAFE: &str = "Opera Safe Storage";
