@@ -13,7 +13,7 @@ async fn get_cookie_work() -> Result<()> {
         .init();
 
     let stdout = std::io::stdout();
-    let mut lock = stdout.lock();
+    let mut std_lock = stdout.lock();
 
     let leetcode_cn = "leetcode.cn";
     for browser in Browser::iter().skip_while(|v| {
@@ -29,7 +29,7 @@ async fn get_cookie_work() -> Result<()> {
                 LeetCodeCookies::default()
             },
         };
-        writeln!(lock, "{:#?}", edge).into_diagnostic()?;
+        writeln!(std_lock, "{:#?}", edge).into_diagnostic()?;
     }
 
     Ok(())

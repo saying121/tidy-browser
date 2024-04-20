@@ -6,6 +6,20 @@ use tokio::fs::read_to_string;
 
 use crate::Browser;
 
+const CHROMIUM_SAFE: &str = "Chromium Safe Storage";
+const CHROME_SAFE: &str = "Chrome Safe Storage";
+const EDGE_SAFE: &str = "Microsoft Edge Safe Storage";
+const BRAVE_SAFE: &str = "Brave Safe Storage";
+const YANDEX_SAFE: &str = "Yandex Safe Storage";
+const VIVALDI_SAFE: &str = "Vivaldi Safe Storage";
+const OPERA_SAFE: &str = "Opera Safe Storage";
+#[cfg(not(target_os = "linux"))]
+const OPERAGX_SAFE: &str = "Opera Safe Storage";
+#[cfg(not(target_os = "linux"))]
+const COCCOC_SAFE: &str = "CocCoc Safe Storage";
+#[cfg(not(target_os = "linux"))]
+const ARC_SAFE: &str = "Arc Safe Storage";
+
 pub trait BrowserTime {
     const MAX_TIME: DateTime<Utc> = chrono::DateTime::<Utc>::MAX_UTC;
     const MIN_TIME: DateTime<Utc> = chrono::DateTime::<Utc>::MIN_UTC;
@@ -165,22 +179,37 @@ pub trait ChromiumInfo: TempPath {
     #[cfg(not(target_os = "windows"))]
     fn safe_storage(&self) -> &str {
         match self.browser() {
-            Browser::Chromium => "Chromium Safe Storage",
-            Browser::Chrome => "Chrome Safe Storage",
-            Browser::Edge => "Microsoft Edge Safe Storage",
-            Browser::Brave => "Brave Safe Storage",
-            Browser::Yandex => "Yandex Safe Storage",
-            Browser::Vivaldi => "Vivaldi Safe Storage",
-            Browser::Opera => "Opera Safe Storage",
+            Browser::Chromium => CHROMIUM_SAFE,
+            Browser::Chrome => CHROME_SAFE,
+            Browser::Edge => EDGE_SAFE,
+            Browser::Brave => BRAVE_SAFE,
+            Browser::Yandex => YANDEX_SAFE,
+            Browser::Vivaldi => VIVALDI_SAFE,
+            Browser::Opera => OPERA_SAFE,
             #[cfg(not(target_os = "linux"))]
-            Browser::OperaGX => "Opera Safe Storage",
+            Browser::OperaGX => OPERA_SAFE,
             #[cfg(not(target_os = "linux"))]
-            Browser::CocCoc => "CocCoc Safe Storage",
+            Browser::CocCoc => COCCOC_SAFE,
             #[cfg(not(target_os = "linux"))]
-            Browser::Arc => "Arc Safe Storage",
+            Browser::Arc => ARC_SAFE,
             _ => panic!("safe storage not support: {}", self.browser()),
         }
     }
+}
+
+/// on linux cache this
+#[cfg(target_os = "linux")]
+pub(crate) fn need_safe_storage(lab: &str) -> bool {
+    matches!(
+        lab,
+        CHROMIUM_SAFE
+            | CHROME_SAFE
+            | EDGE_SAFE
+            | BRAVE_SAFE
+            | YANDEX_SAFE
+            | VIVALDI_SAFE
+            | OPERA_SAFE
+    )
 }
 
 pub trait FfInfo: TempPath {

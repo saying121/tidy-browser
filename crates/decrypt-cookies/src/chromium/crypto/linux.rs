@@ -6,7 +6,7 @@ use pbkdf2::pbkdf2_hmac;
 use secret_service::{EncryptionType, SecretService};
 use tokio::sync::OnceCell;
 
-use crate::Browser;
+use crate::{browser::info::need_safe_storage, Browser};
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=32
 /// Key size required for 128 bit AES.
@@ -48,6 +48,7 @@ async fn get_pass_once() -> &'static HashMap<&'static str, &'static [u8]> {
         .await
 }
 
+// lab: Brave Safe Storage
 /// from `secret_service` get all password
 async fn get_all_pass() -> Result<HashMap<&'static str, &'static [u8]>> {
     // initialize secret service (dbus connection and encryption session)
@@ -81,6 +82,11 @@ async fn get_all_pass() -> Result<HashMap<&'static str, &'static [u8]>> {
         else {
             continue;
         };
+
+        if !need_safe_storage(&label) {
+            continue;
+        }
+
         let Ok(s) = item.get_secret().await
         else {
             continue;
