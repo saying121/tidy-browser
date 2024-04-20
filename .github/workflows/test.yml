@@ -10,6 +10,7 @@ jobs:
     name: Test
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [stable]
@@ -18,14 +19,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      # - name: Install Dependencies
-      #   if: startsWith(matrix.os, 'ubuntu-')
-      #   run: |
-      #     sudo apt update
-      #     sudo apt install -y libdbus-1-dev libsecret-1-dev gnome-keyring
-      - run: |
-          cargo install cargo-nextest
-          cargo nextest run
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
 
   clippy:
     name: Clippy rust

@@ -187,7 +187,7 @@ pub trait ChromiumInfo: TempPath {
             Browser::Vivaldi => VIVALDI_SAFE,
             Browser::Opera => OPERA_SAFE,
             #[cfg(not(target_os = "linux"))]
-            Browser::OperaGX => OPERA_SAFE,
+            Browser::OperaGX => OPERAGX_SAFE,
             #[cfg(not(target_os = "linux"))]
             Browser::CocCoc => COCCOC_SAFE,
             #[cfg(not(target_os = "linux"))]
