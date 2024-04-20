@@ -11,7 +11,7 @@ use super::entities::{
     prelude::*,
 };
 
-/// query firefox based cookies
+/// query Firefox based cookies
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]

@@ -24,7 +24,7 @@ impl I64ToSafariTime for i64 {
     }
 }
 
-/// raw file informations, with pages
+/// raw file information, with pages
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]

@@ -17,7 +17,7 @@ cfg_if::cfg_if!(
 
 /// get csrf and session
 ///
-/// * `borwser`: firefox, librewolf, edge, chrome
+/// * `borwser`: Firefox, Librewolf, edge, chrome
 pub async fn get_cookie<T>(browser: T, host: &str) -> Result<LeetCodeCookies>
 where
     T: Into<Browser> + Clone,

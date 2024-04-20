@@ -10,33 +10,33 @@ use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 #[derive(Debug)]
 #[derive(EnumIter, Display, EnumString, AsRefStr, strum_macros::EnumProperty)]
 pub enum Browser {
-    /// win, mac, linux
+    /// win, mac, Linux
     #[default]
     #[strum(ascii_case_insensitive, props(Based = "firefox"))]
     Firefox,
-    /// win, mac, linux
+    /// win, mac, Linux
     #[strum(ascii_case_insensitive, props(Based = "firefox"))]
     Librewolf,
 
-    /// win, mac, linux
+    /// win, mac, Linux
     #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Chrome,
-    /// win, mac, linux
+    /// win, mac, Linux
     #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Edge,
-    /// win, mac, linux
+    /// win, mac, Linux
     #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Chromium,
-    /// win, mac, linux
+    /// win, mac, Linux
     #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Brave,
-    /// win, mac, linux
+    /// win, mac, Linux
     #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Yandex,
-    /// win, mac, linux
+    /// win, mac, Linux
     #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Vivaldi,
-    /// win, mac, linux
+    /// win, mac, Linux
     #[strum(ascii_case_insensitive, props(Based = "chromium"))]
     Opera,
     /// win, mac

@@ -72,7 +72,7 @@ pub trait ChromiumInfo: TempPath {
 
     fn base(&self) -> &PathBuf;
 
-    /// json, for windows fetch passwd
+    /// json, for windows fetch password
     fn local_state(&self) -> PathBuf {
         let mut path = self.base().clone();
         path.pop();
@@ -204,7 +204,7 @@ pub trait ChromiumInfo: TempPath {
     }
 }
 
-/// on linux cache this
+/// on Linux cache this
 #[cfg(target_os = "linux")]
 pub(crate) fn need_safe_storage(lab: &str) -> bool {
     matches!(
