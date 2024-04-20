@@ -6,18 +6,25 @@ use tokio::fs::read_to_string;
 
 use crate::Browser;
 
+#[cfg(target_os = "linux")]
 const CHROMIUM_SAFE: &str = "Chromium Safe Storage";
+#[cfg(target_os = "linux")]
 const CHROME_SAFE: &str = "Chrome Safe Storage";
+#[cfg(target_os = "linux")]
 const EDGE_SAFE: &str = "Microsoft Edge Safe Storage";
+#[cfg(target_os = "linux")]
 const BRAVE_SAFE: &str = "Brave Safe Storage";
+#[cfg(target_os = "linux")]
 const YANDEX_SAFE: &str = "Yandex Safe Storage";
+#[cfg(target_os = "linux")]
 const VIVALDI_SAFE: &str = "Vivaldi Safe Storage";
+#[cfg(target_os = "linux")]
 const OPERA_SAFE: &str = "Opera Safe Storage";
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "macos")]
 const OPERAGX_SAFE: &str = "Opera Safe Storage";
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "macos")]
 const COCCOC_SAFE: &str = "CocCoc Safe Storage";
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "macos")]
 const ARC_SAFE: &str = "Arc Safe Storage";
 
 pub trait BrowserTime {
