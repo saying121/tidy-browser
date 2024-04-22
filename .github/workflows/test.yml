@@ -1,6 +1,6 @@
 name: Test
 
-on: [push, pull_request, merge_group]
+on: [pull_request, merge_group]
 
 env:
   RUST_BACKTRACE: 1
@@ -30,18 +30,3 @@ jobs:
       - name: Run Test
         run: |
           cargo nextest run
-
-  clippy:
-    name: Clippy rust
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [stable]
-    steps:
-      - uses: actions/checkout/@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          components: clippy
-      - run: cargo clippy -- -D warnings

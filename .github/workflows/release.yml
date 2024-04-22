@@ -17,6 +17,23 @@ env:
   PROJECT_NAME: tidy-browser
 
 jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Repository
+        uses: actions/checkout@v4
+
+      - name: Install Stable Rust Toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Publish crate
+        uses: katyo/publish-crates@v2
+        with:
+          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          ignore-unpublished-changes: true
+
   create-release:
     runs-on: ubuntu-latest
     steps:
@@ -35,8 +52,10 @@ jobs:
       - name: Fetch Repository
         uses: actions/checkout@v4
 
-      - name: Install stable toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install Stable Rust Toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
 
       - name: Install jql
         uses: taiki-e/install-action@v2
@@ -156,10 +175,10 @@ jobs:
         with:
           ref: ${{ steps.get_baseline_sha.outputs.sha_tag }}
 
-      - name: Install Nightly Rust Toolchain
+      - name: Install Stable Rust Toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly
+          toolchain: stable
           targets: ${{ matrix.target }}
 
       - name: Install cross-compilation tools
