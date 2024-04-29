@@ -1,13 +1,15 @@
 # Decrypt Cookies
 
 <!--toc:start-->
-
 - [Decrypt Cookies](#decrypt-cookies)
   - [Example](#example)
+  - [To add new](#to-add-new)
+    - [ChromiumBase](#chromiumbase)
+    - [FirefoxBase](#firefoxbase)
   - [TODO](#todo)
   - [TEST STATUS](#test-status)
-  - [Thanks To](#thanks-to)
-  <!--toc:end-->
+  - [Credits](#credits)
+<!--toc:end-->
 
 ## Example
 
