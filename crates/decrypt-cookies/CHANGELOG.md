@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Filter safe storage in Linux for cache.
+- Parse SameSite.
+- Add `get_set_cookie_header` and other method take from [bench_scraper](https://github.com/goakley/bench_scraper/blob/main/src/cookie.rs#L43)
+
+### Changed
+
+- Cookie times return `Option`.
+- Rename `DecryptedCookies` -> `ChromiumCookie`
 
 ## [0.5.3] - 2024-04-19
 

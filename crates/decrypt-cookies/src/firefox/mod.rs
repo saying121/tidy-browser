@@ -177,9 +177,11 @@ impl FirefoxGetter {
                         .expiry
                         .unwrap_or_default()
                         .secs_to_moz_utc();
-                    if Utc::now() > expir {
-                        res.expiry = true;
-                        break;
+                    if let Some(expir) = expir {
+                        if Utc::now() > expir {
+                            res.expiry = true;
+                            break;
+                        }
                     }
 
                     res.csrf = cookie.value.unwrap_or_default();
@@ -189,9 +191,11 @@ impl FirefoxGetter {
                         .expiry
                         .unwrap_or_default()
                         .secs_to_moz_utc();
-                    if Utc::now() > expir {
-                        res.expiry = true;
-                        break;
+                    if let Some(expir) = expir {
+                        if Utc::now() > expir {
+                            res.expiry = true;
+                            break;
+                        }
                     }
 
                     res.session = cookie.value.unwrap_or_default();

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone)]
@@ -23,6 +25,83 @@ impl std::fmt::Display for LeetCodeCookies {
     }
 }
 
+#[cfg(feature = "reqwest")]
+impl TryFrom<impl CookiesInfo> for reqwest::header::HeaderValue {
+    type Error = reqwest::header::InvalidHeaderValue;
+
+    fn try_from(value: impl CookiesInfo) -> Result<Self, Self::Error> {
+        reqwest::header::HeaderValue::from_str(&value.get_set_cookie_header())
+    }
+}
+#[cfg(feature = "reqwest")]
+impl FromIterator<impl CookiesInfo> for reqwest::cookie::Jar {
+    fn from_iter<T: IntoIterator<Item = impl CookiesInfo>>(iter: T) -> Self {
+        let jar = reqwest::cookie::Jar::default();
+        for cookie in iter {
+            let set_cookie = cookie.get_set_cookie_header();
+            if let Ok(url) = reqwest::Url::parse(&cookie.get_url()) {
+                jar.add_cookie_str(&set_cookie, &url);
+            }
+        }
+    }
+}
+
 pub trait CookiesInfo {
-    fn is_expiry(&self) -> bool;
+    /// <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie>
+    fn get_set_cookie_header(&self) -> String {
+        let mut properties = vec![
+            format!("{}={}", self.name(), self.value()),
+            format!("Path={}", self.path()),
+        ];
+        if !self.name().starts_with("__Host-") {
+            properties.push(format!("Domain={}", self.domain()));
+        }
+        if let Some(expiry) = self.expiry() {
+            properties.push(format!("Expires={}", expiry));
+        }
+        if self.is_secure() {
+            properties.push("Secure".to_owned());
+        }
+        if self.is_http_only() {
+            properties.push("HttpOnly".to_owned());
+        }
+        properties.push(format!("SameSite={}", self.same_site()));
+
+        properties.join("; ")
+    }
+
+    fn get_url(&self) -> String {
+        format!("https://{}{}", self.domain().trim_matches('.'), self.path())
+    }
+
+    fn name(&self) -> &str;
+    fn value(&self) -> &str;
+    fn path(&self) -> &str;
+    fn domain(&self) -> &str;
+    fn expiry(&self) -> Option<String>;
+    fn is_secure(&self) -> bool;
+    fn is_http_only(&self) -> bool;
+    fn same_site(&self) -> SameSite;
+}
+
+#[derive(Clone, Copy)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub enum SameSite {
+    #[default]
+    None,
+    Lax,
+    Strict,
+}
+
+impl Display for SameSite {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::None => "None",
+            Self::Lax => "Lax",
+            Self::Strict => "Strict",
+        }
+        .fmt(f)
+    }
 }
