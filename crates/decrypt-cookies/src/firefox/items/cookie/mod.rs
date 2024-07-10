@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 
 use self::entities::moz_cookies;
 use super::I64ToMozTime;
-use crate::browser::cookies::CookiesInfo;
+use crate::browser::cookies::{CookiesInfo, SameSite};
 
 pub mod dao;
 pub mod entities;
@@ -17,25 +17,49 @@ pub struct MozCookies {
     pub value:              String,
     pub host:               String,
     pub path:               String,
-    pub expiry:             DateTime<Utc>,
-    pub last_accessed:      DateTime<Utc>,
-    pub creation_time:      DateTime<Utc>,
+    /// <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires>
+    pub expiry:             Option<DateTime<Utc>>,
+    pub last_accessed:      Option<DateTime<Utc>>,
+    pub creation_time:      Option<DateTime<Utc>>,
     pub is_secure:          bool,
     pub is_http_only:       bool,
     pub in_browser_element: i32,
-    pub same_site:          i32,
+    pub same_site:          SameSite,
     pub raw_same_site:      i32,
     pub scheme_map:         i32,
 }
 
 impl CookiesInfo for MozCookies {
-    fn is_expiry(&self) -> bool {
-        self.expiry > chrono::Utc::now()
+    fn is_http_only(&self) -> bool {
+        self.is_http_only
+    }
+    fn same_site(&self) -> SameSite {
+        self.same_site
+    }
+    fn is_secure(&self) -> bool {
+        self.is_secure
+    }
+    fn expiry(&self) -> Option<String> {
+        self.expiry
+            .map(|time| time.to_rfc2822())
+    }
+    fn domain(&self) -> &str {
+        &self.host
+    }
+    fn value(&self) -> &str {
+        &self.value
+    }
+    fn path(&self) -> &str {
+        &self.path
+    }
+    fn name(&self) -> &str {
+        &self.name
     }
 }
 
 impl From<moz_cookies::Model> for MozCookies {
     fn from(value: moz_cookies::Model) -> Self {
+        #[allow(clippy::wildcard_in_or_patterns)]
         Self {
             id:                 value.id,
             origin_attributes:  value.origin_attributes,
@@ -64,7 +88,11 @@ impl From<moz_cookies::Model> for MozCookies {
             in_browser_element: value
                 .in_browser_element
                 .unwrap_or_default(),
-            same_site:          value.same_site.unwrap_or_default(),
+            same_site:          match value.same_site.unwrap_or_default() {
+                1 => SameSite::Lax,
+                2 => SameSite::Strict,
+                0 | _ => SameSite::None,
+            },
             raw_same_site:      value
                 .raw_same_site
                 .unwrap_or_default(),

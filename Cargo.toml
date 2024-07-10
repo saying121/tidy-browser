@@ -23,19 +23,19 @@ panic         = "abort"
 
 [workspace.dependencies]
 tokio = { version = "^1", features = ["macros"] }
-# futures = { version = "^0.3", default_features = false }
+# futures = { version = "^0.3", default-features = false }
 
-sea-orm = { version = "^0.12", default_features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
+sea-orm = { version = "^0.12", default-features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
 
 dirs = { version = "^5" }
 
 tracing            = { version = "^0.1" }
-tracing-subscriber = { version = "^0.3", default_features = true, features = ["env-filter"] }
+tracing-subscriber = { version = "^0.3", default-features = true, features = ["env-filter"] }
 
-miette = { version = "^7", default_features = true }
+miette = { version = "^7", default-features = true }
 
-serde      = { version = "^1", default_features = false, features = ["derive"] }
-serde_json = { version = "^1", default_features = false }
+serde      = { version = "^1", default-features = false, features = ["derive"] }
+serde_json = { version = "^1", default-features = false }
 
 strum = { version = "^0.26" }
 

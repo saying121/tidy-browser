@@ -8,7 +8,7 @@ use items::cookie::{cookie_dao::CookiesQuery, cookie_entities::cookies};
 pub use items::{
     cookie::{
         cookie_entities::cookies::{Column as ChromCkColumn, ColumnIter as ChromCkColumnIter},
-        DecryptedCookies,
+        ChromiumCookie,
     },
     passwd::{
         login_data_entities::logins::{Column as ChromLoginColumn, Column as ChromLoginColumnIter},
@@ -279,7 +279,7 @@ impl ChromiumGetter {
     ///     dbg!(res);
     /// }
     /// ```
-    pub async fn get_cookies_filter<F>(&self, filter: F) -> Result<Vec<DecryptedCookies>>
+    pub async fn get_cookies_filter<F>(&self, filter: F) -> Result<Vec<ChromiumCookie>>
     where
         F: IntoCondition,
     {
@@ -293,7 +293,7 @@ impl ChromiumGetter {
     pub async fn get_cookies_by_host<A: AsRef<str>>(
         &self,
         host: A,
-    ) -> Result<Vec<DecryptedCookies>> {
+    ) -> Result<Vec<ChromiumCookie>> {
         let raw_ck = self
             .cookies_query
             .query_cookie_by_host(host.as_ref())
@@ -302,7 +302,7 @@ impl ChromiumGetter {
     }
 
     /// return all cookies
-    pub async fn get_cookies_all(&self) -> Result<Vec<DecryptedCookies>> {
+    pub async fn get_cookies_all(&self) -> Result<Vec<ChromiumCookie>> {
         let raw_ck = self
             .cookies_query
             .query_all_cookie()
@@ -341,9 +341,11 @@ impl ChromiumGetter {
                 let expir = cookie
                     .expires_utc
                     .micros_to_chromium_utc();
-                if Utc::now() > expir {
-                    csrf_token.expiry = true;
-                    break;
+                if let Some(expir) = expir {
+                    if Utc::now() > expir {
+                        csrf_token.expiry = true;
+                        break;
+                    }
                 }
 
                 let cy = self.crypto.clone();
@@ -361,9 +363,11 @@ impl ChromiumGetter {
                 let expir = cookie
                     .expires_utc
                     .micros_to_chromium_utc();
-                if Utc::now() > expir {
-                    csrf_token.expiry = true;
-                    break;
+                if let Some(expir) = expir {
+                    if Utc::now() > expir {
+                        csrf_token.expiry = true;
+                        break;
+                    }
                 }
 
                 let cy = self.crypto.clone();
@@ -388,14 +392,14 @@ impl ChromiumGetter {
         Ok(csrf_token)
     }
     /// parallel decrypt cookies
-    pub fn par_decrypt_cookies(&self, raw: Vec<cookies::Model>) -> Vec<DecryptedCookies> {
+    pub fn par_decrypt_cookies(&self, raw: Vec<cookies::Model>) -> Vec<ChromiumCookie> {
         raw.into_par_iter()
             .map(|mut v| {
                 let res = self
                     .crypto
                     .decrypt(&mut v.encrypted_value)
                     .unwrap_or_default();
-                let mut cookies = DecryptedCookies::from(v);
+                let mut cookies = ChromiumCookie::from(v);
                 cookies.set_encrypted_value(res);
                 cookies
             })
@@ -404,7 +408,7 @@ impl ChromiumGetter {
 
     /// parallel decrypt cookies
     /// and not blocking scheduling
-    async fn par_decrypt_ck(&self, raw: Vec<cookies::Model>) -> Result<Vec<DecryptedCookies>> {
+    async fn par_decrypt_ck(&self, raw: Vec<cookies::Model>) -> Result<Vec<ChromiumCookie>> {
         let crypto = self.crypto.clone();
 
         task::spawn_blocking(move || {
@@ -413,7 +417,7 @@ impl ChromiumGetter {
                     let res = crypto
                         .decrypt(&mut v.encrypted_value)
                         .unwrap_or_default();
-                    let mut cookies = DecryptedCookies::from(v);
+                    let mut cookies = ChromiumCookie::from(v);
                     cookies.set_encrypted_value(res);
                     cookies
                 })

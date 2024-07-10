@@ -42,9 +42,11 @@ async fn write_chromium_password(getter: &ChromiumGetter) -> Result<()> {
                 .unwrap_or_default(),
             ck.password_value
                 .unwrap_or_default(),
-            ck.date_created,
-            ck.date_last_used,
+            ck.date_created.unwrap_or_default(),
+            ck.date_last_used
+                .unwrap_or_default(),
             ck.date_password_modified
+                .unwrap_or_default()
         );
         buf_writer
             .write_all(pass_str.as_bytes())
@@ -89,10 +91,12 @@ async fn write_chromium_cookies(getter: &ChromiumGetter) -> Result<()> {
             ck.is_secure,
             ck.is_httponly,
             ck.source_port,
-            ck.creation_utc,
-            ck.expires_utc,
-            ck.last_access_utc,
-            ck.last_update_utc,
+            ck.creation_utc.unwrap_or_default(),
+            ck.expires_utc.unwrap_or_default(),
+            ck.last_access_utc
+                .unwrap_or_default(),
+            ck.last_update_utc
+                .unwrap_or_default(),
             ck.has_expires,
             ck.is_persistent,
         );
@@ -132,9 +136,11 @@ async fn write_firefox_cookies(getter: &FirefoxGetter) -> Result<()> {
             ck.name,
             ck.path,
             ck.value,
-            ck.creation_time,
-            ck.last_accessed,
-            ck.expiry,
+            ck.creation_time
+                .unwrap_or_default(),
+            ck.last_accessed
+                .unwrap_or_default(),
+            ck.expiry.unwrap_or_default(),
             ck.is_secure,
             ck.is_http_only,
             ck.origin_attributes

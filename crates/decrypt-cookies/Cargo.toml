@@ -1,10 +1,10 @@
 [package]
-name         = "decrypt-cookies"
-version      = "0.5.3"
-description  = "A decrypt browser crate"
-license      = { workspace = true }
-edition      = { workspace = true }
-authors      = { workspace = true }
+name        = "decrypt-cookies"
+version     = "0.5.3"
+description = "A decrypt browser crate"
+license     = { workspace = true }
+edition     = { workspace = true }
+authors     = { workspace = true }
 # homepage     = { workspace = true }
 homepage     = "https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies"
 repository   = { workspace = true }
@@ -36,15 +36,15 @@ cfg-if = { version = "^1" }
 
 strum        = { workspace = true }
 strum_macros = { version = "^0.26" }
+reqwest      = { version = "^0.12", default-features = false, features = ["cookies"], optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))'.dependencies]
-secret-service = { version = "^3", default_features = true, features = ["rt-tokio-crypto-rust"] }
+secret-service = { version = "^4", default-features = true, features = ["rt-tokio-crypto-rust"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
 bytes = { version = "^1" }
-keyring = { version = "^2", default_features = false, features = [
-    "platform-macos",
-    "platform-ios",
+keyring = { version = "^3", default-features = false, features = [
+    "apple-native",
 ] } # It is not working as expected on Linux.
 
 [target.'cfg(not(windows))'.dependencies]
@@ -54,10 +54,10 @@ pbkdf2 = { version = "^0.12", features = ["sha1"] }
 sha1   = { version = "^0.10" }
 
 [target.'cfg(windows)'.dependencies]
-aes-gcm    = { version = "^0.10" }
-base64     = { version = "^0.22" }
+aes-gcm = { version = "^0.10" }
+base64 = { version = "^0.22" }
 serde_json = { version = "^1" }
-windows = { version = "^0.54", features = [
+windows = { version = "^0.58", features = [
     "Win32_Security_Cryptography",
     # "Win32_Foundation",
     # "Win32_System",
@@ -68,6 +68,11 @@ windows = { version = "^0.54", features = [
 tracing-subscriber = { workspace = true }
 tokio              = { version = "^1", features = ["macros", "rt-multi-thread"] }
 miette             = { workspace = true, features = ['fancy'] }
+reqwest            = { version = "^0.12", features = ["cookies"] }
+
+[features]
+default = ["reqwest"]
+reqwest = ["dep:reqwest"]
 
 [lints]
 workspace = true

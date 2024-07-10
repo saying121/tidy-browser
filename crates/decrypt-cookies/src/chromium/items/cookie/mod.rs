@@ -2,7 +2,7 @@ use chrono::prelude::*;
 
 use self::cookie_entities::cookies;
 use super::I64ToChromiumDateTime;
-use crate::browser::cookies::CookiesInfo;
+use crate::browser::cookies::{CookiesInfo, SameSite};
 
 pub mod cookie_dao;
 pub mod cookie_entities;
@@ -10,44 +10,67 @@ pub mod cookie_entities;
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
-pub struct DecryptedCookies {
-    pub creation_utc:       DateTime<Utc>,
+pub struct ChromiumCookie {
+    pub creation_utc:       Option<DateTime<Utc>>,
     pub host_key:           String,
     pub top_frame_site_key: String,
     pub name:               String,
     pub value:              String,
     pub decrypted_value:    Option<String>,
     pub path:               String,
-    pub expires_utc:        DateTime<Utc>,
+    /// <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires>
+    pub expires_utc:        Option<DateTime<Utc>>,
     pub is_secure:          bool,
     pub is_httponly:        bool,
-    pub last_access_utc:    DateTime<Utc>,
+    pub last_access_utc:    Option<DateTime<Utc>>,
     pub has_expires:        bool,
     pub is_persistent:      bool,
     pub priority:           i32,
-    pub samesite:           i32,
+    pub samesite:           SameSite,
     pub source_scheme:      i32,
     pub source_port:        i32,
-    pub last_update_utc:    DateTime<Utc>,
+    pub last_update_utc:    Option<DateTime<Utc>>,
 }
 
-impl CookiesInfo for DecryptedCookies {
-    fn is_expiry(&self) -> bool {
-        if self.has_expires {
-            return true;
-        }
-        Utc::now() > self.expires_utc
+impl CookiesInfo for ChromiumCookie {
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn path(&self) -> &str {
+        &self.path
+    }
+    fn value(&self) -> &str {
+        self.decrypted_value
+            .as_ref()
+            .unwrap_or(&self.value)
+    }
+    fn domain(&self) -> &str {
+        &self.host_key
+    }
+    fn expiry(&self) -> Option<String> {
+        self.expires_utc
+            .map(|expir| expir.to_rfc2822())
+    }
+    fn is_secure(&self) -> bool {
+        self.is_secure
+    }
+    fn same_site(&self) -> SameSite {
+        self.samesite
+    }
+    fn is_http_only(&self) -> bool {
+        self.is_httponly
     }
 }
 
-impl DecryptedCookies {
+impl ChromiumCookie {
     pub fn set_encrypted_value(&mut self, encrypted_value: String) {
         self.decrypted_value = Some(encrypted_value);
     }
 }
 
-impl From<cookies::Model> for DecryptedCookies {
+impl From<cookies::Model> for ChromiumCookie {
     fn from(value: cookies::Model) -> Self {
+        #[allow(clippy::wildcard_in_or_patterns)]
         Self {
             creation_utc:       value
                 .creation_utc
@@ -69,7 +92,11 @@ impl From<cookies::Model> for DecryptedCookies {
             has_expires:        value.has_expires != 0,
             is_persistent:      value.is_persistent != 0,
             priority:           value.priority,
-            samesite:           value.samesite,
+            samesite:           match value.samesite {
+                1 => SameSite::Lax,
+                2 => SameSite::Strict,
+                0 | _ => SameSite::None,
+            },
             source_scheme:      value.source_scheme,
             source_port:        value.source_port,
             last_update_utc:    value

@@ -2,25 +2,28 @@
 //! <https://github.com/cixtor/binarycookies>
 //! <https://github.com/libyal/dtformats/blob/main/documentation/Safari%20Cookies.asciidoc>
 //! <https://github.com/interstateone/BinaryCookies>
+//! <http://justsolve.archiveteam.org/wiki/Safari_cookies>
 
 use bytes::Buf;
-use chrono::{prelude::*, Utc};
+use chrono::{offset::LocalResult, prelude::*, Utc};
 use miette::{bail, IntoDiagnostic, Result};
 
-use crate::browser::{cookies::CookiesInfo, info::BrowserTime};
+use crate::browser::{
+    cookies::{CookiesInfo, SameSite},
+    info::BrowserTime,
+};
 
 trait I64ToSafariTime: BrowserTime {
-    fn to_utc(&self) -> DateTime<Utc>;
+    fn to_utc(&self) -> Option<DateTime<Utc>>;
 }
 impl I64ToSafariTime for i64 {
-    fn to_utc(&self) -> DateTime<Utc> {
+    fn to_utc(&self) -> Option<DateTime<Utc>> {
         let time = self + 978_307_200;
 
-        Utc.timestamp_opt(
-            time.clamp(Self::MIN_TIME.timestamp(), Self::MAX_TIME.timestamp()),
-            0,
-        )
-        .unwrap()
+        match Utc.timestamp_opt(time, 0) {
+            LocalResult::Single(time) => Some(time),
+            LocalResult::Ambiguous(..) | LocalResult::None => None,
+        }
     }
 }
 
@@ -256,10 +259,19 @@ impl BinaryCookies {
         entry.advance(value_len);
         let value = String::from_utf8_lossy(value).to_string();
 
+        let same_site = match cookieflag & 56 {
+            40 => SameSite::Lax,
+            56 => SameSite::Strict,
+            32 | _ => SameSite::None,
+        };
+
         Ok(SafariCookie {
             // cookie_size,
             version,
             cookie_flags,
+            same_site,
+            is_secure: cookie_flags & 0x1 == 0x1,
+            is_httponly: cookie_flags & 0x4 == 0x4,
             has_port,
             domain_offset,
             name_offset,
@@ -284,47 +296,60 @@ impl BinaryCookies {
 #[derive(PartialEq, Eq)]
 pub struct SafariCookie {
     // cookie_size:    u32, // LE_uint32	Cookie size. Number of bytes associated to the cookie
-    pub version:        Vec<u8>, // byte    Unknown field possibly related to the cookie flags
-    cookie_flags:       u32, /* LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly */
-    pub has_port:       [u8; 4], // size:  4    byte    0 or 1
-    pub domain_offset:  u32, // LE_uint32    Cookie domain offset
-    pub name_offset:    u32, // LE_uint32    Cookie name offset
-    pub path_offset:    u32, // LE_uint32    Cookie path offset
-    pub value_offset:   u32, // LE_uint32    Cookie value offset
-    pub comment_offset: u32, // LE_uint32    Cookie comment offset
+    pub version:       Vec<u8>, // byte    Unknown field possibly related to the cookie flags
+    cookie_flags:      u32, /* LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly */
+    pub same_site:     SameSite,
+    pub is_secure:     bool,
+    pub is_httponly:   bool,
+    pub has_port:      [u8; 4], // size:  4    byte    0 or 1
+    pub domain_offset: u32,     // LE_uint32    Cookie domain offset
+    name_offset:       u32,     // LE_uint32    Cookie name offset
+    path_offset:       u32,     // LE_uint32    Cookie path offset
+    value_offset:      u32,     // LE_uint32    Cookie value offset
+    comment_offset:    u32,     // LE_uint32    Cookie comment offset
     // end_header:     Vec<u8>, /* 4    byte    Marks the end of a header. Must be equal to []byte{0x00000000} */
-    pub expires:        DateTime<Utc>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
-    pub creation:       DateTime<Utc>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
-    pub comment:        String, /* N    LE_uint32    Cookie comment string. N = `self.domain_offset` - `self.comment_offset` */
-    pub domain:         String, /* N    LE_uint32    Cookie domain string. N = `self.name_offset` - `self.domain_offset` */
-    pub name:           String, /* N    LE_uint32    Cookie name string. N = `self.path_offset` - `self.name_offset` */
-    pub path:           String, /* N    LE_uint32    Cookie path string. N = `self.value_offset` - `self.path_offset` */
-    pub value:          String, /* N    LE_uint32    Cookie value string. N = `self.cookie_size` - `self.value_offset` */
+    pub expires:       Option<DateTime<Utc>>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
+    pub creation:      Option<DateTime<Utc>>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
+    pub comment:       String, /* N    LE_uint32    Cookie comment string. N = `self.domain_offset` - `self.comment_offset` */
+    pub domain:        String, /* N    LE_uint32    Cookie domain string. N = `self.name_offset` - `self.domain_offset` */
+    pub name:          String, /* N    LE_uint32    Cookie name string. N = `self.path_offset` - `self.name_offset` */
+    pub path:          String, /* N    LE_uint32    Cookie path string. N = `self.value_offset` - `self.path_offset` */
+    pub value:         String, /* N    LE_uint32    Cookie value string. N = `self.cookie_size` - `self.value_offset` */
 }
 
 impl CookiesInfo for SafariCookie {
-    fn is_expiry(&self) -> bool {
-        self.expires > chrono::Utc::now()
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn path(&self) -> &str {
+        &self.path
+    }
+    fn domain(&self) -> &str {
+        &self.domain
+    }
+    fn value(&self) -> &str {
+        &self.value
+    }
+    fn expiry(&self) -> Option<String> {
+        match self.expires {
+            Some(expiry) => Some(expiry.to_rfc2822()),
+            None => None,
+        }
+    }
+    fn is_secure(&self) -> bool {
+        self.is_secure
+    }
+    fn is_http_only(&self) -> bool {
+        self.is_httponly
+    }
+    fn same_site(&self) -> SameSite {
+        self.same_site
     }
 }
 
 impl SafariCookie {
-    pub const fn is_secure(&self) -> bool {
-        self.cookie_flags & 0x1 == 0x1
-    }
-    pub const fn is_secure_and_httponly(&self) -> bool {
-        self.cookie_flags & 0x5 == 0x5
-    }
-    pub const fn is_httponly(&self) -> bool {
-        self.cookie_flags & 0x4 == 0x4
-    }
-
     pub const fn creation(&self) -> DateTime<Utc> {
         self.creation
-    }
-
-    pub const fn expires(&self) -> DateTime<Utc> {
-        self.expires
     }
 }
 
@@ -363,21 +388,5 @@ impl SafariCookie {
 
     pub fn comment(&self) -> &str {
         self.comment.as_ref()
-    }
-
-    pub fn domain(&self) -> &str {
-        self.domain.as_ref()
-    }
-
-    pub fn name(&self) -> &str {
-        self.name.as_ref()
-    }
-
-    pub fn path(&self) -> &str {
-        self.path.as_ref()
-    }
-
-    pub fn value(&self) -> &str {
-        self.value.as_ref()
     }
 }
