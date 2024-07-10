@@ -288,10 +288,7 @@ impl ChromiumGetter {
         self.par_decrypt_ck(raw_ck).await
     }
     /// decrypt Cookies
-    pub async fn get_cookies_by_host<A: AsRef<str>>(
-        &self,
-        host: A,
-    ) -> Result<Vec<ChromiumCookie>> {
+    pub async fn get_cookies_by_host<A: AsRef<str>>(&self, host: A) -> Result<Vec<ChromiumCookie>> {
         let raw_ck = self
             .cookies_query
             .query_cookie_by_host(host.as_ref())
