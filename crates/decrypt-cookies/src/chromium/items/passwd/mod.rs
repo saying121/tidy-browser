@@ -36,7 +36,7 @@ pub struct LoginData {
     pub date_password_modified:   Option<DateTime<Utc>>,
     // pub sender_email:                   String,
     // pub sender_name:                    String,
-    // NOTE: i'm not sure what it do
+    // NOTE: I'm not sure what it do
     // pub date_received:                  i64,
     // pub sharing_notification_displayed: i32,
     // pub keychain_identifier:            Vec<u8>,

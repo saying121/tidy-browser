@@ -207,8 +207,7 @@ impl ChromiumGetter {
     /// # Example:
     ///
     /// ```rust
-    /// use decrypt_cookies::{chromium::ChromLoginColumn, Browser, ChromiumBuilder};
-    /// use sea_orm::prelude::ColumnTrait;
+    /// use decrypt_cookies::{chromium::ChromLoginColumn, Browser, ChromiumBuilder, ColumnTrait};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -263,8 +262,7 @@ impl ChromiumGetter {
     /// # Example:
     ///
     /// ```rust
-    /// use decrypt_cookies::{chromium::ChromCkColumn, Browser, ChromiumBuilder};
-    /// use sea_orm::prelude::ColumnTrait;
+    /// use decrypt_cookies::{chromium::ChromCkColumn, Browser, ChromiumBuilder, ColumnTrait};
     ///
     /// #[tokio::main]
     /// async fn main() {

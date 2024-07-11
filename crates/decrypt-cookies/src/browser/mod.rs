@@ -68,21 +68,19 @@ impl Browser {
         self.get_str("Based")
             .map_or(false, |base| base.eq_ignore_ascii_case("firefox"))
     }
-    pub fn chromiums() -> Vec<Self> {
-        Self::iter()
-            .filter(|v| {
-                v.get_str("Based")
-                    .map_or(false, |base| base.eq_ignore_ascii_case("chromium"))
-            })
-            .collect()
+    /// return Based chromium browser iterator
+    pub fn chromiums() -> impl Iterator<Item = Self> {
+        Self::iter().filter(|v| {
+            v.get_str("Based")
+                .map_or(false, |base| base.eq_ignore_ascii_case("chromium"))
+        })
     }
-    pub fn firefoxs() -> Vec<Self> {
-        Self::iter()
-            .filter(|v| {
-                v.get_str("Based")
-                    .map_or(false, |base| base.eq_ignore_ascii_case("firefox"))
-            })
-            .collect()
+    /// return Based firefox browser iterator
+    pub fn firefoxs() -> impl Iterator<Item = Self> {
+        Self::iter().filter(|v| {
+            v.get_str("Based")
+                .map_or(false, |base| base.eq_ignore_ascii_case("firefox"))
+        })
     }
 }
 

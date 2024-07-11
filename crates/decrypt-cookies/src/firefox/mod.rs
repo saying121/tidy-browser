@@ -99,9 +99,9 @@ impl FirefoxGetter {
     /// filter by condition
     ///
     /// # Example
+    ///
     /// ```rust,ignore
-    /// use decrypt_cookies::{firefox::MozCookiesColumn, Browser, FirefoxBuilder};
-    /// use sea_orm::ColumnTrait;
+    /// use decrypt_cookies::{firefox::MozCookiesColumn, Browser, FirefoxBuilder,ColumnTrait};
     ///
     /// #[tokio::main]
     /// async fn main() {

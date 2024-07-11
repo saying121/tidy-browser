@@ -8,6 +8,7 @@ pub use browser::{cookies::LeetCodeCookies, Browser};
 pub use chromium::{ChromiumBuilder, ChromiumGetter};
 pub use firefox::{FirefoxBuilder, FirefoxGetter};
 use miette::Result;
+pub use sea_orm::prelude::ColumnTrait;
 
 cfg_if::cfg_if!(
     if #[cfg(target_os = "macos")] {

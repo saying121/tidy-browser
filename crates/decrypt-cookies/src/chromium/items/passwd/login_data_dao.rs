@@ -26,6 +26,7 @@ impl LoginDataQuery {
         Ok(Self { conn: db })
     }
 
+    /// filter login data
     pub async fn query_login_dt_filter<F>(&self, filter: F) -> Result<Vec<logins::Model>>
     where
         F: IntoCondition,
@@ -36,6 +37,7 @@ impl LoginDataQuery {
             .await
             .into_diagnostic()
     }
+    /// query all login data
     pub async fn query_all_login_dt(&self) -> Result<Vec<logins::Model>> {
         Logins::find()
             .all(&self.conn)
