@@ -1,5 +1,5 @@
 use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
-use miette::{IntoDiagnostic, Result};
+use miette::{bail, Result};
 use pbkdf2::pbkdf2_hmac;
 
 use crate::Browser;
@@ -40,11 +40,17 @@ impl Decrypter {
         Ok(Self { browser, pass_v10 })
     }
     fn get_pass(safe_storage: &str, safe_name: &str) -> Result<Vec<u8>> {
-        let entry = keyring::Entry::new(safe_storage, safe_name).into_diagnostic()?;
-        entry
+        let entry = match keyring::Entry::new(safe_storage, safe_name) {
+            Ok(res) => res,
+            Err(e) => bail!("Error: {e}.new keyring Entry failed"),
+        };
+        match entry
             .get_password()
             .map(String::into_bytes)
-            .into_diagnostic()
+        {
+            Ok(res) => Ok(res),
+            Err(e) => bail!("Error: {e}.new keyring Entry failed"),
+        }
     }
 
     pub fn decrypt(&self, be_decrypte: &mut [u8]) -> Result<String> {
