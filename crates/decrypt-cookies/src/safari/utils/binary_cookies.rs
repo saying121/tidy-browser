@@ -259,6 +259,7 @@ impl BinaryCookies {
         entry.advance(value_len);
         let value = String::from_utf8_lossy(value).to_string();
 
+        #[allow(clippy::wildcard_in_or_patterns)]
         let same_site = match cookie_flags & 56 {
             40 => SameSite::Lax,
             56 => SameSite::Strict,
@@ -352,10 +353,8 @@ impl CookiesInfo for SafariCookie {
         &self.value
     }
     fn expiry(&self) -> Option<String> {
-        match self.expires {
-            Some(expiry) => Some(expiry.to_rfc2822()),
-            None => None,
-        }
+        self.expires
+            .map(|expiry| expiry.to_rfc2822())
     }
     fn is_secure(&self) -> bool {
         self.is_secure

@@ -70,8 +70,8 @@ impl CookiesGetter {
                         break;
                     }
                 }
-
-                lc_cookies.csrf = ck.value().to_owned();
+                ck.value()
+                    .clone_into(&mut lc_cookies.csrf);
             }
             else if ck.name() == "LEETCODE_SESSION" {
                 if let Some(expires) = ck.expires {
@@ -80,8 +80,8 @@ impl CookiesGetter {
                         break;
                     }
                 }
-
-                lc_cookies.session = ck.value().to_owned();
+                ck.value()
+                    .clone_into(&mut lc_cookies.session);
             }
         }
         lc_cookies
