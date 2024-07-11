@@ -187,12 +187,21 @@ dependencies = [
  "futures-lite",
  "parking",
 <<<<<<< HEAD
+<<<<<<< HEAD
  "polling 3.6.0",
  "rustix 0.38.33",
 =======
  "polling",
  "rustix",
 >>>>>>> 2bd7db6 (feat(cookie): set_cookie)
+=======
+ "polling",
+ "rustix",
+=======
+ "polling 3.6.0",
+ "rustix 0.38.33",
+>>>>>>> dcac4fb (ci: test just run on pr)
+>>>>>>> a1968e9 (ci: test just run on pr)
  "slab",
  "tracing",
  "windows-sys 0.52.0",
@@ -232,17 +241,29 @@ dependencies = [
  "blocking",
  "cfg-if",
 <<<<<<< HEAD
+<<<<<<< HEAD
  "event-listener 3.1.0",
  "futures-lite 1.13.0",
  "rustix 0.38.33",
  "windows-sys 0.48.0",
 =======
+=======
+>>>>>>> a1968e9 (ci: test just run on pr)
  "event-listener 5.3.0",
  "futures-lite",
  "rustix",
  "tracing",
  "windows-sys 0.52.0",
+<<<<<<< HEAD
 >>>>>>> 2bd7db6 (feat(cookie): set_cookie)
+=======
+=======
+ "event-listener 3.1.0",
+ "futures-lite 1.13.0",
+ "rustix 0.38.33",
+ "windows-sys 0.48.0",
+>>>>>>> dcac4fb (ci: test just run on pr)
+>>>>>>> a1968e9 (ci: test just run on pr)
 ]
 
 [[package]]
@@ -263,21 +284,37 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "afe66191c335039c7bb78f99dc7520b0cbb166b3a1cb33a03f53d8a1c6f2afda"
 dependencies = [
 <<<<<<< HEAD
+<<<<<<< HEAD
  "async-io 2.3.2",
  "async-lock 3.3.0",
 =======
  "async-io",
  "async-lock 2.8.0",
 >>>>>>> 2bd7db6 (feat(cookie): set_cookie)
+=======
+ "async-io",
+ "async-lock 2.8.0",
+=======
+ "async-io 2.3.2",
+ "async-lock 3.3.0",
+>>>>>>> dcac4fb (ci: test just run on pr)
+>>>>>>> a1968e9 (ci: test just run on pr)
  "atomic-waker",
  "cfg-if",
  "futures-core",
  "futures-io",
 <<<<<<< HEAD
+<<<<<<< HEAD
  "rustix 0.38.33",
 =======
  "rustix",
 >>>>>>> 2bd7db6 (feat(cookie): set_cookie)
+=======
+ "rustix",
+=======
+ "rustix 0.38.33",
+>>>>>>> dcac4fb (ci: test just run on pr)
+>>>>>>> a1968e9 (ci: test just run on pr)
  "signal-hook-registry",
  "slab",
  "windows-sys 0.52.0",
@@ -1927,10 +1964,17 @@ dependencies = [
  "hermit-abi",
  "pin-project-lite",
 <<<<<<< HEAD
+<<<<<<< HEAD
  "rustix 0.38.33",
 =======
  "rustix",
 >>>>>>> 2bd7db6 (feat(cookie): set_cookie)
+=======
+ "rustix",
+=======
+ "rustix 0.38.33",
+>>>>>>> dcac4fb (ci: test just run on pr)
+>>>>>>> a1968e9 (ci: test just run on pr)
  "tracing",
  "windows-sys 0.52.0",
 ]
@@ -2220,6 +2264,11 @@ checksum = "d626bb9dae77e28219937af045c257c28bfd3f69333c512553507f5f9798cb76"
 [[package]]
 name = "rustix"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+version = "0.38.32"
+=======
+>>>>>>> a1968e9 (ci: test just run on pr)
 version = "0.37.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fea8ca367a3a01fe35e6943c400addf443c0f57670e6ec51196f71a4b8762dd2"
@@ -2235,9 +2284,13 @@ dependencies = [
 [[package]]
 name = "rustix"
 version = "0.38.33"
+<<<<<<< HEAD
 =======
 version = "0.38.32"
 >>>>>>> 2bd7db6 (feat(cookie): set_cookie)
+=======
+>>>>>>> dcac4fb (ci: test just run on pr)
+>>>>>>> a1968e9 (ci: test just run on pr)
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3cc72858054fcff6d7dea32df2aeaee6a7c24227366d7ea429aada2f26b16ad"
 dependencies = [
@@ -2845,12 +2898,21 @@ checksum = "85b77fafb263dd9d05cbeac119526425676db3784113aa9295c88498cbf8bff1"
 dependencies = [
  "cfg-if",
 <<<<<<< HEAD
+<<<<<<< HEAD
  "fastrand 2.0.2",
  "rustix 0.38.33",
 =======
  "fastrand",
  "rustix",
 >>>>>>> 2bd7db6 (feat(cookie): set_cookie)
+=======
+ "fastrand",
+ "rustix",
+=======
+ "fastrand 2.0.2",
+ "rustix 0.38.33",
+>>>>>>> dcac4fb (ci: test just run on pr)
+>>>>>>> a1968e9 (ci: test just run on pr)
  "windows-sys 0.52.0",
 ]
 
@@ -2861,10 +2923,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "21bebf2b7c9e0a515f6e0f8c51dc0f8e4696391e6f1ff30379559f8365fb0df7"
 dependencies = [
 <<<<<<< HEAD
+<<<<<<< HEAD
  "rustix 0.38.33",
 =======
  "rustix",
 >>>>>>> 2bd7db6 (feat(cookie): set_cookie)
+=======
+ "rustix",
+=======
+ "rustix 0.38.33",
+>>>>>>> dcac4fb (ci: test just run on pr)
+>>>>>>> a1968e9 (ci: test just run on pr)
  "windows-sys 0.48.0",
 ]
 
