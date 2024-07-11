@@ -177,15 +177,15 @@ async fn write_safari_cookies(getter: &SafariGetter) -> Result<()> {
     for ck in cks {
         let ck_str = format!(
             "{},{},{},{},{},{},{},{},{}\n",
-            ck.domain(),
-            ck.name(),
-            ck.path(),
-            ck.value(),
-            ck.creation(),
-            ck.expires(),
-            ck.is_secure(),
-            ck.is_httponly(),
-            ck.comment(),
+            ck.domain,
+            ck.name,
+            ck.path,
+            ck.value,
+            ck.creation,
+            ck.expires,
+            ck.is_secure,
+            ck.is_httponly,
+            ck.comment,
         );
         buf_writer
             .write_all(ck_str.as_bytes())
