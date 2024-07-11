@@ -316,6 +316,27 @@ pub struct SafariCookie {
     pub path:          String, /* N    LE_uint32    Cookie path string. N = `self.value_offset` - `self.path_offset` */
     pub value:         String, /* N    LE_uint32    Cookie value string. N = `self.cookie_size` - `self.value_offset` */
 }
+#[cfg(feature = "reqwest")]
+impl TryFrom<SafariCookie> for reqwest::header::HeaderValue {
+    type Error = reqwest::header::InvalidHeaderValue;
+
+    fn try_from(value: SafariCookie) -> Result<Self, Self::Error> {
+        Self::from_str(&value.get_set_cookie_header())
+    }
+}
+#[cfg(feature = "reqwest")]
+impl FromIterator<SafariCookie> for reqwest::cookie::Jar {
+    fn from_iter<T: IntoIterator<Item = SafariCookie>>(iter: T) -> Self {
+        let jar = Self::default();
+        for cookie in iter {
+            let set_cookie = cookie.get_set_cookie_header();
+            if let Ok(url) = reqwest::Url::parse(&cookie.get_url()) {
+                jar.add_cookie_str(&set_cookie, &url);
+            }
+        }
+        jar
+    }
+}
 
 impl CookiesInfo for SafariCookie {
     fn name(&self) -> &str {
