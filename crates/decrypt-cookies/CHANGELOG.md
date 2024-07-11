@@ -8,11 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- pub use `ColumnTrait`.
-- `Browser::chromiums` and `Browser::firefoxs` return iterator.
-
 ### Added
 
 - Filter safe storage in Linux for cache.
@@ -21,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- pub use `ColumnTrait`.
+- `Browser::chromiums` and `Browser::firefoxs` return iterator.
 - Cookie times return `Option`.
 - Rename `DecryptedCookies` -> `ChromiumCookie`
 
