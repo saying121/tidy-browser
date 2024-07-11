@@ -18,13 +18,14 @@ async fn to_jar() {
         .get_cookies_all()
         .await
         .unwrap();
-    let a = all_cookies.iter().find(|v|v.host_key.contains("leetcode.cn")).unwrap();
+    let a = all_cookies
+        .iter()
+        .find(|v| v.host_key.contains("leetcode.cn"))
+        .unwrap();
     dbg!(a);
     let hd = all_cookies[1].get_set_cookie_header();
     dbg!(&hd);
-    let jar: reqwest::cookie::Jar = all_cookies
-        .into_iter()
-        .collect();
+    let jar: reqwest::cookie::Jar = all_cookies.into_iter().collect();
     let a = jar
         .cookies(&Url::parse("https://leetcode.cn/").unwrap())
         .unwrap();
