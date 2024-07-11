@@ -4,6 +4,7 @@ use chrono::prelude::Utc;
 use miette::{IntoDiagnostic, Result};
 
 use crate::{
+    browser::cookies::CookiesInfo,
     safari::utils::binary_cookies::{BinaryCookies, SafariCookie},
     LeetCodeCookies,
 };
@@ -63,17 +64,21 @@ impl CookiesGetter {
             })
         {
             if ck.name() == "csrftoken" {
-                if Utc::now() > ck.expires {
-                    lc_cookies.expiry = true;
-                    break;
+                if let Some(expires) = ck.expires {
+                    if Utc::now() > expires {
+                        lc_cookies.expiry = true;
+                        break;
+                    }
                 }
 
                 lc_cookies.csrf = ck.value().to_owned();
             }
             else if ck.name() == "LEETCODE_SESSION" {
-                if Utc::now() > ck.expires {
-                    lc_cookies.expiry = true;
-                    break;
+                if let Some(expires) = ck.expires {
+                    if Utc::now() > expires {
+                        lc_cookies.expiry = true;
+                        break;
+                    }
                 }
 
                 lc_cookies.session = ck.value().to_owned();

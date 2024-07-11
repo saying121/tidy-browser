@@ -259,7 +259,7 @@ impl BinaryCookies {
         entry.advance(value_len);
         let value = String::from_utf8_lossy(value).to_string();
 
-        let same_site = match cookieflag & 56 {
+        let same_site = match cookie_flags & 56 {
             40 => SameSite::Lax,
             56 => SameSite::Strict,
             32 | _ => SameSite::None,
@@ -369,7 +369,7 @@ impl CookiesInfo for SafariCookie {
 }
 
 impl SafariCookie {
-    pub const fn creation(&self) -> DateTime<Utc> {
+    pub const fn creation(&self) -> Option<DateTime<Utc>> {
         self.creation
     }
 }
