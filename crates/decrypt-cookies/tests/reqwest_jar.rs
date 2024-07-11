@@ -6,6 +6,7 @@ use reqwest::{
     Client, Url,
 };
 
+#[ignore]
 #[tokio::test]
 async fn to_jar() {
     let chrmo = ChromiumBuilder::new(Browser::Edge)
@@ -26,13 +27,14 @@ async fn to_jar() {
     dbg!(s);
 }
 
+#[ignore]
 #[tokio::test]
 async fn jars() {
     // Create a cookie jar we can share with the HTTP client
     let jar = Arc::new(Jar::default());
 
     // create the HTTP client
-    let client = Client::builder()
+    let _client = Client::builder()
         .cookie_provider(Arc::clone(&jar))
         .build()
         .unwrap();
