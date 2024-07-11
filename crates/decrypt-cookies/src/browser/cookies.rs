@@ -25,27 +25,6 @@ impl std::fmt::Display for LeetCodeCookies {
     }
 }
 
-#[cfg(feature = "reqwest")]
-impl TryFrom<impl CookiesInfo> for reqwest::header::HeaderValue {
-    type Error = reqwest::header::InvalidHeaderValue;
-
-    fn try_from(value: impl CookiesInfo) -> Result<Self, Self::Error> {
-        reqwest::header::HeaderValue::from_str(&value.get_set_cookie_header())
-    }
-}
-#[cfg(feature = "reqwest")]
-impl FromIterator<impl CookiesInfo> for reqwest::cookie::Jar {
-    fn from_iter<T: IntoIterator<Item = impl CookiesInfo>>(iter: T) -> Self {
-        let jar = reqwest::cookie::Jar::default();
-        for cookie in iter {
-            let set_cookie = cookie.get_set_cookie_header();
-            if let Ok(url) = reqwest::Url::parse(&cookie.get_url()) {
-                jar.add_cookie_str(&set_cookie, &url);
-            }
-        }
-    }
-}
-
 pub trait CookiesInfo {
     /// <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie>
     fn get_set_cookie_header(&self) -> String {
