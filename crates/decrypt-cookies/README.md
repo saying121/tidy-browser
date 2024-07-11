@@ -25,6 +25,10 @@ async fn main() -> miette::Result<()> {
 
     dbg!(&all_cookies[0]);
 
+    let jar: reqwest::cookie::Jar = all_cookies
+        .into_iter()
+        .collect();
+
     Ok(())
 }
 ```
