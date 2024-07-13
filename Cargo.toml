@@ -39,7 +39,7 @@ serde_json = { version = "^1", default-features = false }
 
 strum = { version = "^0.26" }
 
-decrypt-cookies = { path = "./crates/decrypt-cookies", version = "^0.5" }
+decrypt-cookies = { path = "./crates/decrypt-cookies", version = "^0.6" }
 
 [workspace.lints.rust]
 temporary_cstring_as_ptr = "deny"
