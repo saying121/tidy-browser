@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use decrypt_cookies::{Browser, ChromiumBuilder};
+use decrypt_cookies::{browser::cookies::CookiesInfo, Browser, ChromiumBuilder};
 use reqwest::{
     cookie::{CookieStore, Jar},
     Client, Url,
@@ -14,14 +14,20 @@ async fn to_jar() {
         .await
         .unwrap();
 
-    let jar: Jar = chrmo
+    let all_cookies = chrmo
         .get_cookies_all()
         .await
-        .unwrap()
-        .into_iter()
-        .collect();
+        .unwrap();
+    let a = all_cookies
+        .iter()
+        .find(|v| v.host_key.contains("leetcode.cn"))
+        .unwrap();
+    dbg!(a);
+    let hd = all_cookies[1].get_set_cookie_header();
+    dbg!(&hd);
+    let jar: reqwest::cookie::Jar = all_cookies.into_iter().collect();
     let a = jar
-        .cookies(&Url::parse("http://leetcode.cn/").unwrap())
+        .cookies(&Url::parse("https://leetcode.cn/").unwrap())
         .unwrap();
     let s = a.to_str().unwrap();
     dbg!(s);

@@ -74,7 +74,7 @@ async fn write_chromium_cookies(getter: &ChromiumGetter) -> Result<()> {
         .await?;
     let cks = getter.get_cookies_all().await?;
     let mut buf_writer = open_file(getter.browser(), "cookies").await?;
-    let head  = b"Url,Name,Path,Value,DecryptedValue,IsSecure,IsHttponly,SourcePort,CreationUtc,ExpiresUtc,LastAccessUtc,LastUpdateUtc,HasExpires,IsPersistent";
+    let head  = b"Url,Name,Path,Value,DecryptedValue,IsSecure,IsHttponly,SourcePort,CreationUtc,ExpiresUtc,LastAccessUtc,LastUpdateUtc,HasExpires,IsPersistent\n";
     buf_writer
         .write_all(head)
         .await
@@ -167,7 +167,7 @@ async fn write_firefox_cookies(getter: &FirefoxGetter) -> Result<()> {
 #[cfg(target_os = "macos")]
 async fn write_safari_cookies(getter: &SafariGetter) -> Result<()> {
     println!("{} cookies", getter.browser());
-    let head = b"Domain,Name,Path,Value,Creation,Expires,IsSecure,IsHttpOnly,Comment";
+    let head = b"Domain,Name,Path,Value,Creation,Expires,IsSecure,IsHttpOnly,Comment\n";
     let mut buf_writer = open_file(getter.browser(), "cookies").await?;
     buf_writer
         .write_all(head)
