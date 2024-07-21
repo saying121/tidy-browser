@@ -159,7 +159,9 @@ impl ChromiumBuilder {
                 .unwrap_or_else(|| info.cookies()),
             &temp_cookies_path,
         );
-        _ = tokio::join!(cp_login, cp_cookies);
+        let (login, cookies) = tokio::join!(cp_login, cp_cookies);
+        login.into_diagnostic()?;
+        cookies.into_diagnostic()?;
 
         let (cookies_query, login_data_query) = (
             CookiesQuery::new(temp_cookies_path),
