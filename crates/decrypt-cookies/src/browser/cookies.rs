@@ -7,10 +7,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct LeetCodeCookies {
-    pub csrf:    String,
+    pub csrf: String,
     pub session: String,
     #[serde(skip)]
-    pub expiry:  bool,
+    pub expiry: bool,
 }
 
 impl LeetCodeCookies {

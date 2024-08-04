@@ -23,7 +23,7 @@ type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
     pass_v11: &'static [u8],
-    browser:  Browser,
+    browser: Browser,
 }
 
 impl Decrypter {

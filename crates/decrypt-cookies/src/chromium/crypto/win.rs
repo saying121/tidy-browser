@@ -16,7 +16,7 @@ use crate::{chromium::local_state::LocalState, Browser};
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
-    pass:    Vec<u8>,
+    pass: Vec<u8>,
     browser: Browser,
 }
 

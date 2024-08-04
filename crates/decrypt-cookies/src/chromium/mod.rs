@@ -55,10 +55,10 @@ cfg_if::cfg_if!(
 #[derive(Debug)]
 #[derive(Default)]
 pub struct ChromiumGetter {
-    browser:          Browser,
-    cookies_query:    CookiesQuery,
+    browser: Browser,
+    cookies_query: CookiesQuery,
     login_data_query: LoginDataQuery,
-    crypto:           Decrypter,
+    crypto: Decrypter,
 
     #[cfg(target_os = "linux")]
     pub info: LinuxChromiumBase,
@@ -72,8 +72,8 @@ pub struct ChromiumGetter {
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct ChromiumBuilder {
-    browser:          Browser,
-    cookies_path:     Option<PathBuf>,
+    browser: Browser,
+    cookies_path: Option<PathBuf>,
     /// in windows, it store passwd
     local_state_path: Option<PathBuf>,
 
