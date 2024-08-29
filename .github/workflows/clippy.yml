@@ -23,10 +23,5 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Run Clippy Allow Warning
-        if: ${{ ! (github.ref == 'refs/heads/master' || github.event_name == 'pull_request') }}
-        run: cargo clippy --locked
-
       - name: Run Clippy Deny Warning
-        if: github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
-        run: cargo clippy --locked -- -D warnings
+        run: cargo clippy --tests --locked -- -D warnings
