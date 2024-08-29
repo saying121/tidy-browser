@@ -1,3 +1,5 @@
+#![allow(clippy::exhaustive_structs)]
+
 use chrono::{DateTime, Utc};
 
 use self::entities::moz_cookies;
@@ -10,6 +12,7 @@ pub mod entities;
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
+#[non_exhaustive]
 pub struct MozCookies {
     pub id: i32,
     pub origin_attributes: String,

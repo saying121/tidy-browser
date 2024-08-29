@@ -17,7 +17,7 @@ pub struct LoginDataQuery {
 }
 
 impl LoginDataQuery {
-    pub async fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub async fn new<P: AsRef<Path> + Send>(path: P) -> Result<Self> {
         let db_conn_str = format!("sqlite:{}?mode=rwc", path.as_ref().to_string_lossy());
 
         let db = Database::connect(db_conn_str)
@@ -29,7 +29,7 @@ impl LoginDataQuery {
     /// filter login data
     pub async fn query_login_dt_filter<F>(&self, filter: F) -> Result<Vec<logins::Model>>
     where
-        F: IntoCondition,
+        F: IntoCondition + Send,
     {
         Logins::find()
             .filter(filter)

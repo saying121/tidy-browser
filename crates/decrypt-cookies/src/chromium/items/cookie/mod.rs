@@ -7,6 +7,7 @@ use crate::browser::cookies::{CookiesInfo, SameSite};
 pub mod cookie_dao;
 pub mod cookie_entities;
 
+#[allow(clippy::exhaustive_structs)]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]

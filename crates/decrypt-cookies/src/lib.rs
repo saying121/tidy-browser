@@ -21,7 +21,7 @@ cfg_if::cfg_if!(
 /// * `borwser`: Firefox, Librewolf, edge, chrome
 pub async fn get_cookie<T>(browser: T, host: &str) -> Result<LeetCodeCookies>
 where
-    T: Into<Browser> + Clone,
+    T: Into<Browser> + Clone + Send,
 {
     let res = match browser.clone().into() {
         Browser::Firefox | Browser::Librewolf => {

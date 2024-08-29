@@ -1,3 +1,4 @@
+#![allow(clippy::exhaustive_structs)]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]

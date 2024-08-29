@@ -6,6 +6,7 @@ use super::I64ToChromiumDateTime;
 pub mod login_data_dao;
 pub mod login_data_entities;
 
+#[non_exhaustive]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]

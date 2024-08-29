@@ -13,6 +13,7 @@ use crate::{browser::info::need_safe_storage, Browser};
 // const K_DERIVED_KEY_SIZE_IN_BITS: u32 = 128;
 type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 
+#[allow(clippy::empty_line_after_doc_comments)]
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=50
 /// The UMA metric name for whether the false was decryptable with an empty key.
 // const K_METRIC_DECRYPTED_WITH_EMPTY_KEY: &[u8] = b"OSCrypt.Linux.DecryptedWithEmptyKey";

@@ -19,7 +19,7 @@ pub struct CookiesQuery {
 
 impl CookiesQuery {
     /// * `browser`: `edge`, `chrome`
-    pub async fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub async fn new<P: AsRef<Path> + Send>(path: P) -> Result<Self> {
         let db_conn_str = format!("sqlite:{}?mode=rwc", path.as_ref().to_string_lossy());
 
         let db = Database::connect(db_conn_str)
@@ -31,7 +31,7 @@ impl CookiesQuery {
     /// get raw Cookies
     pub async fn query_cookie_filter<F>(&self, filter: F) -> Result<Vec<Model>>
     where
-        F: IntoCondition,
+        F: IntoCondition + Send,
     {
         CookiesDB::find()
             .filter(filter)
