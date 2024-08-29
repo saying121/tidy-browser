@@ -7,29 +7,30 @@ use crate::browser::cookies::{CookiesInfo, SameSite};
 pub mod cookie_dao;
 pub mod cookie_entities;
 
+#[allow(clippy::exhaustive_structs)]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
 pub struct ChromiumCookie {
-    pub creation_utc:       Option<DateTime<Utc>>,
-    pub host_key:           String,
+    pub creation_utc: Option<DateTime<Utc>>,
+    pub host_key: String,
     pub top_frame_site_key: String,
-    pub name:               String,
-    pub value:              String,
-    pub decrypted_value:    Option<String>,
-    pub path:               String,
+    pub name: String,
+    pub value: String,
+    pub decrypted_value: Option<String>,
+    pub path: String,
     /// <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires>
-    pub expires_utc:        Option<DateTime<Utc>>,
-    pub is_secure:          bool,
-    pub is_httponly:        bool,
-    pub last_access_utc:    Option<DateTime<Utc>>,
-    pub has_expires:        bool,
-    pub is_persistent:      bool,
-    pub priority:           i32,
-    pub samesite:           SameSite,
-    pub source_scheme:      i32,
-    pub source_port:        i32,
-    pub last_update_utc:    Option<DateTime<Utc>>,
+    pub expires_utc: Option<DateTime<Utc>>,
+    pub is_secure: bool,
+    pub is_httponly: bool,
+    pub last_access_utc: Option<DateTime<Utc>>,
+    pub has_expires: bool,
+    pub is_persistent: bool,
+    pub priority: i32,
+    pub samesite: SameSite,
+    pub source_scheme: i32,
+    pub source_port: i32,
+    pub last_update_utc: Option<DateTime<Utc>>,
 }
 #[cfg(feature = "reqwest")]
 impl TryFrom<ChromiumCookie> for reqwest::header::HeaderValue {
@@ -93,34 +94,34 @@ impl From<cookies::Model> for ChromiumCookie {
     fn from(value: cookies::Model) -> Self {
         #[allow(clippy::wildcard_in_or_patterns)]
         Self {
-            creation_utc:       value
+            creation_utc: value
                 .creation_utc
                 .micros_to_chromium_utc(),
-            host_key:           value.host_key,
+            host_key: value.host_key,
             top_frame_site_key: value.top_frame_site_key,
-            name:               value.name,
-            value:              value.value,
-            decrypted_value:    None,
-            path:               value.path,
-            expires_utc:        value
+            name: value.name,
+            value: value.value,
+            decrypted_value: None,
+            path: value.path,
+            expires_utc: value
                 .expires_utc
                 .micros_to_chromium_utc(),
-            is_secure:          value.is_secure != 0,
-            is_httponly:        value.is_httponly != 0,
-            last_access_utc:    value
+            is_secure: value.is_secure != 0,
+            is_httponly: value.is_httponly != 0,
+            last_access_utc: value
                 .last_access_utc
                 .micros_to_chromium_utc(),
-            has_expires:        value.has_expires != 0,
-            is_persistent:      value.is_persistent != 0,
-            priority:           value.priority,
-            samesite:           match value.samesite {
+            has_expires: value.has_expires != 0,
+            is_persistent: value.is_persistent != 0,
+            priority: value.priority,
+            samesite: match value.samesite {
                 1 => SameSite::Lax,
                 2 => SameSite::Strict,
                 0 | _ => SameSite::None,
             },
-            source_scheme:      value.source_scheme,
-            source_port:        value.source_port,
-            last_update_utc:    value
+            source_scheme: value.source_scheme,
+            source_port: value.source_port,
+            last_update_utc: value
                 .last_update_utc
                 .micros_to_chromium_utc(),
         }

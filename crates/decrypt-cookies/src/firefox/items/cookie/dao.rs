@@ -22,7 +22,7 @@ pub struct CookiesQuery {
 impl CookiesQuery {
     pub async fn new<P>(path: P) -> miette::Result<Self>
     where
-        P: AsRef<Path>,
+        P: AsRef<Path> + Send,
     {
         let db_conn_str = format!("sqlite:{}?mode=rwc", path.as_ref().to_string_lossy());
 
@@ -36,7 +36,7 @@ impl CookiesQuery {
 
     pub async fn query_cookie_filter<F>(&self, filter: F) -> Result<Vec<Model>>
     where
-        F: IntoCondition,
+        F: IntoCondition + Send,
     {
         let res = MozCookies::find()
             .filter(filter)

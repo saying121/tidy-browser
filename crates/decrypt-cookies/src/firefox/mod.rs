@@ -29,7 +29,7 @@ cfg_if::cfg_if!(
 #[derive(Debug)]
 #[derive(Default)]
 pub struct FirefoxGetter {
-    browser:       Browser,
+    browser: Browser,
     cookies_query: CookiesQuery,
 
     #[cfg(target_os = "linux")]
@@ -44,7 +44,7 @@ pub struct FirefoxGetter {
 #[derive(Debug)]
 #[derive(Default)]
 pub struct FirefoxBuilder {
-    browser:      Browser,
+    browser: Browser,
     cookies_path: Option<PathBuf>,
 }
 
@@ -117,7 +117,7 @@ impl FirefoxGetter {
     /// ```
     pub async fn get_cookies_filter<F>(&self, filter: F) -> Result<Vec<MozCookies>>
     where
-        F: IntoCondition,
+        F: IntoCondition + Send,
     {
         let res = self
             .cookies_query

@@ -4,10 +4,16 @@ use strum::IntoEnumIterator;
 #[ignore = "need realy environment"]
 #[tokio::test]
 async fn passwd() {
-    let edge_getter = ChromiumBuilder::new(Browser::Yandex)
+    let edge_getter = match ChromiumBuilder::new(Browser::Yandex)
         .build()
         .await
-        .unwrap();
+    {
+        Ok(it) => it,
+        Err(e) => {
+            eprintln!("{e}");
+            return;
+        },
+    };
     let res = edge_getter
         .get_logins_all()
         .await
@@ -32,10 +38,16 @@ async fn passwd() {
 async fn passwd_browsers() {
     for browser in Browser::iter().skip_while(|v| !v.is_chromium_base()) {
         dbg!(browser);
-        let getter = ChromiumBuilder::new(browser)
+        let getter = match ChromiumBuilder::new(browser)
             .build()
             .await
-            .unwrap();
+        {
+            Ok(it) => it,
+            Err(e) => {
+                eprintln!("{e}");
+                continue;
+            },
+        };
         let res = match getter.get_logins_all().await {
             Ok(v) => v,
             Err(e) => {

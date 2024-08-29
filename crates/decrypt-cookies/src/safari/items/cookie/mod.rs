@@ -9,6 +9,7 @@ use crate::{
     LeetCodeCookies,
 };
 
+#[non_exhaustive]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
@@ -32,7 +33,7 @@ impl CookiesGetter {
 
     pub async fn build<T>(cookies_path: Option<T>) -> Result<Self>
     where
-        T: Into<PathBuf>,
+        T: Into<PathBuf> + Send,
     {
         let mut cookie_path;
         if let Some(path) = cookies_path {

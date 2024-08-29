@@ -340,12 +340,13 @@ pub mod linux {
     use super::{ChromiumInfo, FfInfo, TempPath};
     use crate::Browser;
 
+    #[allow(clippy::exhaustive_structs)]
     #[derive(Clone)]
     #[derive(Debug)]
     #[derive(Default)]
     #[derive(PartialEq, Eq)]
     pub struct LinuxChromiumBase {
-        pub base:    PathBuf,
+        pub base: PathBuf,
         pub browser: Browser,
     }
 
@@ -394,7 +395,7 @@ pub mod linux {
     #[derive(Default)]
     #[derive(PartialEq, Eq)]
     pub struct LinuxFFBase {
-        base:    PathBuf,
+        base: PathBuf,
         browser: Browser,
     }
 
@@ -437,12 +438,13 @@ pub mod macos {
     use super::{ChromiumInfo, FfInfo, TempPath};
     use crate::Browser;
 
+    #[allow(clippy::exhaustive_structs)]
     #[derive(Clone)]
     #[derive(Debug)]
     #[derive(Default)]
     #[derive(PartialEq, Eq)]
     pub struct MacChromiumBase {
-        pub base:    PathBuf,
+        pub base: PathBuf,
         pub browser: Browser,
     }
 
@@ -496,7 +498,7 @@ pub mod macos {
     #[derive(PartialEq, Eq)]
     pub struct MacFFBase {
         pub base: PathBuf,
-        browser:  Browser,
+        browser: Browser,
     }
 
     impl TempPath for MacFFBase {
@@ -544,7 +546,7 @@ pub mod win {
     #[derive(Default)]
     #[derive(PartialEq, Eq)]
     pub struct WinChromiumBase {
-        base:    PathBuf,
+        base: PathBuf,
         browser: Browser,
     }
 
@@ -630,7 +632,7 @@ pub mod win {
     #[derive(Default)]
     #[derive(PartialEq, Eq)]
     pub struct WinFFBase {
-        base:    PathBuf,
+        base: PathBuf,
         browser: Browser,
     }
 

@@ -1,3 +1,4 @@
+#![allow(clippy::exhaustive_structs)]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]
@@ -35,7 +36,7 @@ pub struct OsCrypt {
 pub struct YandexLocalState {
     #[serde(default)]
     pub audit_enabled: bool,
-    pub os_crypt:      YandexOsCrypt,
+    pub os_crypt: YandexOsCrypt,
 }
 
 #[derive(Clone)]
@@ -56,6 +57,6 @@ pub struct YandexOsCrypt {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(Deserialize, Serialize)]
 pub struct CheckerState {
-    pub counter:        i32,
+    pub counter: i32,
     pub encrypted_data: String,
 }

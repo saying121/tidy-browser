@@ -15,7 +15,7 @@ use crate::{Browser, LeetCodeCookies};
 #[derive(PartialEq, Eq)]
 pub struct SafariGetter {
     pub cookie_getter: CookiesGetter,
-    browser:           Browser,
+    browser: Browser,
 }
 
 #[derive(Clone)]

@@ -55,10 +55,10 @@ cfg_if::cfg_if!(
 #[derive(Debug)]
 #[derive(Default)]
 pub struct ChromiumGetter {
-    browser:          Browser,
-    cookies_query:    CookiesQuery,
+    browser: Browser,
+    cookies_query: CookiesQuery,
     login_data_query: LoginDataQuery,
-    crypto:           Decrypter,
+    crypto: Decrypter,
 
     #[cfg(target_os = "linux")]
     pub info: LinuxChromiumBase,
@@ -72,8 +72,8 @@ pub struct ChromiumGetter {
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct ChromiumBuilder {
-    browser:          Browser,
-    cookies_path:     Option<PathBuf>,
+    browser: Browser,
+    cookies_path: Option<PathBuf>,
     /// in windows, it store passwd
     local_state_path: Option<PathBuf>,
 
@@ -226,7 +226,7 @@ impl ChromiumGetter {
     /// ```
     pub async fn get_logins_filter<F>(&self, filter: F) -> Result<Vec<LoginData>>
     where
-        F: IntoCondition,
+        F: IntoCondition + Send,
     {
         let raw_login = self
             .login_data_query
@@ -238,7 +238,7 @@ impl ChromiumGetter {
     /// contains passwords
     pub async fn get_logins_by_host<F>(&self, host: F) -> Result<Vec<LoginData>>
     where
-        F: AsRef<str>,
+        F: AsRef<str> + Send,
     {
         let raw_login = self
             .login_data_query
@@ -281,7 +281,7 @@ impl ChromiumGetter {
     /// ```
     pub async fn get_cookies_filter<F>(&self, filter: F) -> Result<Vec<ChromiumCookie>>
     where
-        F: IntoCondition,
+        F: IntoCondition + Send,
     {
         let raw_ck = self
             .cookies_query
@@ -290,7 +290,10 @@ impl ChromiumGetter {
         self.par_decrypt_ck(raw_ck).await
     }
     /// decrypt Cookies
-    pub async fn get_cookies_by_host<A: AsRef<str>>(&self, host: A) -> Result<Vec<ChromiumCookie>> {
+    pub async fn get_cookies_by_host<A: AsRef<str> + Send>(
+        &self,
+        host: A,
+    ) -> Result<Vec<ChromiumCookie>> {
         let raw_ck = self
             .cookies_query
             .query_cookie_by_host(host.as_ref())
@@ -308,7 +311,7 @@ impl ChromiumGetter {
     }
 
     /// get `LEETCODE_SESSION` and `csrftoken` for leetcode
-    pub async fn get_cookies_session_csrf<A: AsRef<str>>(
+    pub async fn get_cookies_session_csrf<A: AsRef<str> + Send>(
         &self,
         host: A,
     ) -> Result<LeetCodeCookies> {

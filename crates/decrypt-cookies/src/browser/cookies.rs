@@ -6,11 +6,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[non_exhaustive]
 pub struct LeetCodeCookies {
-    pub csrf:    String,
+    pub csrf: String,
     pub session: String,
     #[serde(skip)]
-    pub expiry:  bool,
+    pub expiry: bool,
 }
 
 impl LeetCodeCookies {
