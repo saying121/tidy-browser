@@ -1,15 +1,15 @@
 [package]
-name        = "decrypt-cookies"
-version     = "0.6.0"
+name = "decrypt-cookies"
+version = "0.6.0"
 description = "A decrypt browser crate"
-license     = { workspace = true }
-edition     = { workspace = true }
-authors     = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+authors = { workspace = true }
 # homepage     = { workspace = true }
-homepage     = "https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies"
-repository   = { workspace = true }
-keywords     = { workspace = true }
-categories   = { workspace = true }
+homepage = "https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies"
+repository = { workspace = true }
+keywords = { workspace = true }
+categories = { workspace = true }
 rust-version = { workspace = true }
 
 exclude = ["tests/", "examples"]
@@ -17,10 +17,10 @@ exclude = ["tests/", "examples"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio  = { workspace = true }
+tokio = { workspace = true }
 miette = { workspace = true }
-rayon  = { version = "^1" }
-chrono = { version = "^0.4" }
+rayon = { workspace = true }
+chrono = { workspace = true }
 
 sea-orm = { workspace = true }
 
@@ -28,47 +28,50 @@ tracing = { workspace = true }
 
 serde = { workspace = true }
 
-rust-ini = { version = "^0.21" } # firefox
+rust-ini = { workspace = true } # firefox
 
 dirs = { workspace = true }
 
-cfg-if = { version = "^1" }
+cfg-if = { workspace = true }
 
-strum        = { workspace = true }
-strum_macros = { version = "^0.26" }
-reqwest      = { version = "^0.12", default-features = false, features = ["cookies"], optional = true }
+strum = { workspace = true, features = ["derive"] }
+reqwest = { workspace = true, default-features = false, features = [
+  "cookies",
+], optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))'.dependencies]
-secret-service = { version = "^4", default-features = true, features = ["rt-tokio-crypto-rust"] }
+secret-service = { workspace = true, default-features = true, features = [
+  "rt-tokio-crypto-rust",
+] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
-bytes = { version = "^1" }
-keyring = { version = "^3", default-features = false, features = [
-    "apple-native",
+bytes = { workspace = true }
+keyring = { workspace = true, default-features = false, features = [
+  "apple-native",
 ] } # It is not working as expected on Linux.
 
 [target.'cfg(not(windows))'.dependencies]
-aes    = { version = "^0.8" }
-cbc    = { version = "^0.1" }
-pbkdf2 = { version = "^0.12", features = ["sha1"] }
-sha1   = { version = "^0.10" }
+aes = { workspace = true }
+cbc = { workspace = true }
+pbkdf2 = { workspace = true, features = ["sha1"] }
+sha1 = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-aes-gcm = { version = "^0.10" }
-base64 = { version = "^0.22" }
-serde_json = { version = "^1" }
-windows = { version = "^0.58", features = [
-    "Win32_Security_Cryptography",
-    # "Win32_Foundation",
-    # "Win32_System",
-    # "Win32_System_RestartManager",
+aes-gcm = { workspace = true }
+base64 = { workspace = true }
+serde_json = { workspace = true }
+windows = { workspace = true, features = [
+  "Win32_Security_Cryptography",
+  # "Win32_Foundation",
+  # "Win32_System",
+  # "Win32_System_RestartManager",
 ] }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true }
-tokio              = { version = "^1", features = ["macros", "rt-multi-thread"] }
-miette             = { workspace = true, features = ["fancy"] }
-reqwest            = { version = "^0.12", features = ["cookies"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+miette = { workspace = true, features = ["fancy"] }
+reqwest = { workspace = true, features = ["cookies"] }
 
 [features]
 default = ["reqwest"]
