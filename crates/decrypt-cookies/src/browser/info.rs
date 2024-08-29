@@ -438,6 +438,7 @@ pub mod macos {
     use super::{ChromiumInfo, FfInfo, TempPath};
     use crate::Browser;
 
+    #[allow(clippy::exhaustive_structs)]
     #[derive(Clone)]
     #[derive(Debug)]
     #[derive(Default)]
