@@ -26,18 +26,12 @@ tokio = { version = "^1", features = ["macros"] }
 # futures = { version = "^0.3", default-features = false }
 reqwest = { version = "^0.12", default-features = false }
 
-sea-orm = { version = "^1", default-features = false, features = [
-  "sqlx-sqlite",
-  "runtime-tokio-rustls",
-  "macros",
-] }
+sea-orm = { version = "^1", default-features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
 
 dirs = { version = "^5" }
 
 tracing = { version = "^0.1" }
-tracing-subscriber = { version = "^0.3", default-features = true, features = [
-  "env-filter",
-] }
+tracing-subscriber = { version = "^0.3", default-features = true, features = ["env-filter"] }
 
 miette = { version = "^7", default-features = true }
 
@@ -63,7 +57,7 @@ rust-ini = { version = "^0.21" }
 
 cfg-if = { version = "^1" }
 
-clap               = { version = "^4" }
+clap = { version = "^4" }
 
 decrypt-cookies = { path = "./crates/decrypt-cookies", version = "^0.6" }
 
@@ -75,7 +69,7 @@ perf = { level = "deny", priority = -1 }
 
 ### nursery group
 nursery = { level = "warn", priority = -1 }
-trivial_regex = "allow"                     # see: <https://github.com/rust-lang/rust-clippy/issues/6690>
+trivial_regex = "allow" # see: <https://github.com/rust-lang/rust-clippy/issues/6690>
 
 ### pedantic group
 inconsistent_struct_constructor = "warn"
