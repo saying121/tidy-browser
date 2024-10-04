@@ -6,7 +6,7 @@ use pbkdf2::pbkdf2_hmac;
 use secret_service::{EncryptionType, SecretService};
 use tokio::sync::OnceCell;
 
-use crate::{browser::info::need_safe_storage, Browser};
+use crate::browser::info::need_safe_storage;
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=32
 /// Key size required for 128 bit AES.
@@ -24,16 +24,11 @@ type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
     pass_v11: &'static [u8],
-    browser: Browser,
 }
 
 impl Decrypter {
     pub const fn pass_v11(&self) -> &[u8] {
         self.pass_v11
-    }
-
-    pub const fn browser(&self) -> Browser {
-        self.browser
     }
 }
 
@@ -101,12 +96,12 @@ async fn get_all_pass() -> Result<HashMap<&'static str, &'static [u8]>> {
 }
 
 impl Decrypter {
-    pub async fn build(browser: Browser, safe_storage: &str) -> Result<Self> {
+    pub async fn build(safe_storage: &str) -> Result<Self> {
         let pass_v11 = get_pass_once()
             .await
             .get(safe_storage)
             .map_or_else(|| Self::PASSWORD_V10, |v| *v);
-        Ok(Self { pass_v11, browser })
+        Ok(Self { pass_v11 })
     }
     // pub fn decrypt_yandex_password(&self, be_decrypte: &mut [u8]) -> Result<String> {
     //     use aes_gcm::{

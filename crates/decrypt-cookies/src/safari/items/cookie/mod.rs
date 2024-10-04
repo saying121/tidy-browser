@@ -4,9 +4,8 @@ use chrono::prelude::Utc;
 use miette::{IntoDiagnostic, Result};
 
 use crate::{
-    browser::cookies::CookiesInfo,
+    browser::cookies::{CookiesInfo, LeetCodeCookies},
     safari::utils::binary_cookies::{BinaryCookies, SafariCookie},
-    LeetCodeCookies,
 };
 
 #[non_exhaustive]

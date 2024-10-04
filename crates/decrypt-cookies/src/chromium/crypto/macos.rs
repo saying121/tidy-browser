@@ -2,8 +2,6 @@ use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
 use miette::{bail, Result};
 use pbkdf2::pbkdf2_hmac;
 
-use crate::Browser;
-
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_mac.mm;l=35
 /// Key size required for 128 bit AES.
 // const K_DERIVED_KEY_SIZE_IN_BITS: u32 = 128;
@@ -14,7 +12,6 @@ type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
-    browser: Browser,
     pass_v10: Vec<u8>,
 }
 
@@ -35,9 +32,9 @@ impl Decrypter {
 }
 
 impl Decrypter {
-    pub fn build(browser: Browser, safe_storage: &str, safe_name: &str) -> Result<Self> {
+    pub fn build(safe_storage: &str, safe_name: &str) -> Result<Self> {
         let pass_v10 = Self::get_pass(safe_storage, safe_name)?;
-        Ok(Self { browser, pass_v10 })
+        Ok(Self { pass_v10 })
     }
     fn get_pass(safe_storage: &str, safe_name: &str) -> Result<Vec<u8>> {
         let entry = match keyring::Entry::new(safe_storage, safe_name) {

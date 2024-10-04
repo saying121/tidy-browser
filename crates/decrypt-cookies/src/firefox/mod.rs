@@ -13,50 +13,26 @@ use self::items::{
     cookie::{dao::CookiesQuery, MozCookies},
     I64ToMozTime,
 };
-use crate::{browser::info::FfInfo, Browser, LeetCodeCookies};
-
-cfg_if::cfg_if!(
-    if #[cfg(target_os = "linux")] {
-        use crate::browser::info::linux::LinuxFFBase;
-    } else if #[cfg(target_os = "macos")] {
-        use crate::browser::info::macos::MacFFBase;
-    } else if #[cfg(target_os = "windows")] {
-        use crate::browser::info::win::WinFFBase;
-    }
-);
+use crate::browser::{cookies::LeetCodeCookies, info::FirefoxInfo};
 
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct FirefoxGetter {
-    browser: Browser,
+pub struct FirefoxGetter<T: FirefoxInfo + Send + Sync> {
+    browser: T,
     cookies_query: CookiesQuery,
-
-    #[cfg(target_os = "linux")]
-    info: LinuxFFBase,
-    #[cfg(target_os = "windows")]
-    info: WinFFBase,
-    #[cfg(target_os = "macos")]
-    info: MacFFBase,
 }
 
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct FirefoxBuilder {
-    browser: Browser,
+pub struct FirefoxBuilder<T: FirefoxInfo> {
+    browser: T,
     cookies_path: Option<PathBuf>,
 }
 
-impl FirefoxBuilder {
-    /// # Panics
-    ///
-    /// When you use not Firefox based browser
-    pub fn new(browser: Browser) -> Self {
-        assert!(
-            browser.is_firefox_base(),
-            "Firefox based not support: {browser}"
-        );
+impl<T: FirefoxInfo + Send + Sync> FirefoxBuilder<T> {
+    pub const fn new(browser: T) -> Self {
         Self { browser, cookies_path: None }
     }
     /// set `cookies_path`
@@ -67,19 +43,12 @@ impl FirefoxBuilder {
         self.cookies_path = Some(ck_path.into());
         self
     }
-    pub async fn build(&mut self) -> Result<FirefoxGetter> {
-        #[cfg(target_os = "linux")]
-        let info = LinuxFFBase::new(self.browser).await?;
-        #[cfg(target_os = "macos")]
-        let info = MacFFBase::new(self.browser).await?;
-        #[cfg(target_os = "windows")]
-        let info = WinFFBase::new(self.browser).await?;
-
-        let temp_cookies_path = info.cookies_temp();
+    pub async fn build(mut self) -> Result<FirefoxGetter<T>> {
+        let temp_cookies_path = self.browser.cookies_temp();
         tokio::fs::copy(
             self.cookies_path
                 .take()
-                .unwrap_or_else(|| info.cookies()),
+                .unwrap_or_else(|| self.browser.cookies()),
             &temp_cookies_path,
         )
         .await
@@ -90,12 +59,11 @@ impl FirefoxBuilder {
         Ok(FirefoxGetter {
             browser: self.browser,
             cookies_query: query,
-            info,
         })
     }
 }
 
-impl FirefoxGetter {
+impl<T: FirefoxInfo + Send + Sync> FirefoxGetter<T> {
     /// filter by condition
     ///
     /// # Example
@@ -204,12 +172,11 @@ impl FirefoxGetter {
         }
         Ok(res)
     }
-
-    pub const fn browser(&self) -> Browser {
-        self.browser
+    pub fn browser(&self) -> &str {
+        self.browser.browser()
     }
 
-    pub fn info(&self) -> &impl crate::browser::info::FfInfo {
-        &self.info
+    pub fn info(&self) -> &impl crate::browser::info::FirefoxInfo {
+        &self.browser
     }
 }

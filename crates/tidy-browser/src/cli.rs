@@ -1,6 +1,6 @@
-#[cfg(target_os = "macos")]
-use decrypt_cookies::SafariGetter;
-use decrypt_cookies::{Browser, ChromiumBuilder, ChromiumGetter, FirefoxBuilder, FirefoxGetter};
+#![expect(warnings)]
+
+use decrypt_cookies::prelude::*;
 use miette::{IntoDiagnostic, Result};
 use strum::IntoEnumIterator;
 use tokio::{

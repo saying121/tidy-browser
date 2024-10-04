@@ -8,12 +8,9 @@ use bytes::Buf;
 use chrono::{offset::LocalResult, prelude::*, Utc};
 use miette::{bail, IntoDiagnostic, Result};
 
-use crate::browser::{
-    cookies::{CookiesInfo, SameSite},
-    info::BrowserTime,
-};
+use crate::browser::cookies::{CookiesInfo, SameSite};
 
-trait I64ToSafariTime: BrowserTime {
+trait I64ToSafariTime {
     fn to_utc(&self) -> Option<DateTime<Utc>>;
 }
 impl I64ToSafariTime for i64 {

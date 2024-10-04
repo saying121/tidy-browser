@@ -9,7 +9,7 @@ use miette::{IntoDiagnostic, Result};
 use tokio::fs::read_to_string;
 use windows::Win32::{Foundation, Security::Cryptography};
 
-use crate::{chromium::local_state::LocalState, Browser};
+use crate::chromium::local_state::LocalState;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -17,7 +17,6 @@ use crate::{chromium::local_state::LocalState, Browser};
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
     pass: Vec<u8>,
-    browser: Browser,
 }
 
 impl Decrypter {
@@ -41,9 +40,9 @@ impl Decrypter {
 impl Decrypter {
     /// the method will use default `LocalState` path,
     /// custom that path use `DecrypterBuilder`
-    pub async fn build<A: AsRef<Path> + Send>(browser: Browser, key_path: A) -> Result<Self> {
+    pub async fn build<A: AsRef<Path> + Send>(key_path: A) -> Result<Self> {
         let pass = Self::get_pass(key_path).await?;
-        Ok(Self { pass, browser })
+        Ok(Self { pass })
     }
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=108
     async fn get_pass<A: AsRef<Path> + Send>(key_path: A) -> Result<Vec<u8>> {

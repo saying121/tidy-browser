@@ -3,11 +3,10 @@ mod utils;
 
 use std::path::PathBuf;
 
-pub use items::cookie::CookiesGetter;
 use miette::Result;
-pub use utils::binary_cookies::*;
 
-use crate::{Browser, LeetCodeCookies};
+pub use self::{items::cookie::CookiesGetter, utils::binary_cookies::*};
+use crate::browser::cookies::LeetCodeCookies;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -15,7 +14,6 @@ use crate::{Browser, LeetCodeCookies};
 #[derive(PartialEq, Eq)]
 pub struct SafariGetter {
     pub cookie_getter: CookiesGetter,
-    browser: Browser,
 }
 
 #[derive(Clone)]
@@ -39,26 +37,27 @@ impl SafariBuilder {
     }
     pub async fn build(&mut self) -> Result<SafariGetter> {
         let cookie_getter = CookiesGetter::build(self.cookies_path.take()).await?;
-        Ok(SafariGetter {
-            cookie_getter,
-            browser: Browser::Safari,
-        })
+        Ok(SafariGetter { cookie_getter })
     }
 }
 
 impl SafariGetter {
+    const NAME: &'static str = "Safari";
+
     pub fn all_cookies(&self) -> Vec<&SafariCookie> {
         self.cookie_getter.all_cookies()
     }
+
     pub fn get_session_csrf(&self, host: &str) -> LeetCodeCookies {
         self.cookie_getter
             .get_session_csrf(host)
     }
+
     pub const fn binary_cookies(&self) -> &BinaryCookies {
         self.cookie_getter.binary_cookies()
     }
 
-    pub const fn browser(&self) -> Browser {
-        self.browser
+    pub const fn browser(&self) -> &str {
+        Self::NAME
     }
 }
