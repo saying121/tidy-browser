@@ -3,283 +3,94 @@ pub mod info;
 
 use std::path::PathBuf;
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Firefox {
-    base: PathBuf,
+macro_rules! browser_base {
+    ($({ $browser:ident, $linux_base:literal, $win_base:literal, $mac_base:literal }), *) => {
+        $(
+            #[derive(Clone)]
+            #[derive(Debug)]
+            #[derive(Default)]
+            #[derive(PartialEq, Eq, PartialOrd, Ord)]
+            pub struct $browser {
+                base: PathBuf,
+            }
+
+            impl $browser {
+                pub const NAME: &'static str = stringify!($browser);
+
+                #[cfg(target_os = "linux")]
+                pub const BASE: &'static str = $linux_base;
+                #[cfg(target_os = "windows")]
+                pub const BASE: &'static str = $win_base;
+                #[cfg(target_os = "macos")]
+                pub const BASE: &'static str = $mac_base;
+            }
+        )*
+    };
+    ($({ $browser:ident, $win_base:literal, $mac_base:literal }), *) => {
+        $(
+            #[derive(Clone)]
+            #[derive(Debug)]
+            #[derive(Default)]
+            #[derive(PartialEq, Eq, PartialOrd, Ord)]
+            pub struct $browser {
+                base: PathBuf,
+            }
+
+            impl $browser {
+                pub const NAME: &'static str = stringify!($browser);
+
+                #[cfg(target_os = "windows")]
+                pub const BASE: &'static str = $win_base;
+                #[cfg(target_os = "macos")]
+                pub const BASE: &'static str = $mac_base;
+            }
+        )*
+    };
 }
 
-impl Firefox {
-    pub const NAME: &'static str = "Firefox";
-
-    #[cfg(target_os = "linux")]
-    pub const BASE: &'static str = ".mozilla/firefox";
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = r"Mozilla\Firefox";
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "Firefox";
+macro_rules! chromium_safe {
+    ($({ $browser:ident, $safe_storage:literal, $safe_name:literal }), *) => {
+        $(
+            impl $browser {
+                #[cfg(not(target_os = "windows"))]
+                pub const SAFE_STORAGE: &str = $safe_storage;
+                #[cfg(target_os = "macos")]
+                pub const SAFE_NAME: &str = $safe_name;
+            }
+        )*
+    };
 }
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Librewolf {
-    base: PathBuf,
-}
+browser_base!(
+    { Firefox,   ".mozilla/firefox", "Mozilla/Firefox", "Firefox" },
+    { Librewolf, ".librewolf",       "librewolf",       "librewolf" },
 
-impl Librewolf {
-    pub const NAME: &'static str = "Librewolf";
-
-    #[cfg(target_os = "linux")]
-    pub const BASE: &'static str = ".librewolf";
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = "librewolf";
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "librewolf";
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Chrome {
-    base: PathBuf,
-}
-
-impl Chrome {
-    pub const NAME: &'static str = "Chrome";
-
-    #[cfg(target_os = "linux")]
-    pub const BASE: &'static str = "google-chrome/Default";
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = "Google/Chrome/User Data/Default";
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "Google/Chrome/Default";
-
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    pub const SAFE_STORAGE: &str = "Chrome Safe Storage";
-    #[cfg(target_os = "macos")]
-    pub const SAFE_NAME: &str = "Chrome";
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Edge {
-    base: PathBuf,
-}
-
-impl Edge {
-    pub const NAME: &'static str = "Edge";
-
-    #[cfg(target_os = "linux")]
-    pub const BASE: &'static str = "microsoft-edge/Default";
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = "Microsoft/Edge/User Data/Default";
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "Microsoft Edge/Default";
-
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    pub const SAFE_STORAGE: &str = "Microsoft Edge Safe Storage";
-    #[cfg(target_os = "macos")]
-    pub const SAFE_NAME: &str = "Microsoft Edge";
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Chromium {
-    base: PathBuf,
-}
-
-impl Chromium {
-    pub const NAME: &'static str = "Chromium";
-
-    #[cfg(target_os = "linux")]
-    pub const BASE: &'static str = "chromium/Default";
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = "Chromium/User Data/Default";
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "Chromium/Default";
-
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    pub const SAFE_STORAGE: &str = "Chromium Safe Storage";
-    #[cfg(target_os = "macos")]
-    pub const SAFE_NAME: &str = "Chromium";
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Brave {
-    base: PathBuf,
-}
-
-impl Brave {
-    pub const NAME: &'static str = "Brave";
-
-    #[cfg(target_os = "linux")]
-    pub const BASE: &'static str = "BraveSoftware/Brave-Browser/Default";
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = "BraveSoftware/Brave-Browser/User Data/Default";
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "BraveSoftware/Brave-Browser/Default";
-
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    pub const SAFE_STORAGE: &str = "Brave Safe Storage";
-    #[cfg(target_os = "macos")]
-    pub const SAFE_NAME: &str = "Brave";
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Yandex {
-    base: PathBuf,
-}
-
-impl Yandex {
-    pub const NAME: &'static str = "Yandex";
-
-    #[cfg(target_os = "linux")]
-    pub const BASE: &'static str = "yandex-browser/Default";
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = "Yandex/YandexBrowser/User Data/Default";
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "Yandex/YandexBrowser/Default";
-
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    pub const SAFE_STORAGE: &str = "Yandex Safe Storage";
-    #[cfg(target_os = "macos")]
-    pub const SAFE_NAME: &str = "Yandex";
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Vivaldi {
-    base: PathBuf,
-}
-
-impl Vivaldi {
-    pub const NAME: &'static str = "Vivaldi";
-
-    #[cfg(target_os = "linux")]
-    pub const BASE: &'static str = "vivaldi/Default";
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = "Vivaldi/User Data/Default";
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "Vivaldi/Default";
-
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    pub const SAFE_STORAGE: &str = "Vivaldi Safe Storage";
-    #[cfg(target_os = "macos")]
-    pub const SAFE_NAME: &str = "Vivaldi";
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Opera {
-    base: PathBuf,
-}
-
-impl Opera {
-    pub const NAME: &'static str = "Opera";
-
-    #[cfg(target_os = "linux")]
-    pub const BASE: &'static str = "opera/Default";
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = "Opera Software/Opera Stable/Default";
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "com.operasoftware.Opera/Default";
-
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    pub const SAFE_STORAGE: &str = "Opera Safe Storage";
-    #[cfg(target_os = "macos")]
-    pub const SAFE_NAME: &str = "Opera";
-}
-
+    { Chrome,   "google-chrome/Default",               "Google/Chrome/User Data/Default",               "Google/Chrome/Default" },
+    { Edge,     "microsoft-edge/Default",              "Microsoft/Edge/User Data/Default",              "Microsoft Edge/Default" },
+    { Chromium, "chromium/Default",                    "Chromium/User Data/Default",                    "Chromium/Default" },
+    { Brave,    "BraveSoftware/Brave-Browser/Default", "BraveSoftware/Brave-Browser/User Data/Default", "BraveSoftware/Brave-Browser/Default" },
+    { Yandex,   "yandex-browser/Default",              "Yandex/YandexBrowser/User Data/Default",        "Yandex/YandexBrowser/Default" },
+    { Vivaldi,  "vivaldi/Default",                     "Vivaldi/User Data/Default",                     "Vivaldi/Default"},
+    { Opera,    "opera/Default",                       "Opera Software/Opera Stable/Default",           "com.operasoftware.Opera/Default"}
+);
 #[cfg(not(target_os = "linux"))]
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct OperaGX {
-    base: PathBuf,
-}
-
-#[cfg(not(target_os = "linux"))]
-impl OperaGX {
-    pub const NAME: &'static str = "OperaGX";
-
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = "Opera Software/Opera GX Stable";
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "com.operasoftware.OperaGX";
-
-    #[cfg(target_os = "macos")]
-    pub const SAFE_STORAGE: &str = "Opera Safe Storage";
-    #[cfg(target_os = "macos")]
-    pub const SAFE_NAME: &str = "Opera";
-}
-
-#[cfg(not(target_os = "linux"))]
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct CocCoc {
-    base: PathBuf,
-}
-
-#[cfg(not(target_os = "linux"))]
-impl CocCoc {
-    pub const NAME: &'static str = "CocCoc";
-
-    #[cfg(target_os = "linux")]
-    pub const BASE: &'static str = "vivaldi/Default";
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = "CocCoc/Browser/User Data/Default";
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "Coccoc/Default";
-
-    #[cfg(target_os = "macos")]
-    pub const SAFE_STORAGE: &str = "CocCoc Safe Storage";
-    #[cfg(target_os = "macos")]
-    pub const SAFE_NAME: &str = "CocCoc";
-}
-
-#[cfg(not(target_os = "linux"))]
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Arc {
-    base: PathBuf,
-}
-
-// WARN: test it
-#[cfg(not(target_os = "linux"))]
-impl Arc {
-    pub const NAME: &'static str = "Arc";
-
-    #[cfg(target_os = "macos")]
-    pub const BASE: &'static str = "Arc/User Data/Default";
-    #[cfg(target_os = "windows")]
-    pub const BASE: &'static str = "Arc/User Data/Default";
-
-    #[cfg(target_os = "macos")]
-    pub const SAFE_STORAGE: &str = "Arc Safe Storage";
-    #[cfg(target_os = "macos")]
-    pub const SAFE_NAME: &str = "Arc";
-}
+browser_base!(
+    { OperaGX, "Opera Software/Opera GX Stable",   "com.operasoftware.OperaGX" },
+    { CocCoc , "CocCoc/Browser/User Data/Default", "Coccoc/Default"},
+    { Arc ,    "Arc/User Data/Default",            "Arc/User Data/Default"}
+);
+chromium_safe!(
+    { Chrome,   "Chrome Safe Storage",         "Chrome" },
+    { Edge,     "Microsoft Edge Safe Storage", "Microsoft Edge" },
+    { Chromium, "Chromium Safe Storage",       "Chromium" },
+    { Brave,    "Brave Safe Storage",          "Brave" },
+    { Yandex,   "Yandex Safe Storage",         "Yandex" },
+    { Vivaldi,  "Vivaldi Safe Storage",        "Vivaldi" },
+    { Opera,    "Opera Safe Storage",          "Opera" }
+);
+#[cfg(target_os = "macos")]
+chromium_safe!(
+    { OperaGx, "Opera Safe Storage",  "Opera" },
+    { CocCoc,  "CocCoc Safe Storage", "CocCoc" },
+    { Arc,     "Arc Safe Storage",    "Arc" }
+);
