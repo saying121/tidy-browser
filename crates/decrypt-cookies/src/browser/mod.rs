@@ -1,7 +1,7 @@
 pub mod cookies;
 pub mod info;
 
-use std::path::PathBuf;
+use std::{fmt::Display, path::PathBuf};
 
 macro_rules! browser_base {
     ($({ $browser:ident, $linux_base:literal, $win_base:literal, $mac_base:literal }), *) => {
@@ -24,6 +24,12 @@ macro_rules! browser_base {
                 #[cfg(target_os = "macos")]
                 pub const BASE: &'static str = $mac_base;
             }
+
+            impl Display for $browser {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    f.write_str(Self::NAME)
+                }
+            }
         )*
     };
     ($({ $browser:ident, $win_base:literal, $mac_base:literal }), *) => {
@@ -43,6 +49,12 @@ macro_rules! browser_base {
                 pub const BASE: &'static str = $win_base;
                 #[cfg(target_os = "macos")]
                 pub const BASE: &'static str = $mac_base;
+            }
+
+            impl Display for $browser {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    f.write_str(Self::NAME)
+                }
             }
         )*
     };
@@ -88,7 +100,7 @@ chromium_safe!(
     { Vivaldi,  "Vivaldi Safe Storage",        "Vivaldi" },
     { Opera,    "Opera Safe Storage",          "Opera" }
 );
-#[cfg(target_os = "macos")]
+#[cfg(not(target_os = "linux"))]
 chromium_safe!(
     { OperaGx, "Opera Safe Storage",  "Opera" },
     { CocCoc,  "CocCoc Safe Storage", "CocCoc" },

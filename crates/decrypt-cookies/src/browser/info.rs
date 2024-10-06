@@ -50,6 +50,11 @@ pub trait ChromiumInfo: TempPath {
     /// This directory contains shared files for the implementation of the <chrome://local-state> `WebUI` page.
     const LOCAL_STATE: &'static str = "Local State"; // key, json, https://source.chromium.org/chromium/chromium/src/+/main:components/local_state/README.md
 
+    #[cfg(not(target_os = "windows"))]
+    const SAFE_NAME: &'static str = "Unimplemented Safe Name";
+    #[cfg(not(target_os = "windows"))]
+    const SAFE_STORAGE: &'static str = "Unimplemented Safe Storage";
+
     fn base(&self) -> &Path;
 
     /// json, for windows fetch password
@@ -152,11 +157,15 @@ pub trait ChromiumInfo: TempPath {
 
     /// for fetch password
     #[cfg(target_os = "macos")]
-    fn safe_name(&self) -> &str;
+    fn safe_name(&self) -> &str {
+        Self::SAFE_NAME
+    }
 
     /// for fetch password
     #[cfg(not(target_os = "windows"))]
-    fn safe_storage(&self) -> &str;
+    fn safe_storage(&self) -> &str {
+        Self::SAFE_STORAGE
+    }
 }
 
 /// on Linux cache this
@@ -344,18 +353,13 @@ macro_rules! chromium_info_impl {
     ($($browser:ident), *) => {
         $(
             impl ChromiumInfo for $browser {
+                #[cfg(target_os = "macos")]
+                const SAFE_NAME: &'static str = Self::SAFE_NAME;
+                #[cfg(not(target_os = "windows"))]
+                const SAFE_STORAGE: &'static str = Self::SAFE_STORAGE;
+
                 fn base(&self) -> &Path {
                     &self.base
-                }
-
-                #[cfg(target_os = "macos")]
-                fn safe_name(&self) -> &str {
-                    Self::SAFE_NAME
-                }
-
-                #[cfg(not(target_os = "windows"))]
-                fn safe_storage(&self) -> &str {
-                    Self::SAFE_STORAGE
                 }
             }
         )*
@@ -366,20 +370,15 @@ macro_rules! chromium_info_yandex_impl {
     ($($browser:ident), *) => {
         $(
             impl ChromiumInfo for $browser {
+                #[cfg(target_os = "macos")]
+                const SAFE_NAME: &'static str = Self::SAFE_NAME;
+                #[cfg(not(target_os = "windows"))]
+                const SAFE_STORAGE: &'static str = Self::SAFE_STORAGE;
+
                 const LOGIN_DATA: &'static str = "Ya Passman Data"; // sqlite3
 
                 fn base(&self) -> &Path {
                     &self.base
-                }
-
-                #[cfg(target_os = "macos")]
-                fn safe_name(&self) -> &str {
-                    Self::SAFE_NAME
-                }
-
-                #[cfg(not(target_os = "windows"))]
-                fn safe_storage(&self) -> &str {
-                    Self::SAFE_STORAGE
                 }
             }
         )*
@@ -427,12 +426,6 @@ macro_rules! firefox_impl {
             impl FirefoxInfo for $browser {
                 fn base(&self) -> &Path {
                     &self.base
-                }
-            }
-
-            impl std::fmt::Display for $browser {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    f.write_str(Self::NAME)
                 }
             }
         )*

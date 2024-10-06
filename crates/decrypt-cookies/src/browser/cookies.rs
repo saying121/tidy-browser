@@ -20,7 +20,7 @@ impl LeetCodeCookies {
     }
 }
 
-impl std::fmt::Display for LeetCodeCookies {
+impl Display for LeetCodeCookies {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         format!("LEETCODE_SESSION={};csrftoken={};", self.session, self.csrf).fmt(f)
     }
