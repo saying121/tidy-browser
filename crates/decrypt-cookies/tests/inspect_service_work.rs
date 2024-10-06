@@ -1,4 +1,4 @@
-#![allow(clippy::string_slice)]
+#![expect(clippy::string_slice)]
 
 #[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
