@@ -2,7 +2,6 @@
 
 use decrypt_cookies::prelude::*;
 use miette::{IntoDiagnostic, Result};
-use strum::IntoEnumIterator;
 use tokio::{
     fs::{create_dir_all, File, OpenOptions},
     io::{AsyncWriteExt, BufWriter},
@@ -10,7 +9,7 @@ use tokio::{
 
 const BASE_DIR: &str = "./results";
 
-async fn open_file(browser: Browser, item: &str) -> Result<BufWriter<File>> {
+async fn open_file(browser: &str, item: &str) -> Result<BufWriter<File>> {
     Ok(BufWriter::new(
         OpenOptions::new()
             .create(true)
@@ -21,9 +20,11 @@ async fn open_file(browser: Browser, item: &str) -> Result<BufWriter<File>> {
     ))
 }
 
-async fn write_chromium_password(getter: &ChromiumGetter) -> Result<()> {
+async fn write_chromium_password<T: ChromiumInfo + Sync + Send>(
+    getter: &ChromiumGetter<T>,
+) -> Result<()> {
     println!("{} password", getter.browser());
-    let getter = ChromiumBuilder::new(getter.browser())
+    let getter = ChromiumBuilder::new(Chrome::new())
         .build()
         .await?;
     let all_passwords = getter.get_logins_all().await?;
@@ -67,9 +68,11 @@ async fn write_chromium_password(getter: &ChromiumGetter) -> Result<()> {
     Ok(())
 }
 
-async fn write_chromium_cookies(getter: &ChromiumGetter) -> Result<()> {
+async fn write_chromium_cookies<T: ChromiumInfo + Sync + Send>(
+    getter: &ChromiumGetter<T>,
+) -> Result<()> {
     println!("{} cookies", getter.browser());
-    let getter = ChromiumBuilder::new(getter.browser())
+    let getter = ChromiumBuilder::new(Chrome::new())
         .build()
         .await?;
     let cks = getter.get_cookies_all().await?;
@@ -120,7 +123,10 @@ async fn write_chromium_cookies(getter: &ChromiumGetter) -> Result<()> {
     Ok(())
 }
 
-async fn write_firefox_cookies(getter: &FirefoxGetter) -> Result<()> {
+async fn write_firefox_cookies<T>(getter: &FirefoxGetter<T>) -> Result<()>
+where
+    T: FirefoxInfo + Send + Sync,
+{
     println!("{} cookies", getter.browser());
     let head  = b"Host,Name,Path,Value,CreationTime,LastAccessed,Expiry,IsSecure,IsHttpOnly,OriginAttributes";
     let mut buf_writer = open_file(getter.browser(), "cookies").await?;
@@ -210,73 +216,73 @@ pub async fn run() -> Result<()> {
     create_dir_all(BASE_DIR)
         .await
         .into_diagnostic()?;
-    let mut jds = vec![];
+    let mut jds: Vec<tokio::task::JoinHandle<()>> = vec![];
 
-    for browser in Browser::iter() {
-        match browser {
-            Browser::Firefox | Browser::Librewolf => {
-                let hd = tokio::spawn(async move {
-                    let getter = match FirefoxBuilder::new(browser)
-                        .build()
-                        .await
-                    {
-                        Ok(it) => it,
-                        Err(err) => {
-                            tracing::warn!("Firefox Getter wrong: {err}");
-                            return;
-                        },
-                    };
-                    match write_firefox_cookies(&getter).await {
-                        Ok(()) => {},
-                        Err(err) => tracing::warn!("{err}"),
-                    }
-                });
-                jds.push(hd);
-            },
-            #[cfg(target_os = "macos")]
-            Browser::Safari => {
-                use decrypt_cookies::SafariBuilder;
-                let hd = tokio::spawn(async move {
-                    let getter = match SafariBuilder::new().build().await {
-                        Ok(it) => it,
-                        Err(err) => {
-                            tracing::warn!("{browser} wrong: {err}");
-                            return;
-                        },
-                    };
-                    match write_safari_cookies(&getter).await {
-                        Ok(()) => {},
-                        Err(err) => tracing::warn!("{browser} wrong: {err}"),
-                    };
-                });
-                jds.push(hd);
-            },
-
-            browser => {
-                let hd = tokio::spawn(async move {
-                    let getter = match ChromiumBuilder::new(browser)
-                        .build()
-                        .await
-                    {
-                        Ok(it) => it,
-                        Err(err) => {
-                            tracing::warn!("{browser} wrong: {err}");
-                            return;
-                        },
-                    };
-                    match write_chromium_cookies(&getter).await {
-                        Ok(()) => {},
-                        Err(err) => tracing::warn!("{browser} Cookies wrong: {err}"),
-                    };
-                    match write_chromium_password(&getter).await {
-                        Ok(()) => {},
-                        Err(err) => tracing::warn!("{browser} Cookies wrong: {err}"),
-                    };
-                });
-                jds.push(hd);
-            },
-        }
-    }
+    // for browser in Browser::iter() {
+    //     match browser {
+    //         Browser::Firefox | Browser::Librewolf => {
+    //             let hd = tokio::spawn(async move {
+    //                 let getter = match FirefoxBuilder::new(Firefox::new().unwrap())
+    //                     .build()
+    //                     .await
+    //                 {
+    //                     Ok(it) => it,
+    //                     Err(err) => {
+    //                         tracing::warn!("Firefox Getter wrong: {err}");
+    //                         return;
+    //                     },
+    //                 };
+    //                 match write_firefox_cookies(&getter).await {
+    //                     Ok(()) => {},
+    //                     Err(err) => tracing::warn!("{err}"),
+    //                 }
+    //             });
+    //             jds.push(hd);
+    //         },
+    //         #[cfg(target_os = "macos")]
+    //         Browser::Safari => {
+    //             use decrypt_cookies::SafariBuilder;
+    //             let hd = tokio::spawn(async move {
+    //                 let getter = match SafariBuilder::new().build().await {
+    //                     Ok(it) => it,
+    //                     Err(err) => {
+    //                         tracing::warn!("{browser} wrong: {err}");
+    //                         return;
+    //                     },
+    //                 };
+    //                 match write_safari_cookies(&getter).await {
+    //                     Ok(()) => {},
+    //                     Err(err) => tracing::warn!("{browser} wrong: {err}"),
+    //                 };
+    //             });
+    //             jds.push(hd);
+    //         },
+    //
+    //         browser => {
+    //             let hd = tokio::spawn(async move {
+    //                 let getter = match ChromiumBuilder::new(Chrome::new())
+    //                     .build()
+    //                     .await
+    //                 {
+    //                     Ok(it) => it,
+    //                     Err(err) => {
+    //                         tracing::warn!("{browser} wrong: {err}");
+    //                         return;
+    //                     },
+    //                 };
+    //                 match write_chromium_cookies(&getter).await {
+    //                     Ok(()) => {},
+    //                     Err(err) => tracing::warn!("{browser} Cookies wrong: {err}"),
+    //                 };
+    //                 match write_chromium_password(&getter).await {
+    //                     Ok(()) => {},
+    //                     Err(err) => tracing::warn!("{browser} Cookies wrong: {err}"),
+    //                 };
+    //             });
+    //             jds.push(hd);
+    //         },
+    //     }
+    // }
     for ele in jds {
         match ele.await {
             Ok(()) => {},
