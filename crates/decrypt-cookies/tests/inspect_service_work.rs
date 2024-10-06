@@ -1,5 +1,3 @@
-#![expect(clippy::string_slice)]
-
 #[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[cfg(target_os = "linux")]

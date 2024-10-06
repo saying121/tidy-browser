@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use decrypt_cookies::{browser::cookies::CookiesInfo, Browser, ChromiumBuilder};
+use decrypt_cookies::{
+    browser::{cookies::CookiesInfo, Edge},
+    prelude::*,
+};
 use reqwest::{
     cookie::{CookieStore, Jar},
     Client, Url,
@@ -9,7 +12,7 @@ use reqwest::{
 #[ignore]
 #[tokio::test]
 async fn to_jar() {
-    let chrmo = ChromiumBuilder::new(Browser::Edge)
+    let chrmo = ChromiumBuilder::new(Edge::new())
         .build()
         .await
         .unwrap();

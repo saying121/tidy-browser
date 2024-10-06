@@ -1,10 +1,9 @@
-use decrypt_cookies::{Browser, ChromiumBuilder};
-use strum::IntoEnumIterator;
+use decrypt_cookies::prelude::*;
 
 #[ignore = "need realy environment"]
 #[tokio::test]
 async fn passwd() {
-    let edge_getter = match ChromiumBuilder::new(Browser::Yandex)
+    let edge_getter = match ChromiumBuilder::new(Chrome::new())
         .build()
         .await
     {
@@ -18,7 +17,7 @@ async fn passwd() {
         .get_logins_all()
         .await
         .unwrap();
-    dbg!(&res[0]);
+    // dbg!(&res[0]);
     for i in res.into_iter().take(6) {
         println!(
             "{}, {}, {}, {}",
@@ -36,45 +35,52 @@ async fn passwd() {
 #[ignore = "need realy environment"]
 #[tokio::test]
 async fn passwd_browsers() {
-    for browser in Browser::iter().skip_while(|v| !v.is_chromium_base()) {
-        dbg!(browser);
-        let getter = match ChromiumBuilder::new(browser)
-            .build()
-            .await
-        {
-            Ok(it) => it,
-            Err(e) => {
-                eprintln!("{e}");
-                continue;
-            },
-        };
-        let res = match getter.get_logins_all().await {
-            Ok(v) => v,
-            Err(e) => {
-                eprintln!("{e}");
-                vec![]
-            },
-        };
-        match res.first() {
-            Some(first) => {
-                println!(
-                    "{} {} {} ",
-                    first.origin_url,
-                    first
-                        .username_value
-                        .as_deref()
-                        .unwrap_or_default(),
-                    first
-                        .password_value
-                        .as_deref()
-                        .unwrap_or_default()
-                );
-            },
-            None => {
+    macro_rules! test_chromium_pwd {
+        ($($browser:ident), *) => {
+            $(
+                let getter = match ChromiumBuilder::new($browser::new())
+                    .build()
+                    .await
+                {
+                    Ok(it) => it,
+                    Err(e) => {
+                        eprintln!("{e}");
+                        return;
+                    },
+                };
+                let res = match getter.get_logins_all().await {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("{e}");
+                        vec![]
+                    },
+                };
+                match res.first() {
+                    Some(first) => {
+                        println!(
+                            "{} {} {} ",
+                            first.origin_url,
+                            first
+                                .username_value
+                                .as_deref()
+                                .unwrap_or_default(),
+                            first
+                                .password_value
+                                .as_deref()
+                                .unwrap_or_default()
+                        );
+                    },
+                    None => {
+                        println!("=============");
+                        return;
+                    },
+                };
                 println!("=============");
-                continue;
-            },
-        };
-        println!("=============");
+            )*
+        }
     }
+
+    test_chromium_pwd!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi, Opera);
+    #[cfg(not(target_os = "linux"))]
+    test_chromium_pwd!(OperaGX, CocCoc, Arc);
 }
