@@ -100,10 +100,6 @@ pub trait ChromiumInfo: TempPath {
     }
 
     /// sqlite3
-        match self.browser() {
-            "Yandex" => self.base().join("Ya Passman Data"),
-            _ => self.base().join(Self::LOGIN_DATA),
-        }
     fn login_data(&self) -> PathBuf {
         self.base().join(Self::LOGIN_DATA)
     }
@@ -286,15 +282,67 @@ pub trait FirefoxInfo: TempPath {
     }
 }
 
-macro_rules! chromium_impl {
-    ($($browser:ident),*) => {
+macro_rules! chromium_temp_path_impl {
+    ($($browser:ident), *) => {
         $(
             impl TempPath for $browser {
                 fn browser(&self) -> &'static str {
                     Self::NAME
                 }
             }
+        )*
+    };
+}
 
+macro_rules! chromium_impl {
+    ($($browser:ident), *) => {
+        $(
+            impl $browser {
+                pub fn new() -> Self {
+                    #[cfg(target_os = "linux")]
+                    let mut base = dirs::config_dir().expect("Get config dir failed");
+
+                    #[cfg(target_os = "windows")]
+                    let mut base = dirs::data_local_dir().expect("Get data local dir failed");
+
+                    #[cfg(target_os = "macos")]
+                    let mut base = dirs::config_local_dir().expect("Get config dir failed");
+
+                    base.push(Self::BASE);
+
+                    Self { base }
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! chromium_opera_impl {
+    ($($browser:ident), *) => {
+        $(
+            impl $browser {
+                pub fn new() -> Self {
+                    #[cfg(target_os = "linux")]
+                    let mut base = dirs::config_dir().expect("Get config dir failed");
+
+                    #[cfg(target_os = "windows")]
+                    let mut base = dirs::data_dir().expect("Get data dir failed");
+
+                    #[cfg(target_os = "macos")]
+                    let mut base = dirs::config_local_dir().expect("Get config dir failed");
+
+                    base.push(Self::BASE);
+
+                    Self { base }
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! chromium_info_impl {
+    ($($browser:ident), *) => {
+        $(
             impl ChromiumInfo for $browser {
                 fn base(&self) -> &Path {
                     &self.base
@@ -310,35 +358,46 @@ macro_rules! chromium_impl {
                     Self::SAFE_STORAGE
                 }
             }
+        )*
+    };
+}
 
-            impl $browser {
-                pub fn new() -> Self {
-                    #[cfg(target_os = "linux")]
-                    let mut base = dirs::config_dir().expect("Get config dir failed");
+macro_rules! chromium_info_yandex_impl {
+    ($($browser:ident), *) => {
+        $(
+            impl ChromiumInfo for $browser {
+                const LOGIN_DATA: &'static str = "Ya Passman Data"; // sqlite3
 
-                    #[cfg(target_os = "windows")]
-                    let mut base = if Self::NAME.starts_with("Opera") {
-                        dirs::data_dir().expect("Get data dir failed")
-                    }
-                    else {
-                        dirs::data_local_dir().expect("Get data local dir failed")
-                    };
+                fn base(&self) -> &Path {
+                    &self.base
+                }
 
-                    #[cfg(target_os = "macos")]
-                    let mut base = dirs::config_local_dir().expect("Get config dir failed");
+                #[cfg(target_os = "macos")]
+                fn safe_name(&self) -> &str {
+                    Self::SAFE_NAME
+                }
 
-                    base.push(Self::BASE);
-
-                    Self { base }
+                #[cfg(not(target_os = "windows"))]
+                fn safe_storage(&self) -> &str {
+                    Self::SAFE_STORAGE
                 }
             }
         )*
     };
 }
 
-chromium_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi, Opera);
+chromium_temp_path_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi, Opera);
+chromium_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi);
+chromium_opera_impl!(Opera);
+chromium_info_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera);
+chromium_info_yandex_impl!(Yandex);
+
 #[cfg(not(target_os = "linux"))]
-chromium_impl!(OperaGX, CocCoc, Arc);
+chromium_temp_path_impl!(OperaGX, CocCoc, Arc);
+#[cfg(not(target_os = "linux"))]
+chromium_impl!(CocCoc, Arc);
+#[cfg(not(target_os = "linux"))]
+chromium_opera_impl!(OperaGX);
 
 macro_rules! firefox_impl {
     ($($browser:ident), *) => {
