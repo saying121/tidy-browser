@@ -12,13 +12,14 @@ keywords = { workspace = true }
 categories = { workspace = true }
 rust-version = { workspace = true }
 
-exclude = ["tests/", "examples"]
+exclude = ["tests/", "examples", "./CHANGELOG.md"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 tokio = { workspace = true }
 miette = { workspace = true }
+thiserror = { workspace = true }
 rayon = { workspace = true }
 chrono = { workspace = true }
 
@@ -32,22 +33,15 @@ rust-ini = { workspace = true } # firefox
 
 dirs = { workspace = true }
 
-cfg-if = { workspace = true }
-
-strum = { workspace = true, features = ["derive"] }
-reqwest = { workspace = true, default-features = false, features = [
-  "cookies",
-], optional = true }
+reqwest = { workspace = true, default-features = false, features = ["cookies"], optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))'.dependencies]
-secret-service = { workspace = true, default-features = true, features = [
-  "rt-tokio-crypto-rust",
-] }
+secret-service = { workspace = true, default-features = true, features = ["rt-tokio-crypto-rust"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
 bytes = { workspace = true }
 keyring = { workspace = true, default-features = false, features = [
-  "apple-native",
+    "apple-native",
 ] } # It is not working as expected on Linux.
 
 [target.'cfg(not(windows))'.dependencies]
@@ -60,12 +54,7 @@ sha1 = { workspace = true }
 aes-gcm = { workspace = true }
 base64 = { workspace = true }
 serde_json = { workspace = true }
-windows = { workspace = true, features = [
-  "Win32_Security_Cryptography",
-  # "Win32_Foundation",
-  # "Win32_System",
-  # "Win32_System_RestartManager",
-] }
+windows = { workspace = true, features = ["Win32_Security_Cryptography"] }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true }

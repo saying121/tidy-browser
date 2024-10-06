@@ -108,26 +108,25 @@ impl<T: ChromiumInfo + Send + Sync> ChromiumBuilder<T> {
     }
 
     pub async fn build(self) -> Result<ChromiumGetter<T>> {
-        cfg_if::cfg_if!(
-            if #[cfg(target_os = "linux")] {
-                let crypto = Decrypter::build(self.browser.safe_storage()).await?;
-            } else if #[cfg(target_os = "macos")] {
-                let crypto = Decrypter::build(
-                    self.browser.safe_storage(),
-                    self.browser.safe_name(),
-                )?;
-            } else if #[cfg(target_os = "windows")] {
-                let temp_key_path = self.browser.local_state_temp();
-                fs::copy(
-                    self.local_state_path
-                        .unwrap_or_else(|| self.browser.local_state()),
-                    &temp_key_path,
-                )
-                .await
-                .into_diagnostic()?;
-                let crypto = Decrypter::build(temp_key_path).await?;
-            }
-        );
+        #[cfg(target_os = "linux")]
+        let crypto = Decrypter::build(self.browser.safe_storage()).await?;
+
+        #[cfg(target_os = "macos")]
+        let crypto = Decrypter::build(self.browser.safe_storage(), self.browser.safe_name())?;
+
+        #[cfg(target_os = "windows")]
+        let crypto = {
+            let temp_key_path = self.browser.local_state_temp();
+            fs::copy(
+                self.local_state_path
+                    .unwrap_or_else(|| self.browser.local_state()),
+                &temp_key_path,
+            )
+            .await
+            .into_diagnostic()?;
+            Decrypter::build(temp_key_path).await?
+        };
+
         let (temp_cookies_path, temp_login_data_path) =
             (self.browser.cookies_temp(), self.browser.login_data_temp());
         let cp_login = fs::copy(

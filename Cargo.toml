@@ -34,11 +34,10 @@ tracing = { version = "^0.1" }
 tracing-subscriber = { version = "^0.3", default-features = true, features = ["env-filter"] }
 
 miette = { version = "^7", default-features = true }
+thiserror = { version = "^1" }
 
 serde = { version = "^1", default-features = false, features = ["derive"] }
 serde_json = { version = "^1", default-features = false }
-
-strum = { version = "^0.26" }
 
 secret-service = { version = "^4" }
 bytes = { version = "^1" }
@@ -54,8 +53,6 @@ windows = { version = "^0.58" }
 rayon = { version = "^1" }
 chrono = { version = "^0.4" }
 rust-ini = { version = "^0.21" }
-
-cfg-if = { version = "^1" }
 
 clap = { version = "^4" }
 
