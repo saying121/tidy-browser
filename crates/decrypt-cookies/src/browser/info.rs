@@ -60,16 +60,10 @@ pub trait ChromiumInfo: TempPath {
     /// json, for windows fetch password
     #[cfg(target_os = "windows")]
     fn local_state(&self) -> PathBuf {
-        // shit, quirky
-        if self.browser() == "OperaGX" {
-            self.base().join(Self::LOCAL_STATE)
-        }
-        else {
-            let mut path = self.base().to_owned();
-            path.pop();
-            path.push(Self::LOCAL_STATE);
-            path
-        }
+        let mut path = self.base().to_owned();
+        path.pop();
+        path.push(Self::LOCAL_STATE);
+        path
     }
     fn local_state_temp(&self) -> PathBuf {
         self.temp_path_prefix()
@@ -392,11 +386,30 @@ chromium_info_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera);
 chromium_info_yandex_impl!(Yandex);
 
 #[cfg(not(target_os = "linux"))]
+chromium_info_impl!(CocCoc, Arc);
+#[cfg(not(target_os = "linux"))]
 chromium_temp_path_impl!(OperaGX, CocCoc, Arc);
 #[cfg(not(target_os = "linux"))]
 chromium_impl!(CocCoc, Arc);
 #[cfg(not(target_os = "linux"))]
 chromium_opera_impl!(OperaGX);
+
+#[cfg(not(target_os = "linux"))]
+impl ChromiumInfo for OperaGX {
+    #[cfg(target_os = "macos")]
+    const SAFE_NAME: &'static str = Self::SAFE_NAME;
+    #[cfg(not(target_os = "windows"))]
+    const SAFE_STORAGE: &'static str = Self::SAFE_STORAGE;
+
+    fn base(&self) -> &Path {
+        &self.base
+    }
+
+    #[cfg(target_os = "windows")]
+    fn local_state(&self) -> PathBuf {
+        self.base().join(Self::LOCAL_STATE)
+    }
+}
 
 macro_rules! firefox_impl {
     ($($browser:ident), *) => {

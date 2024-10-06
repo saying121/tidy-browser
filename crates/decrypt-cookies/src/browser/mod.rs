@@ -73,6 +73,7 @@ macro_rules! chromium_safe {
     };
 }
 
+// TODO: Add more browser
 browser_base!(
     { Firefox,   ".mozilla/firefox", "Mozilla/Firefox", "Firefox" },
     { Librewolf, ".librewolf",       "librewolf",       "librewolf" },
@@ -85,6 +86,8 @@ browser_base!(
     { Vivaldi,  "vivaldi/Default",                     "Vivaldi/User Data/Default",                     "Vivaldi/Default"},
     { Opera,    "opera/Default",                       "Opera Software/Opera Stable/Default",           "com.operasoftware.Opera/Default"}
 );
+// WARN: `Arc` is no test
+// TODO: Test `Arc`
 #[cfg(not(target_os = "linux"))]
 browser_base!(
     { OperaGX, "Opera Software/Opera GX Stable",   "com.operasoftware.OperaGX" },
@@ -102,7 +105,7 @@ chromium_safe!(
 );
 #[cfg(not(target_os = "linux"))]
 chromium_safe!(
-    { OperaGx, "Opera Safe Storage",  "Opera" },
+    { OperaGX, "Opera Safe Storage",  "Opera" },
     { CocCoc,  "CocCoc Safe Storage", "CocCoc" },
     { Arc,     "Arc Safe Storage",    "Arc" }
 );
