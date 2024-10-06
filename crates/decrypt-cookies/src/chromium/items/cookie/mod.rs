@@ -7,10 +7,10 @@ use crate::browser::cookies::{CookiesInfo, SameSite};
 pub mod cookie_dao;
 pub mod cookie_entities;
 
-#[allow(clippy::exhaustive_structs)]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
+#[non_exhaustive]
 pub struct ChromiumCookie {
     pub creation_utc: Option<DateTime<Utc>>,
     pub host_key: String,
@@ -92,7 +92,7 @@ impl ChromiumCookie {
 
 impl From<cookies::Model> for ChromiumCookie {
     fn from(value: cookies::Model) -> Self {
-        #[allow(clippy::wildcard_in_or_patterns)]
+        #[expect(clippy::wildcard_in_or_patterns)]
         Self {
             creation_utc: value
                 .creation_utc

@@ -1,5 +1,3 @@
-#![allow(clippy::exhaustive_structs)]
-
 use chrono::{DateTime, Utc};
 
 use self::entities::moz_cookies;
@@ -83,7 +81,7 @@ impl CookiesInfo for MozCookies {
 
 impl From<moz_cookies::Model> for MozCookies {
     fn from(value: moz_cookies::Model) -> Self {
-        #[allow(clippy::wildcard_in_or_patterns)]
+        #[expect(clippy::wildcard_in_or_patterns)]
         Self {
             id: value.id,
             origin_attributes: value.origin_attributes,

@@ -104,7 +104,7 @@ impl BinaryCookies {
     const PAGE_START_HEADER: [u8; 4] = [0x00, 0x00, 0x01, 0x00];
     const END_HEADER: [u8; 4] = [0x00, 0x00, 0x00, 0x00];
 
-    #[allow(clippy::panic_in_result_fn)]
+    #[expect(clippy::panic_in_result_fn)]
     // raw data and some unnecessary data
     pub fn parse(file: &[u8]) -> Result<Self> {
         let mut entry = file;
@@ -142,7 +142,7 @@ impl BinaryCookies {
             checksum: entry[..8].to_vec(),
         })
     }
-    #[allow(clippy::panic_in_result_fn)]
+    #[expect(clippy::panic_in_result_fn)]
     fn parse_page(entry: &mut &[u8]) -> Result<Page> {
         // page start
         if entry.len() < 4 || entry[..4] != Self::PAGE_START_HEADER {
@@ -182,7 +182,7 @@ impl BinaryCookies {
         };
         Ok(page)
     }
-    #[allow(clippy::panic_in_result_fn)]
+    #[expect(clippy::panic_in_result_fn)]
     fn parse_cookie(entry: &mut &[u8]) -> Result<SafariCookie> {
         let cookie_size = entry.get_u32_le();
 
@@ -259,7 +259,7 @@ impl BinaryCookies {
         entry.advance(value_len);
         let value = String::from_utf8_lossy(value).to_string();
 
-        #[allow(clippy::wildcard_in_or_patterns)]
+        #[expect(clippy::wildcard_in_or_patterns)]
         let same_site = match cookie_flags & 56 {
             40 => SameSite::Lax,
             56 => SameSite::Strict,

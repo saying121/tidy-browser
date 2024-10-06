@@ -12,6 +12,7 @@ use crate::browser::cookies::LeetCodeCookies;
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
+#[non_exhaustive]
 pub struct SafariGetter {
     pub cookie_getter: CookiesGetter,
 }
@@ -28,6 +29,8 @@ impl SafariBuilder {
     pub const fn new() -> Self {
         Self { cookies_path: None }
     }
+
+    /// If the Cookies file is not in specified location
     pub fn cookies_path<P>(&mut self, path: P) -> &mut Self
     where
         P: Into<PathBuf>,
@@ -35,6 +38,7 @@ impl SafariBuilder {
         self.cookies_path = Some(path.into());
         self
     }
+
     pub async fn build(&mut self) -> Result<SafariGetter> {
         let cookie_getter = CookiesGetter::build(self.cookies_path.take()).await?;
         Ok(SafariGetter { cookie_getter })

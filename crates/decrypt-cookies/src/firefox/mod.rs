@@ -1,14 +1,15 @@
 pub mod items;
+
 use std::path::PathBuf;
 
 use chrono::Utc;
-pub use items::cookie::entities::moz_cookies::{
-    Column as MozCookiesColumn, ColumnIter as MozCookiesColumnIter,
-};
 use miette::{IntoDiagnostic, Result};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
 
+pub use self::items::cookie::entities::moz_cookies::{
+    Column as MozCookiesCol, ColumnIter as MozCookiesColIter,
+};
 use self::items::{
     cookie::{dao::CookiesQuery, MozCookies},
     I64ToMozTime,
@@ -69,16 +70,16 @@ impl<T: FirefoxInfo + Send + Sync> FirefoxGetter<T> {
     /// # Example
     ///
     /// ```rust,ignore
-    /// use decrypt_cookies::{firefox::MozCookiesColumn, Browser, FirefoxBuilder,ColumnTrait};
+    /// use decrypt_cookies::{firefox::MozCookiesCol, Browser, FirefoxBuilder,ColumnTrait};
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let ffget = FirefoxBuilder::new(Browser::Firefox)
+    ///     let ffget = FirefoxBuilder::new(Firefox::new().unwrap())
     ///         .build()
     ///         .await
     ///         .unwrap();
     ///     let res = ffget
-    ///         .get_cookies_filter(MozCookiesColumn::Host.contains("mozilla.com"))
+    ///         .get_cookies_filter(MozCookiesCol::Host.contains("mozilla.com"))
     ///         .await
     ///         .unwrap_or_default();
     /// }
@@ -109,6 +110,7 @@ impl<T: FirefoxInfo + Send + Sync> FirefoxGetter<T> {
             .collect();
         Ok(res)
     }
+
     pub async fn get_cookies_by_host(&self, host: &str) -> Result<Vec<MozCookies>> {
         let res = self
             .cookies_query
@@ -126,12 +128,12 @@ impl<T: FirefoxInfo + Send + Sync> FirefoxGetter<T> {
         let cookies = self
             .cookies_query
             .query_cookie_filter(
-                MozCookiesColumn::Host
+                MozCookiesCol::Host
                     .contains(host)
                     .and(
-                        MozCookiesColumn::Name
+                        MozCookiesCol::Name
                             .eq("csrftoken")
-                            .or(MozCookiesColumn::Name.eq("LEETCODE_SESSION")),
+                            .or(MozCookiesCol::Name.eq("LEETCODE_SESSION")),
                     ),
             )
             .await?;
@@ -172,6 +174,7 @@ impl<T: FirefoxInfo + Send + Sync> FirefoxGetter<T> {
         }
         Ok(res)
     }
+
     pub fn browser(&self) -> &str {
         self.browser.browser()
     }

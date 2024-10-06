@@ -1,5 +1,6 @@
 pub mod crypto;
 mod items;
+#[cfg(target_os = "windows")]
 pub mod local_state;
 use std::path::PathBuf;
 
@@ -7,7 +8,9 @@ use chrono::prelude::Utc;
 use items::cookie::{cookie_dao::CookiesQuery, cookie_entities::cookies};
 pub use items::{
     cookie::{
-        cookie_entities::cookies::{Column as ChromiumCookieCol, ColumnIter as ChromiumCookieColIter},
+        cookie_entities::cookies::{
+            Column as ChromiumCookieCol, ColumnIter as ChromiumCookieColIter,
+        },
         ChromiumCookie,
     },
     passwd::{
@@ -38,7 +41,7 @@ use crate::browser::{cookies::LeetCodeCookies, info::ChromiumInfo};
 ///
 /// # Example
 /// ```rust, ignore
-/// let getter = ChromiumBuilder::new(Browser::Chromium)
+/// let getter = ChromiumBuilder::new(Chromium::new())
 ///     .build()
 ///     .await?;
 /// getter
@@ -62,6 +65,7 @@ pub struct ChromiumBuilder<T: ChromiumInfo + Send + Sync> {
     browser: T,
     cookies_path: Option<PathBuf>,
     /// in windows, it store passwd
+    #[cfg(target_os = "windows")]
     local_state_path: Option<PathBuf>,
 
     login_data_path: Option<PathBuf>,
@@ -72,10 +76,12 @@ impl<T: ChromiumInfo + Send + Sync> ChromiumBuilder<T> {
         Self {
             browser,
             cookies_path: None,
+            #[cfg(target_os = "windows")]
             local_state_path: None,
             login_data_path: None,
         }
     }
+    /// If the Login Data file is not in specified location
     pub fn login_data_path<P>(&mut self, path: P) -> &mut Self
     where
         P: Into<PathBuf>,
@@ -83,7 +89,7 @@ impl<T: ChromiumInfo + Send + Sync> ChromiumBuilder<T> {
         self.login_data_path = Some(path.into());
         self
     }
-    /// set cookies path
+    /// If the Cookies file is not in specified location
     pub fn cookies_path<P>(&mut self, path: P) -> &mut Self
     where
         P: Into<PathBuf>,
@@ -92,6 +98,7 @@ impl<T: ChromiumInfo + Send + Sync> ChromiumBuilder<T> {
         self
     }
     /// set `local_state` path
+    #[cfg(target_os = "windows")]
     pub fn local_state_path<P>(&mut self, path: P) -> &mut Self
     where
         P: Into<PathBuf>,
@@ -122,10 +129,10 @@ impl<T: ChromiumInfo + Send + Sync> ChromiumBuilder<T> {
             }
         );
         let (temp_cookies_path, temp_login_data_path) =
-            (self.browser.cookies_temp(), self.browser.logindata_temp());
+            (self.browser.cookies_temp(), self.browser.login_data_temp());
         let cp_login = fs::copy(
             self.login_data_path
-                .unwrap_or_else(|| self.browser.logindata()),
+                .unwrap_or_else(|| self.browser.login_data()),
             &temp_login_data_path,
         );
 
@@ -183,11 +190,11 @@ impl<T: ChromiumInfo + Send + Sync> ChromiumGetter<T> {
     /// # Example:
     ///
     /// ```rust
-    /// use decrypt_cookies::{chromium::ChromeLoginCol, Browser, ChromiumBuilder, ColumnTrait};
+    /// use decrypt_cookies::prelude::*;
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let edge_getter = ChromiumBuilder::new(Browser::Edge)
+    ///     let edge_getter = ChromiumBuilder::new(Chromium::new())
     ///         .build()
     ///         .await
     ///         .unwrap();
@@ -209,7 +216,6 @@ impl<T: ChromiumInfo + Send + Sync> ChromiumGetter<T> {
         self.par_decrypt_logins(raw_login)
             .await
     }
-    /// contains passwords
     pub async fn get_logins_by_host<F>(&self, host: F) -> Result<Vec<LoginData>>
     where
         F: AsRef<str> + Send,
@@ -238,11 +244,11 @@ impl<T: ChromiumInfo + Send + Sync> ChromiumGetter<T> {
     /// # Example:
     ///
     /// ```rust
-    /// use decrypt_cookies::{chromium::ChromCkColumn, Browser, ChromiumBuilder, ColumnTrait};
+    /// use decrypt_cookies::prelude::*;
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let edge_getter = ChromiumBuilder::new(Browser::Edge)
+    ///     let edge_getter = ChromiumBuilder::new(Chromium::new())
     ///         .build()
     ///         .await
     ///         .unwrap();
