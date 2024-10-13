@@ -72,26 +72,25 @@ macro_rules! chromium_safe {
 }
 
 // TODO: Add more browser
-// TODO: Remove suffix `Default`?
 browser_base!(
     { Firefox,   ".mozilla/firefox", "Mozilla/Firefox", "Firefox" },
     { Librewolf, ".librewolf",       "librewolf",       "librewolf" },
 
-    { Chrome,   "google-chrome/Default",               "Google/Chrome/User Data/Default",               "Google/Chrome/Default" },
-    { Edge,     "microsoft-edge/Default",              "Microsoft/Edge/User Data/Default",              "Microsoft Edge/Default" },
-    { Chromium, "chromium/Default",                    "Chromium/User Data/Default",                    "Chromium/Default" },
-    { Brave,    "BraveSoftware/Brave-Browser/Default", "BraveSoftware/Brave-Browser/User Data/Default", "BraveSoftware/Brave-Browser/Default" },
-    { Yandex,   "yandex-browser/Default",              "Yandex/YandexBrowser/User Data/Default",        "Yandex/YandexBrowser/Default" },
-    { Vivaldi,  "vivaldi/Default",                     "Vivaldi/User Data/Default",                     "Vivaldi/Default"},
-    { Opera,    "opera/Default",                       "Opera Software/Opera Stable/Default",           "com.operasoftware.Opera/Default"}
+    { Chrome,   "google-chrome",               "Google/Chrome/User Data",               "Google/Chrome" },
+    { Edge,     "microsoft-edge",              "Microsoft/Edge/User Data",              "Microsoft Edge" },
+    { Chromium, "chromium",                    "Chromium/User Data",                    "Chromium" },
+    { Brave,    "BraveSoftware/Brave-Browser", "BraveSoftware/Brave-Browser/User Data", "BraveSoftware/Brave-Browser" },
+    { Yandex,   "yandex-browser",              "Yandex/YandexBrowser/User Data",        "Yandex/YandexBrowser" },
+    { Vivaldi,  "vivaldi",                     "Vivaldi/User Data",                     "Vivaldi"},
+    { Opera,    "opera",                       "Opera Software/Opera Stable",           "com.operasoftware.Opera"}
 );
 // WARN: `Arc` is no test
 // TODO: Test `Arc`
 #[cfg(not(target_os = "linux"))]
 browser_base!(
-    { OperaGX, "Opera Software/Opera GX Stable",   "com.operasoftware.OperaGX" },
-    { CocCoc,  "CocCoc/Browser/User Data/Default", "Coccoc/Default"},
-    { Arc,     "Arc/User Data/Default",            "Arc/User Data/Default"}
+    { OperaGX, "Opera Software/Opera GX Stable", "com.operasoftware.OperaGX" },
+    { CocCoc,  "CocCoc/Browser/User Data",       "Coccoc"},
+    { Arc,     "Arc/User Data",                  "Arc/User Data"}
 );
 chromium_safe!(
     { Chrome,   "Chrome Safe Storage",         "Chrome" },

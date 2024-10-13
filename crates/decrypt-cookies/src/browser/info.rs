@@ -1,9 +1,7 @@
-use std::{
-    fs::{create_dir_all, read_to_string},
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use miette::{IntoDiagnostic, Result};
+use tokio::fs::create_dir_all;
 
 use super::*;
 
@@ -14,8 +12,7 @@ pub trait TempPath {
     /// for gen temp path
     fn temp_path_prefix(&self) -> PathBuf {
         let mut temp_path = dirs::cache_dir().expect("get cache_dir failed");
-        temp_path.push(format!("tidy_browser/{}", self.browser()));
-        create_dir_all(&temp_path).expect("create temp path failed");
+        temp_path.push(format!("decrypt-cookies/{}", self.browser()));
 
         temp_path
     }
@@ -23,26 +20,26 @@ pub trait TempPath {
 
 /// just impl the `base` method
 pub trait ChromiumInfo: TempPath {
-    const BOOKMARKS: &'static str = "Bookmarks"; // json
+    const BOOKMARKS: &'static str = "Default/Bookmarks"; // json
     #[cfg(not(target_os = "windows"))]
-    const COOKIES: &'static str = "Cookies"; // sqlite3
+    const COOKIES: &'static str = "Default/Cookies"; // sqlite3
     #[cfg(target_os = "windows")]
     const COOKIES: &'static str = "Network/Cookies"; // sqlite3
 
     // const PROFILE_PICTURE: &'static str = "Edge Profile Picture.png";
     const EXTENSION_COOKIES: &'static str = "Extension Cookies";
     // const FAVICONS: &'static str = "Favicons"; // sqlite3
-    const HISTORY: &'static str = "History"; // sqlite3
+    const HISTORY: &'static str = "Default/History"; // sqlite3
     const LOAD_STATISTICS: &'static str = "load_statistics.db"; // sqlite3
-    const LOGIN_DATA: &'static str = "Login Data"; // sqlite3
+    const LOGIN_DATA: &'static str = "Default/Login Data"; // sqlite3
     const MEDIA_DEVICE_SALTS: &'static str = "MediaDeviceSalts"; // sqlite3, https://source.chromium.org/chromium/chromium/src/+/main:components/media_device_salt/README.md
     const NETWORK_ACTION_PREDICTOR: &'static str = "Network Action Predictor"; // sqlite3
-    const LOCAL_STORAGE: &'static str = "Local Storage/leveldb";
-    const EXTENSIONS: &'static str = "Extensions"; // a directory
-    const SESSION_STORAGE: &'static str = "Session Storage"; // leveldb
+    const LOCAL_STORAGE: &'static str = "Default/Local Storage/leveldb";
+    const EXTENSIONS: &'static str = "Default/Extensions"; // a directory
+    const SESSION_STORAGE: &'static str = "Default/Session Storage"; // leveldb
     /// The webdata component manages the "web database", a `SQLite` database stored in the user's profile
     /// containing various webpage-related metadata such as autofill and web search engine data.
-    const WEB_DATA: &'static str = "Web Data"; // sqlite3, https://source.chromium.org/chromium/chromium/src/+/main:components/webdata/README.md
+    const WEB_DATA: &'static str = "Default/Web Data"; // sqlite3, https://source.chromium.org/chromium/chromium/src/+/main:components/webdata/README.md
     /// This directory contains shared files for the implementation of the <chrome://local-state> `WebUI` page.
     const LOCAL_STATE: &'static str = "Local State"; // key, json, https://source.chromium.org/chromium/chromium/src/+/main:components/local_state/README.md
 
@@ -56,11 +53,9 @@ pub trait ChromiumInfo: TempPath {
     /// json, for windows fetch password
     #[cfg(target_os = "windows")]
     fn local_state(&self) -> PathBuf {
-        let mut path = self.base().to_owned();
-        path.pop();
-        path.push(Self::LOCAL_STATE);
-        path
+        self.base().join(Self::LOCAL_STATE)
     }
+    #[cfg(target_os = "windows")]
     fn local_state_temp(&self) -> PathBuf {
         self.temp_path_prefix()
             .join(Self::LOCAL_STATE)
@@ -68,7 +63,8 @@ pub trait ChromiumInfo: TempPath {
 
     /// sqlite3
     fn credit(&self) -> PathBuf {
-        self.base().join(Self::WEB_DATA)
+        let path = self.base().join(Self::WEB_DATA);
+        path
     }
     fn credit_temp(&self) -> PathBuf {
         self.temp_path_prefix()
@@ -136,13 +132,8 @@ pub trait ChromiumInfo: TempPath {
         self.base().join(Self::COOKIES)
     }
     fn cookies_temp(&self) -> PathBuf {
-        #[cfg(not(target_os = "windows"))]
-        let cookies = Self::COOKIES;
-        #[cfg(target_os = "windows")]
-        let cookies = "Cookies";
-
         self.temp_path_prefix()
-            .join(cookies)
+            .join(Self::COOKIES)
     }
 
     /// for fetch password
@@ -245,8 +236,7 @@ pub trait FirefoxInfo: TempPath {
     fn helper(base: PathBuf) -> Result<PathBuf> {
         let ini_path = base.join("profiles.ini");
 
-        let str = read_to_string(ini_path).into_diagnostic()?;
-        let ini_file = ini::Ini::load_from_str(&str).into_diagnostic()?;
+        let ini_file = ini::Ini::load_from_file(ini_path).into_diagnostic()?;
         let mut res: PathBuf = base;
         for (sec, prop) in ini_file {
             let Some(sec) = sec
@@ -270,12 +260,18 @@ pub trait FirefoxInfo: TempPath {
     }
 }
 
-macro_rules! chromium_builder_temp_path_impl {
+macro_rules! chromium_builder_temp_path_display_impl {
     ($($browser:ident), *) => {
         $(
             impl TempPath for crate::chromium::ChromiumBuilder<$browser> {
                 fn browser(&self) -> &'static str {
                     $browser::NAME
+                }
+            }
+
+            impl std::fmt::Display for crate::chromium::ChromiumGetter<$browser> {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    f.write_str($browser::NAME)
                 }
             }
         )*
@@ -302,8 +298,8 @@ macro_rules! chromium_builder_new_impl {
                 }
 
                 /// When browser start with `--user-data-dir=DIR` or special other channel
-                pub fn with_user_data_dir(base: &Path) -> Self {
-                    Self { base: base.join("Default"), __browser: core::marker::PhantomData::<$browser> }
+                pub const fn with_user_data_dir(base: PathBuf) -> Self {
+                    Self { base, __browser: core::marker::PhantomData::<$browser> }
                 }
             }
         )*
@@ -330,8 +326,26 @@ impl crate::chromium::ChromiumBuilder<$browser> {
             crate::chromium::crypto::win::Decrypter::build(temp_key_path).await?
         };
 
+        let lg_temp = self.login_data_temp();
+        let ck_temp = self.cookies_temp();
+
+        create_dir_all(
+            lg_temp.parent()
+                .expect("Get parent dir failed"),
+        )
+        .await
+        .expect("Create cache path failed");
+
+
+        create_dir_all(
+            ck_temp.parent()
+                .expect("Get parent dir failed"),
+        )
+        .await
+        .expect("Create cache path failed");
+
         let (temp_cookies_path, temp_login_data_path) =
-            (self.cookies_temp(), self.login_data_temp());
+            (ck_temp , lg_temp );
         let cp_login = tokio::fs::copy(self.login_data(), &temp_login_data_path);
 
         let cp_cookies = tokio::fs::copy(self.cookies(), &temp_cookies_path);
@@ -421,37 +435,22 @@ macro_rules! chromium_builder_info_yandex_impl {
         )*
     };
 }
-macro_rules! chromium_getter_display_impl {
-    ($($browser:ident), *) => {
-        $(
-impl std::fmt::Display for crate::chromium::ChromiumGetter<$browser> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str($browser::NAME)
-    }
-}
-        )*
-    }
-}
 
-chromium_builder_temp_path_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi, Opera);
-chromium_getter_display_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi, Opera);
+chromium_builder_temp_path_display_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera, Yandex);
 
 chromium_builder_info_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera);
 chromium_builder_info_yandex_impl!(Yandex);
 
-chromium_builder_new_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi);
+chromium_builder_new_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Yandex);
 chromium_builder_new_opera_impl!(Opera);
 
-chromium_builder_build_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi);
-chromium_builder_build_impl!(Opera);
+chromium_builder_build_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera, Yandex);
 
 #[cfg(not(target_os = "linux"))]
-chromium_builder_temp_path_impl!(OperaGX, CocCoc, Arc);
-#[cfg(not(target_os = "linux"))]
-chromium_getter_display_impl!(OperaGX, CocCoc, Arc);
+chromium_builder_temp_path_display_impl!(OperaGX, CocCoc, Arc);
 
 #[cfg(not(target_os = "linux"))]
-chromium_builder_info_impl!(CocCoc, Arc);
+chromium_builder_info_impl!(OperaGX, CocCoc, Arc);
 
 #[cfg(not(target_os = "linux"))]
 chromium_builder_new_impl!(CocCoc, Arc);
@@ -459,23 +458,6 @@ chromium_builder_new_impl!(CocCoc, Arc);
 chromium_builder_new_opera_impl!(OperaGX);
 #[cfg(not(target_os = "linux"))]
 chromium_builder_build_impl!(OperaGX, CocCoc, Arc);
-
-#[cfg(not(target_os = "linux"))]
-impl ChromiumInfo for crate::chromium::ChromiumBuilder<OperaGX> {
-    #[cfg(target_os = "macos")]
-    const SAFE_NAME: &'static str = OperaGX::SAFE_NAME;
-    #[cfg(not(target_os = "windows"))]
-    const SAFE_STORAGE: &'static str = OperaGX::SAFE_STORAGE;
-
-    fn base(&self) -> &Path {
-        &self.base
-    }
-
-    #[cfg(target_os = "windows")]
-    fn local_state(&self) -> PathBuf {
-        self.base().join(Self::LOCAL_STATE)
-    }
-}
 
 macro_rules! firefox_impl {
     ($($browser:ident), *) => {
@@ -508,7 +490,14 @@ macro_rules! firefox_impl {
 
                 pub async fn build(self) -> Result<crate::firefox::FirefoxGetter<$browser>> {
                     let temp_cookies_path = self.cookies_temp();
-                    tracing::debug!("{:?}", self.cookies());
+
+                    create_dir_all(
+                        temp_cookies_path.parent()
+                            .expect("Get parent dir failed"),
+                    )
+                    .await
+                    .expect("Create cache path failed");
+
                     tokio::fs::copy(self.cookies(), &temp_cookies_path)
                         .await
                         .into_diagnostic()?;

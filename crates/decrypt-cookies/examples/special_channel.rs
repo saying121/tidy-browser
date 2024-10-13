@@ -4,10 +4,9 @@ use decrypt_cookies::prelude::*;
 async fn main() -> miette::Result<()> {
     let mut p = dirs::config_dir().expect("Get config dir failed");
     p.push("google-chrome-beta");
-    dbg!(&p);
 
     // p: `"$HOME/.config/google-chrome-beta"`
-    let chromium = ChromiumBuilder::<Chrome>::with_user_data_dir(&p)
+    let chromium = ChromiumBuilder::<Chrome>::with_user_data_dir(p)
         .build()
         .await?;
     let all_cookies = chromium.get_cookies_all().await?;
