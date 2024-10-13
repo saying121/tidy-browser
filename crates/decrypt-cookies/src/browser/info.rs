@@ -260,7 +260,7 @@ pub trait FirefoxInfo: TempPath {
         }
         let str = read_to_string(ini_path).into_diagnostic()?;
         let ini_file = ini::Ini::load_from_str(&str).into_diagnostic()?;
-        let mut section = base.to_owned();
+        let mut section: PathBuf = base.into();
         for (sec, prop) in ini_file {
             let Some(sec) = sec
             else {
@@ -270,12 +270,12 @@ pub trait FirefoxInfo: TempPath {
                 let default = prop
                     .get("Default")
                     .unwrap_or_default();
-                section.push_str(default);
+                section.push(default);
                 break;
             }
         }
 
-        tracing::debug!("section: {}", section);
+        tracing::debug!("section: {:?}", section);
 
         let mut res = init_path;
         res.push(section);

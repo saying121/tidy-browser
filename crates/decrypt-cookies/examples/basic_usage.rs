@@ -7,26 +7,26 @@ async fn main() -> miette::Result<()> {
         .await?;
     let all_cookies = chromium.get_cookies_all().await?;
 
-    dbg!(&all_cookies[0]);
+    dbg!(&all_cookies.first());
 
     let filtered_cookies = chromium
         .get_cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
         .await?;
 
-    dbg!(&filtered_cookies[0]);
+    dbg!(&filtered_cookies.first());
 
     let firefox = FirefoxBuilder::<Firefox>::new()?
         .build()
         .await?;
     let all_cookies = firefox.get_cookies_all().await?;
 
-    dbg!(&all_cookies[0]);
+    dbg!(&all_cookies.first());
 
     let filtered_cookies = firefox
-        .get_cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
+        .get_cookies_filter(MozCookiesCol::Host.contains("google.com"))
         .await?;
 
-    dbg!(&filtered_cookies[0]);
+    dbg!(&filtered_cookies.first());
 
     Ok(())
 }
