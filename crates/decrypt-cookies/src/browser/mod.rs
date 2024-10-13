@@ -1,18 +1,17 @@
 pub mod cookies;
 pub mod info;
 
-use std::{fmt::Display, path::PathBuf};
+use std::fmt::Display;
 
 macro_rules! browser_base {
     ($({ $browser:ident, $linux_base:literal, $win_base:literal, $mac_base:literal }), *) => {
         $(
-            #[derive(Clone)]
+            #[derive(Clone, Copy)]
             #[derive(Debug)]
             #[derive(Default)]
             #[derive(PartialEq, Eq, PartialOrd, Ord)]
-            pub struct $browser {
-                base: PathBuf,
-            }
+            #[expect(clippy::exhaustive_structs)]
+            pub struct $browser;
 
             impl $browser {
                 pub const NAME: &'static str = stringify!($browser);
@@ -34,13 +33,12 @@ macro_rules! browser_base {
     };
     ($({ $browser:ident, $win_base:literal, $mac_base:literal }), *) => {
         $(
-            #[derive(Clone)]
+            #[derive(Clone, Copy)]
             #[derive(Debug)]
             #[derive(Default)]
             #[derive(PartialEq, Eq, PartialOrd, Ord)]
-            pub struct $browser {
-                base: PathBuf,
-            }
+            #[expect(clippy::exhaustive_structs)]
+            pub struct $browser;
 
             impl $browser {
                 pub const NAME: &'static str = stringify!($browser);

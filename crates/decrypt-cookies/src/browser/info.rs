@@ -285,10 +285,10 @@ pub trait FirefoxInfo: TempPath {
     }
 }
 
-macro_rules! chromium_temp_path_impl {
+macro_rules! chromium_builder_temp_path_impl {
     ($($browser:ident), *) => {
         $(
-            impl TempPath for $browser {
+            impl TempPath for crate::chromium::ChromiumBuilder<$browser> {
                 fn browser(&self) -> &'static str {
                     Self::NAME
                 }
@@ -297,10 +297,10 @@ macro_rules! chromium_temp_path_impl {
     };
 }
 
-macro_rules! chromium_impl {
+macro_rules! chromium_builder_new_impl {
     ($($browser:ident), *) => {
         $(
-            impl $browser {
+            impl crate::chromium::ChromiumBuilder<$browser> {
                 pub fn new() -> Self {
                     #[cfg(target_os = "linux")]
                     let mut base = dirs::config_dir().expect("Get config dir failed");
@@ -311,19 +311,67 @@ macro_rules! chromium_impl {
                     #[cfg(target_os = "macos")]
                     let mut base = dirs::config_local_dir().expect("Get config dir failed");
 
-                    base.push(Self::BASE);
+                    base.push($browser::BASE);
 
-                    Self { base }
+                    Self { base, __browser: core::marker::PhantomData::<$browser> }
                 }
             }
         )*
     };
 }
 
-macro_rules! chromium_opera_impl {
+macro_rules! chromium_builder_build_impl {
     ($($browser:ident), *) => {
         $(
-            impl $browser {
+impl crate::chromium::ChromiumBuilder<$browser> {
+    pub async fn build(self) -> Result<crate::chromium::ChromiumGetter<$browser>> {
+        #[cfg(target_os = "linux")]
+        let crypto = crate::chromium::crypto::linux::Decrypter::build(self.safe_storage()).await?;
+
+        #[cfg(target_os = "macos")]
+        let crypto = crate::chromium::crypto::macos::Decrypter::build(self.safe_storage(), self.safe_name())?;
+
+        #[cfg(target_os = "windows")]
+        let crypto = {
+            let temp_key_path = self.local_state_temp();
+            tokio::fs::copy(self.local_state(), &temp_key_path)
+            .await
+            .into_diagnostic()?;
+            crate::chromium::crypto::win::Decrypter::build(temp_key_path).await?
+        };
+
+        let (temp_cookies_path, temp_login_data_path) =
+            (self.cookies_temp(), self.login_data_temp());
+        let cp_login = tokio::fs::copy(self.login_data(), &temp_login_data_path);
+
+        let cp_cookies = tokio::fs::copy(self.cookies(), &temp_cookies_path);
+        let (login, cookies) = tokio::join!(cp_login, cp_cookies);
+        login.into_diagnostic()?;
+        cookies.into_diagnostic()?;
+
+        let (cookies_query, login_data_query) = (
+            crate::chromium::items::cookie::cookie_dao::CookiesQuery::new(temp_cookies_path),
+            crate::chromium::items::passwd::login_data_dao::LoginDataQuery::new(temp_login_data_path),
+        );
+        let (cookies_query, login_data_query) = tokio::join!(cookies_query, login_data_query);
+        let (cookies_query, login_data_query) = (cookies_query?, login_data_query?);
+
+        Ok(crate::chromium::ChromiumGetter {
+            cookies_query,
+            login_data_query,
+            crypto,
+            __browser: self.__browser,
+        })
+    }
+}
+        )*
+    };
+}
+
+macro_rules! chromium_builder_new_opera_impl {
+    ($($browser:ident), *) => {
+        $(
+            impl crate::chromium::ChromiumBuilder<$browser> {
                 pub fn new() -> Self {
                     #[cfg(target_os = "linux")]
                     let mut base = dirs::config_dir().expect("Get config dir failed");
@@ -334,23 +382,23 @@ macro_rules! chromium_opera_impl {
                     #[cfg(target_os = "macos")]
                     let mut base = dirs::config_local_dir().expect("Get config dir failed");
 
-                    base.push(Self::BASE);
+                    base.push($browser::BASE);
 
-                    Self { base }
+                    Self { base, __browser: core::marker::PhantomData::<$browser> }
                 }
             }
         )*
     };
 }
 
-macro_rules! chromium_info_impl {
+macro_rules! chromium_builder_info_impl {
     ($($browser:ident), *) => {
         $(
-            impl ChromiumInfo for $browser {
+            impl ChromiumInfo for crate::chromium::ChromiumBuilder<$browser> {
                 #[cfg(target_os = "macos")]
-                const SAFE_NAME: &'static str = Self::SAFE_NAME;
+                const SAFE_NAME: &'static str = $browser::SAFE_NAME;
                 #[cfg(not(target_os = "windows"))]
-                const SAFE_STORAGE: &'static str = Self::SAFE_STORAGE;
+                const SAFE_STORAGE: &'static str = $browser::SAFE_STORAGE;
 
                 fn base(&self) -> &Path {
                     &self.base
@@ -360,14 +408,14 @@ macro_rules! chromium_info_impl {
     };
 }
 
-macro_rules! chromium_info_yandex_impl {
+macro_rules! chromium_builder_info_yandex_impl {
     ($($browser:ident), *) => {
         $(
-            impl ChromiumInfo for $browser {
+            impl ChromiumInfo for crate::chromium::ChromiumBuilder<$browser> {
                 #[cfg(target_os = "macos")]
-                const SAFE_NAME: &'static str = Self::SAFE_NAME;
+                const SAFE_NAME: &'static str = $browser::SAFE_NAME;
                 #[cfg(not(target_os = "windows"))]
-                const SAFE_STORAGE: &'static str = Self::SAFE_STORAGE;
+                const SAFE_STORAGE: &'static str = $browser::SAFE_STORAGE;
 
                 const LOGIN_DATA: &'static str = "Ya Passman Data"; // sqlite3
 
@@ -378,28 +426,51 @@ macro_rules! chromium_info_yandex_impl {
         )*
     };
 }
+macro_rules! chromium_getter_display_impl {
+    ($($browser:ident), *) => {
+        $(
+impl std::fmt::Display for crate::chromium::ChromiumGetter<$browser> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str($browser::NAME)
+    }
+}
+        )*
+    }
+}
 
-chromium_temp_path_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi, Opera);
-chromium_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi);
-chromium_opera_impl!(Opera);
-chromium_info_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera);
-chromium_info_yandex_impl!(Yandex);
+chromium_builder_temp_path_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi, Opera);
+chromium_getter_display_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi, Opera);
+
+chromium_builder_info_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera);
+chromium_builder_info_yandex_impl!(Yandex);
+
+chromium_builder_new_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi);
+chromium_builder_new_opera_impl!(Opera);
+
+chromium_builder_build_impl!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi);
+chromium_builder_build_impl!(Opera);
 
 #[cfg(not(target_os = "linux"))]
-chromium_info_impl!(CocCoc, Arc);
+chromium_builder_temp_path_impl!(OperaGX, CocCoc, Arc);
 #[cfg(not(target_os = "linux"))]
-chromium_temp_path_impl!(OperaGX, CocCoc, Arc);
-#[cfg(not(target_os = "linux"))]
-chromium_impl!(CocCoc, Arc);
-#[cfg(not(target_os = "linux"))]
-chromium_opera_impl!(OperaGX);
+chromium_getter_display_impl!(OperaGX, CocCoc, Arc);
 
 #[cfg(not(target_os = "linux"))]
-impl ChromiumInfo for OperaGX {
+chromium_builder_info_impl!(CocCoc, Arc);
+
+#[cfg(not(target_os = "linux"))]
+chromium_builder_new_impl!(CocCoc, Arc);
+#[cfg(not(target_os = "linux"))]
+chromium_builder_new_opera_impl!(OperaGX);
+#[cfg(not(target_os = "linux"))]
+chromium_builder_build_impl!(OperaGX, CocCoc, Arc);
+
+#[cfg(not(target_os = "linux"))]
+impl ChromiumInfo for crate::chromium::ChromiumBuilder<OperaGX> {
     #[cfg(target_os = "macos")]
-    const SAFE_NAME: &'static str = Self::SAFE_NAME;
+    const SAFE_NAME: &'static str = OperaGX::SAFE_NAME;
     #[cfg(not(target_os = "windows"))]
-    const SAFE_STORAGE: &'static str = Self::SAFE_STORAGE;
+    const SAFE_STORAGE: &'static str = OperaGX::SAFE_STORAGE;
 
     fn base(&self) -> &Path {
         &self.base
@@ -414,15 +485,15 @@ impl ChromiumInfo for OperaGX {
 macro_rules! firefox_impl {
     ($($browser:ident), *) => {
         $(
-            impl TempPath for $browser {
-                const NAME: &'static str = Self::NAME;
+            impl TempPath for crate::firefox::FirefoxBuilder<$browser> {
+                const NAME: &'static str = $browser::NAME;
 
                 fn browser(&self) -> &'static str {
                     Self::NAME
                 }
             }
 
-            impl $browser {
+            impl crate::firefox::FirefoxBuilder<$browser> {
                 pub fn new() -> Result<Self> {
                     #[cfg(target_os = "linux")]
                     let init = dirs::home_dir().expect("Get home dir failed");
@@ -431,18 +502,46 @@ macro_rules! firefox_impl {
                     #[cfg(target_os = "windows")]
                     let init = dirs::data_dir().expect("get data local dir failed");
 
-                    let base = Self::helper(init, Self::BASE)?;
-                    Ok(Self { base })
+                    let base = Self::helper(init, $browser::BASE)?;
+                    Ok(Self { base, __browser: core::marker::PhantomData::<$browser>  })
+                }
+
+                pub async fn build(self) -> Result<crate::firefox::FirefoxGetter<$browser>> {
+                    let temp_cookies_path = self.cookies_temp();
+                    tokio::fs::copy(self.cookies(), &temp_cookies_path)
+                        .await
+                        .into_diagnostic()?;
+
+                    let query = crate::firefox::items::cookie::dao::CookiesQuery::new(temp_cookies_path).await?;
+
+                    Ok(crate::firefox::FirefoxGetter {
+                        cookies_query: query,
+                        __browser: core::marker::PhantomData::<$browser>,
+                    })
                 }
             }
 
-            impl FirefoxInfo for $browser {
+            impl FirefoxInfo for crate::firefox::FirefoxBuilder<$browser> {
                 fn base(&self) -> &Path {
                     &self.base
                 }
             }
+
         )*
     };
 }
 
+macro_rules! firefox_getter_display_impl {
+    ($($browser:ident), *) => {
+        $(
+impl std::fmt::Display for crate::firefox::FirefoxGetter<$browser> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str($browser::NAME)
+    }
+}
+        )*
+    }
+}
+
 firefox_impl!(Firefox, Librewolf);
+firefox_getter_display_impl!(Firefox, Librewolf);

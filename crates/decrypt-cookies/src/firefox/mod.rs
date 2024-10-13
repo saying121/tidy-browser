@@ -1,9 +1,9 @@
 pub mod items;
 
-use std::path::PathBuf;
+use std::{marker::PhantomData, path::PathBuf};
 
 use chrono::Utc;
-use miette::{IntoDiagnostic, Result};
+use miette::Result;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
 
@@ -14,57 +14,25 @@ use self::items::{
     cookie::{dao::CookiesQuery, MozCookies},
     I64ToMozTime,
 };
-use crate::browser::{cookies::LeetCodeCookies, info::FirefoxInfo};
+use crate::browser::cookies::LeetCodeCookies;
 
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct FirefoxGetter<T: FirefoxInfo + Send + Sync> {
-    browser: T,
-    cookies_query: CookiesQuery,
+pub struct FirefoxGetter<T> {
+    pub(crate) cookies_query: CookiesQuery,
+    pub(crate) __browser: PhantomData<T>,
 }
 
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct FirefoxBuilder<T: FirefoxInfo> {
-    browser: T,
-    cookies_path: Option<PathBuf>,
+pub struct FirefoxBuilder<T> {
+    pub(crate) base: PathBuf,
+    pub(crate) __browser: PhantomData<T>,
 }
 
-impl<T: FirefoxInfo + Send + Sync> FirefoxBuilder<T> {
-    pub const fn new(browser: T) -> Self {
-        Self { browser, cookies_path: None }
-    }
-    /// set `cookies_path`
-    pub fn cookies_path<P>(&mut self, ck_path: P) -> &mut Self
-    where
-        P: Into<PathBuf>,
-    {
-        self.cookies_path = Some(ck_path.into());
-        self
-    }
-    pub async fn build(mut self) -> Result<FirefoxGetter<T>> {
-        let temp_cookies_path = self.browser.cookies_temp();
-        tokio::fs::copy(
-            self.cookies_path
-                .take()
-                .unwrap_or_else(|| self.browser.cookies()),
-            &temp_cookies_path,
-        )
-        .await
-        .into_diagnostic()?;
-
-        let query = CookiesQuery::new(temp_cookies_path).await?;
-
-        Ok(FirefoxGetter {
-            browser: self.browser,
-            cookies_query: query,
-        })
-    }
-}
-
-impl<T: FirefoxInfo + Send + Sync> FirefoxGetter<T> {
+impl<T: Send + Sync> FirefoxGetter<T> {
     /// filter by condition
     ///
     /// # Example
@@ -173,13 +141,5 @@ impl<T: FirefoxInfo + Send + Sync> FirefoxGetter<T> {
             }
         }
         Ok(res)
-    }
-
-    pub fn browser(&self) -> &str {
-        self.browser.browser()
-    }
-
-    pub fn info(&self) -> &impl crate::browser::info::FirefoxInfo {
-        &self.browser
     }
 }
