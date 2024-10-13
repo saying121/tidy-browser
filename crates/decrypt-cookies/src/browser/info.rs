@@ -9,11 +9,7 @@ use super::*;
 
 /// just impl `browser` method
 pub trait TempPath {
-    const NAME: &'static str = "Temp";
-
-    fn browser(&self) -> &'static str {
-        Self::NAME
-    }
+    fn browser(&self) -> &'static str;
 
     /// for gen temp path
     fn temp_path_prefix(&self) -> PathBuf {
@@ -246,21 +242,12 @@ pub trait FirefoxInfo: TempPath {
             .join(Self::COOKIES)
     }
 
-    fn helper(init_path: PathBuf, base: &str) -> Result<PathBuf> {
-        let mut ini_path = init_path.clone();
-        ini_path.push(format!("{}/profiles.ini", base));
+    fn helper(base: PathBuf) -> Result<PathBuf> {
+        let ini_path = base.join("profiles.ini");
 
-        if !ini_path.exists() {
-            miette::bail!(
-                "{} not exists",
-                ini_path
-                    .to_str()
-                    .unwrap_or_default()
-            );
-        }
         let str = read_to_string(ini_path).into_diagnostic()?;
         let ini_file = ini::Ini::load_from_str(&str).into_diagnostic()?;
-        let mut section: PathBuf = base.into();
+        let mut res: PathBuf = base;
         for (sec, prop) in ini_file {
             let Some(sec) = sec
             else {
@@ -270,15 +257,13 @@ pub trait FirefoxInfo: TempPath {
                 let default = prop
                     .get("Default")
                     .unwrap_or_default();
-                section.push(default);
+                res.push(default);
                 break;
             }
         }
 
-        tracing::debug!("section: {:?}", section);
+        tracing::debug!("section: {:?}", res);
 
-        let mut res = init_path;
-        res.push(section);
         tracing::debug!("path: {:?}", res);
 
         Ok(res)
@@ -290,7 +275,7 @@ macro_rules! chromium_builder_temp_path_impl {
         $(
             impl TempPath for crate::chromium::ChromiumBuilder<$browser> {
                 fn browser(&self) -> &'static str {
-                    Self::NAME
+                    $browser::NAME
                 }
             }
         )*
@@ -314,6 +299,11 @@ macro_rules! chromium_builder_new_impl {
                     base.push($browser::BASE);
 
                     Self { base, __browser: core::marker::PhantomData::<$browser> }
+                }
+
+                /// When browser start with `--user-data-dir=DIR` or special other channel
+                pub fn with_user_data_dir(base: &Path) -> Self {
+                    Self { base: base.join("Default"), __browser: core::marker::PhantomData::<$browser> }
                 }
             }
         )*
@@ -384,6 +374,11 @@ macro_rules! chromium_builder_new_opera_impl {
 
                     base.push($browser::BASE);
 
+                    Self { base, __browser: core::marker::PhantomData::<$browser> }
+                }
+
+                /// When browser start with `--user-data-dir=DIR` or special other channel
+                pub const fn with_user_data_dir(base: PathBuf) -> Self {
                     Self { base, __browser: core::marker::PhantomData::<$browser> }
                 }
             }
@@ -486,28 +481,34 @@ macro_rules! firefox_impl {
     ($($browser:ident), *) => {
         $(
             impl TempPath for crate::firefox::FirefoxBuilder<$browser> {
-                const NAME: &'static str = $browser::NAME;
-
                 fn browser(&self) -> &'static str {
-                    Self::NAME
+                    $browser::NAME
                 }
             }
 
             impl crate::firefox::FirefoxBuilder<$browser> {
                 pub fn new() -> Result<Self> {
                     #[cfg(target_os = "linux")]
-                    let init = dirs::home_dir().expect("Get home dir failed");
+                    let mut init = dirs::home_dir().expect("Get home dir failed");
                     #[cfg(target_os = "macos")]
-                    let init = dirs::config_local_dir().expect("get config local dir failed");
+                    let mut init = dirs::config_local_dir().expect("get config local dir failed");
                     #[cfg(target_os = "windows")]
-                    let init = dirs::data_dir().expect("get data local dir failed");
+                    let mut init = dirs::data_dir().expect("get data local dir failed");
 
-                    let base = Self::helper(init, $browser::BASE)?;
+                    init.push($browser::BASE);
+                    let base = Self::helper(init)?;
                     Ok(Self { base, __browser: core::marker::PhantomData::<$browser>  })
+                }
+
+                /// When special other channel
+                pub fn with_user_data_dir(base: PathBuf) -> Result<Self> {
+                    let base = Self::helper(base)?;
+                    Ok(Self { base, __browser: core::marker::PhantomData::<$browser> })
                 }
 
                 pub async fn build(self) -> Result<crate::firefox::FirefoxGetter<$browser>> {
                     let temp_cookies_path = self.cookies_temp();
+                    tracing::debug!("{:?}", self.cookies());
                     tokio::fs::copy(self.cookies(), &temp_cookies_path)
                         .await
                         .into_diagnostic()?;

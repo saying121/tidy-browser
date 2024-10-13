@@ -72,6 +72,7 @@ macro_rules! chromium_safe {
 }
 
 // TODO: Add more browser
+// TODO: Remove suffix `Default`?
 browser_base!(
     { Firefox,   ".mozilla/firefox", "Mozilla/Firefox", "Firefox" },
     { Librewolf, ".librewolf",       "librewolf",       "librewolf" },
@@ -89,8 +90,8 @@ browser_base!(
 #[cfg(not(target_os = "linux"))]
 browser_base!(
     { OperaGX, "Opera Software/Opera GX Stable",   "com.operasoftware.OperaGX" },
-    { CocCoc , "CocCoc/Browser/User Data/Default", "Coccoc/Default"},
-    { Arc ,    "Arc/User Data/Default",            "Arc/User Data/Default"}
+    { CocCoc,  "CocCoc/Browser/User Data/Default", "Coccoc/Default"},
+    { Arc,     "Arc/User Data/Default",            "Arc/User Data/Default"}
 );
 chromium_safe!(
     { Chrome,   "Chrome Safe Storage",         "Chrome" },
