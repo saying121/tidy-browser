@@ -12,7 +12,7 @@ use reqwest::{
 #[ignore]
 #[tokio::test]
 async fn to_jar() {
-    let chrmo = ChromiumBuilder::new(Edge::new())
+    let chrmo = ChromiumBuilder::<Edge>::new()
         .build()
         .await
         .unwrap();

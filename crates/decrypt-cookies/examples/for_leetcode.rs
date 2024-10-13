@@ -15,9 +15,7 @@ async fn main() -> Result<()> {
 
     let leetcode_cn = "leetcode.cn";
 
-    let chrome = Chrome::new();
-
-    let getter = ChromiumBuilder::new(chrome)
+    let getter = ChromiumBuilder::<Chrome>::new()
         .build()
         .await?;
     let ck = getter

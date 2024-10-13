@@ -3,7 +3,7 @@ use decrypt_cookies::prelude::*;
 #[ignore = "need realy environment"]
 #[tokio::test]
 async fn passwd() {
-    let edge_getter = match ChromiumBuilder::new(Chrome::new())
+    let edge_getter = match ChromiumBuilder::<Chrome>::new()
         .build()
         .await
     {
@@ -38,7 +38,7 @@ async fn passwd_browsers() {
     macro_rules! test_chromium_pwd {
         ($($browser:ident), *) => {
             $(
-                let getter = match ChromiumBuilder::new($browser::new())
+                let getter = match ChromiumBuilder::<$browser>::new()
                     .build()
                     .await
                 {

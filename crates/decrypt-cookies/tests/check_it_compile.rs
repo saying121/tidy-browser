@@ -5,8 +5,7 @@ async fn can_compile() {
     macro_rules! test_chromium_compile {
         ($($browser:ident), *) => {
             $(
-                let chromium = $browser::new();
-                let Ok(getter) = ChromiumBuilder::new(chromium)
+                let Ok(getter) = ChromiumBuilder::<$browser>::new()
                     .build()
                     .await
                 else {
@@ -47,8 +46,8 @@ async fn can_compile() {
     macro_rules! test_ff_compile {
         ($($browser:ident), *) => {
             $(
-                let ff = $browser::new().unwrap();
-                let Ok(getter) = FirefoxBuilder::new(ff)
+                let Ok(getter) = FirefoxBuilder::<$browser>::new()
+                    .unwrap()
                     .build()
                     .await
                 else {

@@ -15,7 +15,7 @@ async fn get_cookie_work() -> Result<()> {
     let mut std_lock = stdout.lock();
 
     let leetcode_cn = "leetcode.cn";
-    let edge = ChromiumBuilder::new(Edge::new())
+    let edge = ChromiumBuilder::<Edge>::new()
         .build()
         .await?;
     let ck = edge
