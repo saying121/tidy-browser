@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use miette::{IntoDiagnostic, Result};
-use tokio::fs::create_dir_all;
+use tokio::{fs, join};
 
 use super::*;
 
@@ -320,16 +320,16 @@ impl crate::chromium::ChromiumBuilder<$browser> {
         #[cfg(target_os = "windows")]
         let crypto = {
             let temp_key_path = self.local_state_temp();
-            tokio::fs::copy(self.local_state(), &temp_key_path)
-            .await
-            .into_diagnostic()?;
+            fs::copy(self.local_state(), &temp_key_path)
+                .await
+                .into_diagnostic()?;
             crate::chromium::crypto::win::Decrypter::build(temp_key_path).await?
         };
 
         let lg_temp = self.login_data_temp();
         let ck_temp = self.cookies_temp();
 
-        create_dir_all(
+        fs::create_dir_all(
             lg_temp.parent()
                 .expect("Get parent dir failed"),
         )
@@ -337,7 +337,7 @@ impl crate::chromium::ChromiumBuilder<$browser> {
         .expect("Create cache path failed");
 
 
-        create_dir_all(
+        fs::create_dir_all(
             ck_temp.parent()
                 .expect("Get parent dir failed"),
         )
@@ -346,10 +346,10 @@ impl crate::chromium::ChromiumBuilder<$browser> {
 
         let (temp_cookies_path, temp_login_data_path) =
             (ck_temp , lg_temp );
-        let cp_login = tokio::fs::copy(self.login_data(), &temp_login_data_path);
+        let cp_login = fs::copy(self.login_data(), &temp_login_data_path);
 
-        let cp_cookies = tokio::fs::copy(self.cookies(), &temp_cookies_path);
-        let (login, cookies) = tokio::join!(cp_login, cp_cookies);
+        let cp_cookies = fs::copy(self.cookies(), &temp_cookies_path);
+        let (login, cookies) = join!(cp_login, cp_cookies);
         login.into_diagnostic()?;
         cookies.into_diagnostic()?;
 
@@ -357,7 +357,7 @@ impl crate::chromium::ChromiumBuilder<$browser> {
             crate::chromium::items::cookie::cookie_dao::CookiesQuery::new(temp_cookies_path),
             crate::chromium::items::passwd::login_data_dao::LoginDataQuery::new(temp_login_data_path),
         );
-        let (cookies_query, login_data_query) = tokio::join!(cookies_query, login_data_query);
+        let (cookies_query, login_data_query) = join!(cookies_query, login_data_query);
         let (cookies_query, login_data_query) = (cookies_query?, login_data_query?);
 
         Ok(crate::chromium::ChromiumGetter {
@@ -491,14 +491,14 @@ macro_rules! firefox_impl {
                 pub async fn build(self) -> Result<crate::firefox::FirefoxGetter<$browser>> {
                     let temp_cookies_path = self.cookies_temp();
 
-                    create_dir_all(
+                    fs::create_dir_all(
                         temp_cookies_path.parent()
                             .expect("Get parent dir failed"),
                     )
                     .await
                     .expect("Create cache path failed");
 
-                    tokio::fs::copy(self.cookies(), &temp_cookies_path)
+                    fs::copy(self.cookies(), &temp_cookies_path)
                         .await
                         .into_diagnostic()?;
 

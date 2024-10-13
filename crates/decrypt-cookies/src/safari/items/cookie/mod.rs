@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use chrono::prelude::Utc;
 use miette::{IntoDiagnostic, Result};
+use tokio::fs;
 
 use crate::{
     browser::cookies::{CookiesInfo, LeetCodeCookies},
@@ -46,7 +47,7 @@ impl CookiesGetter {
                 cookie_path.push(Self::COOKIES_OLD);
             }
         }
-        let content = tokio::fs::read(cookie_path)
+        let content = fs::read(cookie_path)
             .await
             .into_diagnostic()?;
         let binary_cookies = BinaryCookies::parse(&content)?;

@@ -6,7 +6,7 @@ use aes_gcm::{
 };
 use base64::{engine::general_purpose, Engine};
 use miette::{IntoDiagnostic, Result};
-use tokio::fs::read_to_string;
+use tokio::{fs, task::spawn_blocking};
 use windows::Win32::{Foundation, Security::Cryptography};
 
 use crate::chromium::local_state::LocalState;
@@ -46,7 +46,7 @@ impl Decrypter {
     }
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=108
     async fn get_pass<A: AsRef<Path> + Send>(key_path: A) -> Result<Vec<u8>> {
-        let string_str = read_to_string(key_path)
+        let string_str = fs::read_to_string(key_path)
             .await
             .into_diagnostic()?;
         let local_state: LocalState = serde_json::from_str(&string_str).into_diagnostic()?;
@@ -55,7 +55,7 @@ impl Decrypter {
             .into_diagnostic()?;
         let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
 
-        let key = tokio::task::spawn_blocking(move || decrypt_with_dpapi(&mut key))
+        let key = spawn_blocking(move || decrypt_with_dpapi(&mut key))
             .await
             .into_diagnostic()??;
 
