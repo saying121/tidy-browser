@@ -5,5 +5,6 @@ async fn main() -> miette::Result<()> {
         .with_test_writer()
         .init();
 
-    tidy_browser::cli::run().await
+    // tidy_browser::cli::run().await
+    Ok(())
 }
