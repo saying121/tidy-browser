@@ -2,7 +2,7 @@ use decrypt_cookies::{
     browser::{Chrome, Firefox},
     prelude::*,
 };
-use miette::Result;
+use anyhow::Result;
 
 #[ignore = "need realy environment"]
 #[tokio::test]

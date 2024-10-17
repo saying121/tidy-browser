@@ -1,13 +1,25 @@
 use std::path::PathBuf;
 
 use chrono::prelude::Utc;
-use miette::{IntoDiagnostic, Result};
-use tokio::fs;
+use tokio::{fs, task::spawn_blocking};
 
 use crate::{
     browser::cookies::{CookiesInfo, LeetCodeCookies},
     safari::utils::binary_cookies::{BinaryCookies, SafariCookie},
 };
+
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum CookiesGetterError {
+    #[error("Parse cookies failed")]
+    Parse(#[from] crate::safari::utils::binary_cookies::ParseError),
+    #[error("Io error")]
+    Io(#[from] std::io::Error),
+    #[error("Tokio task failed")]
+    Task(#[from] tokio::task::JoinError),
+}
+
+type Result<T> = std::result::Result<T, CookiesGetterError>;
 
 #[non_exhaustive]
 #[derive(Clone)]
@@ -47,10 +59,8 @@ impl CookiesGetter {
                 cookie_path.push(Self::COOKIES_OLD);
             }
         }
-        let content = fs::read(cookie_path)
-            .await
-            .into_diagnostic()?;
-        let binary_cookies = BinaryCookies::parse(&content)?;
+        let content = fs::read(cookie_path).await?;
+        let binary_cookies = spawn_blocking(move || BinaryCookies::parse(&content)).await??;
 
         Ok(Self { binary_cookies })
     }

@@ -3,9 +3,8 @@ pub mod items;
 use std::{marker::PhantomData, path::PathBuf};
 
 use chrono::Utc;
-use miette::Result;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
+use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition, DbErr};
 
 pub use self::items::cookie::entities::moz_cookies::{
     Column as MozCookiesCol, ColumnIter as MozCookiesColIter,
@@ -15,6 +14,8 @@ use self::items::{
     I64ToMozTime,
 };
 use crate::browser::cookies::LeetCodeCookies;
+
+type Result<T> = std::result::Result<T, DbErr>;
 
 #[derive(Clone)]
 #[derive(Debug)]

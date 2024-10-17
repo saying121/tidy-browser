@@ -18,7 +18,6 @@ exclude = ["tests/", "examples", "./CHANGELOG.md"]
 
 [dependencies]
 tokio = { workspace = true }
-miette = { workspace = true }
 thiserror = { workspace = true }
 rayon = { workspace = true }
 chrono = { workspace = true }
@@ -59,7 +58,7 @@ windows = { workspace = true, features = ["Win32_Security_Cryptography"] }
 [dev-dependencies]
 tracing-subscriber = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
-miette = { workspace = true, features = ["fancy"] }
+anyhow = { workspace = true }
 reqwest = { workspace = true, features = ["cookies"] }
 
 [features]

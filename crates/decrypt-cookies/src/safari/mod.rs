@@ -3,10 +3,10 @@ mod utils;
 
 use std::path::PathBuf;
 
-use miette::Result;
-
 pub use self::{items::cookie::CookiesGetter, utils::binary_cookies::*};
 use crate::browser::cookies::LeetCodeCookies;
+
+type Result<T> = std::result::Result<T,crate::safari::items::cookie::CookiesGetterError>;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -61,7 +61,7 @@ impl SafariGetter {
         self.cookie_getter.binary_cookies()
     }
 
-    pub const fn browser(&self) -> &str {
+    pub const fn browser() -> &'static str {
         Self::NAME
     }
 }

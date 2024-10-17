@@ -4,11 +4,33 @@
 //! <https://github.com/interstateone/BinaryCookies>
 //! <http://justsolve.archiveteam.org/wiki/Safari_cookies>
 
+use std::array::TryFromSliceError;
+
 use bytes::Buf;
 use chrono::{offset::LocalResult, prelude::*, Utc};
-use miette::{bail, IntoDiagnostic, Result};
 
 use crate::browser::cookies::{CookiesInfo, SameSite};
+
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum ParseError {
+    #[error("Cookies signature broken")]
+    Signature,
+    #[error("Cookies data broken")]
+    Data,
+    #[error("Cookies header broken")]
+    Header,
+    #[error("Cookies end header broken")]
+    EndHeader,
+    #[error("Cookies end broken")]
+    End,
+    #[error("Parser f64 failed")]
+    ParseF64(#[from] std::num::ParseFloatError),
+    #[error("Parser f64 failed")]
+    Array(#[from] TryFromSliceError),
+}
+
+type Result<T> = std::result::Result<T, ParseError>;
 
 trait I64ToSafariTime {
     fn to_utc(&self) -> Option<DateTime<Utc>>;
@@ -104,17 +126,18 @@ impl BinaryCookies {
     const PAGE_START_HEADER: [u8; 4] = [0x00, 0x00, 0x01, 0x00];
     const END_HEADER: [u8; 4] = [0x00, 0x00, 0x00, 0x00];
 
-    #[expect(clippy::panic_in_result_fn)]
     // raw data and some unnecessary data
+    #[expect(
+        clippy::missing_asserts_for_indexing,
+        reason = "The `advance` method can also panic"
+    )]
     pub fn parse(file: &[u8]) -> Result<Self> {
         let mut entry = file;
 
         if entry.len() < 4 || &entry[..4] != Self::SIGNATURE {
-            bail!("wrong SIGNATURE")
+            return Err(ParseError::Signature);
         }
         entry.advance(4);
-
-        assert!(entry.len() > 7);
 
         let num_pages = entry.get_u32();
 
@@ -125,7 +148,7 @@ impl BinaryCookies {
         }
         let page_size = pages_offsets.iter().sum::<u32>() as usize;
         if entry.len() < page_size {
-            bail!("wrong data")
+            return Err(ParseError::Data);
         }
         let mut pages = vec![];
 
@@ -146,7 +169,7 @@ impl BinaryCookies {
     fn parse_page(entry: &mut &[u8]) -> Result<Page> {
         // page start
         if entry.len() < 4 || entry[..4] != Self::PAGE_START_HEADER {
-            bail!("wrong cookie header")
+            return Err(ParseError::Header);
         }
         assert!(entry.len() > 3);
         entry.advance(4);
@@ -161,7 +184,7 @@ impl BinaryCookies {
 
         // page end
         if entry[..4] != Self::END_HEADER {
-            bail!("wrong cookie end")
+            return Err(ParseError::End);
         }
 
         entry.advance(4);
@@ -182,23 +205,19 @@ impl BinaryCookies {
         };
         Ok(page)
     }
-    #[expect(clippy::panic_in_result_fn)]
+    #[expect(
+        clippy::missing_asserts_for_indexing,
+        reason = "The `advance` method can also panic"
+    )]
     fn parse_cookie(entry: &mut &[u8]) -> Result<SafariCookie> {
         let cookie_size = entry.get_u32_le();
-
-        if entry.len() < 8 {
-            bail!("wrong")
-        }
-        assert!(entry.len() > 7);
 
         let version = entry[..4].to_vec();
         entry.advance(4);
 
         let cookie_flags = entry.get_u32_le();
 
-        let has_port = entry[..4]
-            .try_into()
-            .into_diagnostic()?;
+        let has_port = entry[..4].try_into()?;
         entry.advance(4);
 
         let domain_offset = entry.get_u32_le();
@@ -209,23 +228,15 @@ impl BinaryCookies {
 
         let end_header = &entry[..4];
         if end_header != Self::END_HEADER {
-            bail!("wrong end header")
+            return Err(ParseError::EndHeader);
         }
         entry.advance(4);
 
-        let expires = f64::from_le_bytes(
-            entry[..8]
-                .try_into()
-                .into_diagnostic()?,
-        );
+        let expires = f64::from_le_bytes(entry[..8].try_into()?);
         entry.advance(8);
         let expires = (expires as i64).to_utc();
 
-        let creation = f64::from_le_bytes(
-            entry[..8]
-                .try_into()
-                .into_diagnostic()?,
-        );
+        let creation = f64::from_le_bytes(entry[..8].try_into()?);
         entry.advance(8);
         let creation = (creation as i64).to_utc();
 
@@ -321,7 +332,7 @@ pub struct SafariCookie {
 impl TryFrom<SafariCookie> for reqwest::header::HeaderValue {
     type Error = reqwest::header::InvalidHeaderValue;
 
-    fn try_from(value: SafariCookie) -> Result<Self, Self::Error> {
+    fn try_from(value: SafariCookie) -> std::result::Result<Self, Self::Error> {
         Self::from_str(&value.get_set_cookie_header())
     }
 }

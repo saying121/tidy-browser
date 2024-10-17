@@ -1,9 +1,27 @@
 use std::path::{Path, PathBuf};
 
-use miette::{IntoDiagnostic, Result};
 use tokio::{fs, join};
 
 use super::*;
+
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum InfoError {
+    #[error("No such file")]
+    Io(#[from] std::io::Error),
+    #[error("Ini load error")]
+    Ini(#[from] ini::Error),
+    #[cfg(target_os = "linux")]
+    #[error("Decrypter error")]
+    Decrypter(#[from] crate::chromium::crypto::linux::CryptoError),
+    #[cfg(target_os = "windows")]
+    #[error("Decrypter error")]
+    Decrypter(#[from] crate::chromium::crypto::win::CryptoError),
+    #[error("Db err")]
+    Db(#[from] sea_orm::DbErr)
+}
+
+type Result<T> = std::result::Result<T, InfoError>;
 
 /// just impl `browser` method
 pub trait TempPath {
@@ -320,9 +338,7 @@ impl crate::chromium::ChromiumBuilder<$browser> {
         #[cfg(target_os = "windows")]
         let crypto = {
             let temp_key_path = self.local_state_temp();
-            fs::copy(self.local_state(), &temp_key_path)
-                .await
-                .into_diagnostic()?;
+            fs::copy(self.local_state(), &temp_key_path).await?;
             crate::chromium::crypto::win::Decrypter::build(temp_key_path).await?
         };
 
@@ -350,8 +366,8 @@ impl crate::chromium::ChromiumBuilder<$browser> {
 
         let cp_cookies = fs::copy(self.cookies(), &temp_cookies_path);
         let (login, cookies) = join!(cp_login, cp_cookies);
-        login.into_diagnostic()?;
-        cookies.into_diagnostic()?;
+        login?;
+        cookies?;
 
         let (cookies_query, login_data_query) = (
             crate::chromium::items::cookie::cookie_dao::CookiesQuery::new(temp_cookies_path),
@@ -498,9 +514,7 @@ macro_rules! firefox_impl {
                     .await
                     .expect("Create cache path failed");
 
-                    fs::copy(self.cookies(), &temp_cookies_path)
-                        .await
-                        .into_diagnostic()?;
+                    fs::copy(self.cookies(), &temp_cookies_path).await?;
 
                     let query = crate::firefox::items::cookie::dao::CookiesQuery::new(temp_cookies_path).await?;
 

@@ -1,7 +1,7 @@
 use std::io::Write;
 
+use anyhow::Result;
 use decrypt_cookies::prelude::*;
-use miette::{IntoDiagnostic, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -21,7 +21,7 @@ async fn main() -> Result<()> {
     let ck = getter
         .get_cookies_session_csrf(leetcode_cn)
         .await?;
-    writeln!(lock, "{:#?}", ck).into_diagnostic()?;
+    writeln!(lock, "{:#?}", ck)?;
 
     Ok(())
 }

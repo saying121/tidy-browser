@@ -1,7 +1,7 @@
 use decrypt_cookies::prelude::*;
 
 #[tokio::main]
-async fn main() -> miette::Result<()> {
+async fn main() -> anyhow::Result<()> {
     let mut p = dirs::config_dir().expect("Get config dir failed");
     p.push("google-chrome-beta");
 

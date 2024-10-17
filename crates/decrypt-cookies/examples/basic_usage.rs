@@ -1,7 +1,7 @@
 use decrypt_cookies::prelude::*;
 
 #[tokio::main]
-async fn main() -> miette::Result<()> {
+async fn main() -> anyhow::Result<()> {
     let chromium = ChromiumBuilder::<Chrome>::new()
         .build()
         .await?;

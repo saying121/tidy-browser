@@ -1,7 +1,7 @@
 use std::io::Write;
 
+use anyhow::Result;
 use decrypt_cookies::prelude::*;
-use miette::{IntoDiagnostic, Result};
 
 #[ignore = "need realy environment"]
 #[tokio::test(flavor = "multi_thread", worker_threads = 10)]
@@ -21,7 +21,7 @@ async fn get_cookie_work() -> Result<()> {
     let ck = edge
         .get_cookies_session_csrf(leetcode_cn)
         .await?;
-    writeln!(std_lock, "{:#?}", ck).into_diagnostic()?;
+    writeln!(std_lock, "{:#?}", ck)?;
 
     Ok(())
 }

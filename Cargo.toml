@@ -33,6 +33,7 @@ dirs = { version = "^5" }
 tracing = { version = "^0.1" }
 tracing-subscriber = { version = "^0.3", default-features = true, features = ["env-filter"] }
 
+anyhow = "^1"
 miette = { version = "^7", default-features = true }
 thiserror = { version = "^1" }
 

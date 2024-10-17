@@ -18,10 +18,9 @@ pub use items::{
         LoginData,
     },
 };
-use miette::{IntoDiagnostic, Result};
 use rayon::prelude::*;
-use sea_orm::{sea_query::IntoCondition, ColumnTrait};
-use tokio::task;
+use sea_orm::{sea_query::IntoCondition, ColumnTrait, DbErr};
+use tokio::task::{self, JoinError};
 
 #[cfg(target_os = "linux")]
 use crate::chromium::crypto::linux::Decrypter;
@@ -37,6 +36,23 @@ use crate::{
         I64ToChromiumDateTime,
     },
 };
+
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum ChromiumError {
+    #[error("Tokio task failed")]
+    Task(#[from] JoinError),
+    #[error("Database error")]
+    Db(#[from] DbErr),
+    #[cfg(target_os = "linux")]
+    #[error("Decrypt error")]
+    Decrypt(#[from] crate::chromium::crypto::linux::CryptoError),
+    #[cfg(target_os = "windows")]
+    #[error("Decrypt error")]
+    Decrypt(#[from] crate::chromium::crypto::win::CryptoError),
+}
+
+type Result<T> = std::result::Result<T, ChromiumError>;
 
 /// Chromium based, get cookies, etc. and decrypt
 ///
@@ -73,7 +89,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     async fn par_decrypt_logins(&self, raw: Vec<logins::Model>) -> Result<Vec<LoginData>> {
         let crypto = self.crypto.clone();
 
-        task::spawn_blocking(move || {
+        let login_data = task::spawn_blocking(move || {
             raw.into_par_iter()
                 .map(|mut v| {
                     let res = v
@@ -90,8 +106,8 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                 })
                 .collect()
         })
-        .await
-        .into_diagnostic()
+        .await;
+        Ok(login_data?)
     }
     /// contains passwords
     ///
@@ -271,7 +287,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
             }
         }
         for (handle, flag) in hds {
-            let res = handle.await.into_diagnostic()?;
+            let res = handle.await?;
             match flag {
                 CsrfSession::Csrf => csrf_token.csrf = res,
                 CsrfSession::Session => csrf_token.session = res,
@@ -299,7 +315,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     async fn par_decrypt_ck(&self, raw: Vec<cookies::Model>) -> Result<Vec<ChromiumCookie>> {
         let crypto = self.crypto.clone();
 
-        task::spawn_blocking(move || {
+        let decrypted_ck = task::spawn_blocking(move || {
             raw.into_par_iter()
                 .map(|mut v| {
                     let res = crypto
@@ -311,14 +327,14 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                 })
                 .collect()
         })
-        .await
-        .into_diagnostic()
+        .await?;
+        Ok(decrypted_ck)
     }
 }
 
 impl<T: Send + Sync> ChromiumGetter<T> {
     /// the browser's decrypt
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
-        self.crypto.decrypt(ciphertext)
+        Ok(self.crypto.decrypt(ciphertext)?)
     }
 }
