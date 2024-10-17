@@ -33,12 +33,12 @@ rust-ini = { workspace = true } # firefox
 dirs = { workspace = true }
 
 reqwest = { workspace = true, default-features = false, features = ["cookies"], optional = true }
+bytes = { workspace = true, optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))'.dependencies]
 secret-service = { workspace = true, default-features = true, features = ["rt-tokio-crypto-rust"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
-bytes = { workspace = true }
 keyring = { workspace = true, default-features = false, features = [
     "apple-native",
 ] } # It is not working as expected on Linux.
@@ -64,6 +64,7 @@ reqwest = { workspace = true, features = ["cookies"] }
 [features]
 default = ["reqwest"]
 reqwest = ["dep:reqwest"]
+binary_cookies = ["dep:bytes"] # `binary_cookies` does not depend on Macos
 
 [lints]
 workspace = true

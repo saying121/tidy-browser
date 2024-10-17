@@ -5,14 +5,14 @@ use tokio::{fs, task::spawn_blocking};
 
 use crate::{
     browser::cookies::{CookiesInfo, LeetCodeCookies},
-    safari::utils::binary_cookies::{BinaryCookies, SafariCookie},
+    utils::binary_cookies::{BinaryCookies, SafariCookie},
 };
 
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum CookiesGetterError {
     #[error("Parse cookies failed")]
-    Parse(#[from] crate::safari::utils::binary_cookies::ParseError),
+    Parse(#[from] crate::utils::binary_cookies::ParseError),
     #[error("Io error")]
     Io(#[from] std::io::Error),
     #[error("Tokio task failed")]

@@ -51,12 +51,13 @@ impl I64ToSafariTime for i64 {
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
+#[non_exhaustive]
 pub struct BinaryCookies {
-    signature: Vec<u8>,
-    num_pages: u32,         // be
-    pages_offset: Vec<u32>, // be
+    pub signature: Vec<u8>,
+    pub num_pages: u32,         // be
+    pub pages_offset: Vec<u32>, // be
     pub pages: Vec<Page>,
-    checksum: Vec<u8>, // 8 byte
+    pub checksum: Vec<u8>, // 8 byte
 }
 
 impl BinaryCookies {
@@ -91,11 +92,12 @@ impl BinaryCookies {
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
+#[non_exhaustive]
 pub struct Page {
-    pages_start: Vec<u8>,
-    num_cookies: u32,          // le
-    cookies_offsets: Vec<u32>, // le, N * `self.num_cookies`
-    page_end: Vec<u8>,         // Must be equal to []byte{0x00_00_00_00}
+    pub pages_start: Vec<u8>,
+    pub num_cookies: u32,          // le
+    pub cookies_offsets: Vec<u32>, // le, N * `self.num_cookies`
+    pub page_end: Vec<u8>,         // Must be equal to []byte{0x00_00_00_00}
     pub cookies: Vec<SafariCookie>,
 }
 
@@ -306,19 +308,20 @@ impl BinaryCookies {
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
+#[non_exhaustive]
 pub struct SafariCookie {
     // cookie_size:    u32, // LE_uint32	Cookie size. Number of bytes associated to the cookie
     pub version: Vec<u8>, // byte    Unknown field possibly related to the cookie flags
-    cookie_flags: u32, /* LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly */
+    pub cookie_flags: u32, /* LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly */
     pub same_site: SameSite,
     pub is_secure: bool,
     pub is_httponly: bool,
     pub has_port: [u8; 4],  // size:  4    byte    0 or 1
     pub domain_offset: u32, // LE_uint32    Cookie domain offset
-    name_offset: u32,       // LE_uint32    Cookie name offset
-    path_offset: u32,       // LE_uint32    Cookie path offset
-    value_offset: u32,      // LE_uint32    Cookie value offset
-    comment_offset: u32,    // LE_uint32    Cookie comment offset
+    pub name_offset: u32,       // LE_uint32    Cookie name offset
+    pub path_offset: u32,       // LE_uint32    Cookie path offset
+    pub value_offset: u32,      // LE_uint32    Cookie value offset
+    pub comment_offset: u32,    // LE_uint32    Cookie comment offset
     // end_header:     Vec<u8>, /* 4    byte    Marks the end of a header. Must be equal to []byte{0x00000000} */
     pub expires: Option<DateTime<Utc>>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
     pub creation: Option<DateTime<Utc>>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */

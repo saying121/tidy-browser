@@ -1,12 +1,11 @@
 pub mod items;
-mod utils;
 
 use std::path::PathBuf;
 
-pub use self::{items::cookie::CookiesGetter, utils::binary_cookies::*};
+pub use self::items::cookie::CookiesGetter;
 use crate::browser::cookies::LeetCodeCookies;
 
-type Result<T> = std::result::Result<T,crate::safari::items::cookie::CookiesGetterError>;
+type Result<T> = std::result::Result<T, crate::safari::items::cookie::CookiesGetterError>;
 
 #[derive(Clone)]
 #[derive(Debug)]
