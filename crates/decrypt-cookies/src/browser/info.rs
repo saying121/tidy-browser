@@ -11,6 +11,10 @@ pub enum InfoError {
     Io(#[from] std::io::Error),
     #[error("Ini load error")]
     Ini(#[from] ini::Error),
+    #[error("Profile {0} missing `Name` properties")]
+    ProfilePath(String),
+    #[error("Install {0} missing `Default` properties")]
+    InstallPath(String),
     #[cfg(target_os = "linux")]
     #[error("Decrypter error")]
     Decrypter(#[from] crate::chromium::crypto::linux::CryptoError),
@@ -18,7 +22,7 @@ pub enum InfoError {
     #[error("Decrypter error")]
     Decrypter(#[from] crate::chromium::crypto::win::CryptoError),
     #[error("Db err")]
-    Db(#[from] sea_orm::DbErr)
+    Db(#[from] sea_orm::DbErr),
 }
 
 type Result<T> = std::result::Result<T, InfoError>;
@@ -251,30 +255,48 @@ pub trait FirefoxInfo: TempPath {
             .join(Self::COOKIES)
     }
 
-    fn helper(base: PathBuf) -> Result<PathBuf> {
+    fn helper_profile(mut base: PathBuf, profile: Option<&str>) -> Result<PathBuf> {
         let ini_path = base.join("profiles.ini");
 
-        let ini_file = ini::Ini::load_from_file(ini_path).into_diagnostic()?;
-        let mut res: PathBuf = base;
+        let ini_file = ini::Ini::load_from_file(ini_path)?;
         for (sec, prop) in ini_file {
             let Some(sec) = sec
             else {
                 continue;
             };
-            if sec.starts_with("Install") {
-                let default = prop
-                    .get("Default")
-                    .unwrap_or_default();
-                res.push(default);
+            if let Some(profile) = profile {
+                if !sec.starts_with("Profile") {
+                    continue;
+                }
+                let Some(profile_name) = prop.get("Name")
+                else {
+                    continue;
+                };
+                if profile_name == profile {
+                    let Some(var) = prop.get("Path")
+                    else {
+                        return Err(InfoError::ProfilePath(profile_name.to_owned()));
+                    };
+                    base.push(var);
+                    break;
+                }
+            }
+            else {
+                if !sec.starts_with("Install") {
+                    continue;
+                }
+                let Some(default) = prop.get("Default")
+                else {
+                    return Err(InfoError::InstallPath(sec));
+                };
+                base.push(default);
                 break;
             }
         }
 
-        tracing::debug!("section: {:?}", res);
+        tracing::debug!("path: {:?}", base);
 
-        tracing::debug!("path: {:?}", res);
-
-        Ok(res)
+        Ok(base)
     }
 }
 
@@ -486,21 +508,40 @@ macro_rules! firefox_impl {
 
             impl crate::firefox::FirefoxBuilder<$browser> {
                 pub fn new() -> Result<Self> {
-                    #[cfg(target_os = "linux")]
-                    let mut init = dirs::home_dir().expect("Get home dir failed");
-                    #[cfg(target_os = "macos")]
-                    let mut init = dirs::config_local_dir().expect("get config local dir failed");
-                    #[cfg(target_os = "windows")]
-                    let mut init = dirs::data_dir().expect("get data local dir failed");
+                    let mut init = Self::init_path();
 
                     init.push($browser::BASE);
-                    let base = Self::helper(init)?;
+                    let base = Self::helper_profile(init, None)?;
                     Ok(Self { base, __browser: core::marker::PhantomData::<$browser>  })
                 }
 
-                /// When special other channel
-                pub fn with_user_data_dir(base: PathBuf) -> Result<Self> {
-                    let base = Self::helper(base)?;
+                fn init_path() -> PathBuf {
+                    #[cfg(target_os = "linux")]
+                    let init = dirs::home_dir().expect("Get home dir failed");
+                    #[cfg(target_os = "macos")]
+                    let init = dirs::config_local_dir().expect("get config local dir failed");
+                    #[cfg(target_os = "windows")]
+                    let init = dirs::data_dir().expect("get data local dir failed");
+
+                    init
+                }
+
+                /// `base`: When firefox base path changed
+                /// `profile`: When start with `-P <profile>`
+                pub fn with_path_profile<'a, I, P>(init: I, profile: P) -> Result<Self>
+                where
+                    I: Into<Option<PathBuf>>,
+                    P: Into<Option<&'a str>>,
+                {
+                    let init = match init.into() {
+                        Some(init) => init,
+                        None => {
+                            let mut init = Self::init_path();
+                            init.push($browser::BASE);
+                            init
+                        }
+                    };
+                    let base = Self::helper_profile(init, profile.into())?;
                     Ok(Self { base, __browser: core::marker::PhantomData::<$browser> })
                 }
 

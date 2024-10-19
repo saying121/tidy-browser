@@ -1,5 +1,6 @@
 use decrypt_cookies::prelude::*;
 
+#[cfg(target_os = "linux")]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let mut p = dirs::config_dir().expect("Get config dir failed");
@@ -23,7 +24,9 @@ async fn main() -> anyhow::Result<()> {
     p.push(".mozilla/firefox-esr");
 
     // p: `"$HOME/.mozilla/firefox-esr"`
-    let firefox = FirefoxBuilder::<Firefox>::with_user_data_dir(p)?
+    // let firefox = FirefoxBuilder::<Firefox>::with_path_profile(Some(p), Some("default-release"))?
+    // or
+    let firefox = FirefoxBuilder::<Firefox>::with_path_profile(p, "default")?
         .build()
         .await?;
     // TODO: make it show FirefoxEsr?
