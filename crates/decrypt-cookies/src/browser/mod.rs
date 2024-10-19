@@ -90,7 +90,7 @@ browser_base!(
 browser_base!(
     { OperaGX, "Opera Software/Opera GX Stable", "com.operasoftware.OperaGX" },
     { CocCoc,  "CocCoc/Browser/User Data",       "Coccoc"},
-    { Arc,     "Arc/User Data",                  "Arc/User Data"}
+    { Arc,     "Packages/TheBrowserCompany.Arc_ttt1ap7aakyb4/LocalCache/Local/Arc/User Data",                  "Arc/User Data"}
 );
 chromium_safe!(
     { Chrome,   "Chrome Safe Storage",         "Chrome" },
