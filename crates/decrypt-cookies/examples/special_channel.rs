@@ -12,6 +12,7 @@ async fn main() -> anyhow::Result<()> {
         .await?;
     let all_cookies = chromium.get_cookies_all().await?;
 
+    // In theory it shoule work, but cookies result have some garbled characters
     dbg!(&all_cookies.first());
 
     let filtered_cookies = chromium
