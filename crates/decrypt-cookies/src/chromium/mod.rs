@@ -118,12 +118,12 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let edge_getter = ChromiumBuilder::new(Chromium::new())
+    ///     let edge_getter = ChromiumBuilder::<Chrome>::new()
     ///         .build()
     ///         .await
     ///         .unwrap();
     ///     let res = edge_getter
-    ///         .get_logins_filter(ChromeLoginCol::OriginUrl.contains("google.com"))
+    ///         .get_logins_filter(ChromiumLoginCol::OriginUrl.contains("google.com"))
     ///         .await
     ///         .unwrap_or_default();
     ///     dbg!(res);
@@ -172,12 +172,12 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let edge_getter = ChromiumBuilder::new(Chromium::new())
+    ///     let edge_getter = ChromiumBuilder::<Chrome>::new()
     ///         .build()
     ///         .await
     ///         .unwrap();
     ///     let res = edge_getter
-    ///         .get_cookies_filter(ChromCkColumn::HostKey.contains("google.com"))
+    ///         .get_cookies_filter(ChromiumCookieCol::HostKey.contains("google.com") )
     ///         .await
     ///         .unwrap_or_default();
     ///     dbg!(res);
