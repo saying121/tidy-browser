@@ -316,12 +316,12 @@ pub struct SafariCookie {
     pub same_site: SameSite,
     pub is_secure: bool,
     pub is_httponly: bool,
-    pub has_port: [u8; 4],  // size:  4    byte    0 or 1
-    pub domain_offset: u32, // LE_uint32    Cookie domain offset
-    pub name_offset: u32,       // LE_uint32    Cookie name offset
-    pub path_offset: u32,       // LE_uint32    Cookie path offset
-    pub value_offset: u32,      // LE_uint32    Cookie value offset
-    pub comment_offset: u32,    // LE_uint32    Cookie comment offset
+    pub has_port: [u8; 4],   // size:  4    byte    0 or 1
+    pub domain_offset: u32,  // LE_uint32    Cookie domain offset
+    pub name_offset: u32,    // LE_uint32    Cookie name offset
+    pub path_offset: u32,    // LE_uint32    Cookie path offset
+    pub value_offset: u32,   // LE_uint32    Cookie value offset
+    pub comment_offset: u32, // LE_uint32    Cookie comment offset
     // end_header:     Vec<u8>, /* 4    byte    Marks the end of a header. Must be equal to []byte{0x00000000} */
     pub expires: Option<DateTime<Utc>>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
     pub creation: Option<DateTime<Utc>>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */

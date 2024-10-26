@@ -177,7 +177,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     ///         .await
     ///         .unwrap();
     ///     let res = edge_getter
-    ///         .get_cookies_filter(ChromiumCookieCol::HostKey.contains("google.com") )
+    ///         .get_cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
     ///         .await
     ///         .unwrap_or_default();
     ///     dbg!(res);
