@@ -49,7 +49,7 @@ pub trait ChromiumInfo: TempPath {
     #[cfg(not(target_os = "windows"))]
     const COOKIES: &'static str = "Default/Cookies"; // sqlite3
     #[cfg(target_os = "windows")]
-    const COOKIES: &'static str = "Network/Cookies"; // sqlite3
+    const COOKIES: &'static str = "Default/Network/Cookies"; // sqlite3
 
     // const PROFILE_PICTURE: &'static str = "Edge Profile Picture.png";
     const EXTENSION_COOKIES: &'static str = "Extension Cookies";
@@ -363,6 +363,14 @@ impl crate::chromium::ChromiumBuilder<$browser> {
         #[cfg(target_os = "windows")]
         let crypto = {
             let temp_key_path = self.local_state_temp();
+
+            fs::create_dir_all(
+                temp_key_path.parent()
+                    .expect("Get parent dir failed"),
+            )
+            .await
+            .expect("Create cache path failed");
+
             fs::copy(self.local_state(), &temp_key_path).await?;
             crate::chromium::crypto::win::Decrypter::build(temp_key_path).await?
         };
@@ -370,33 +378,29 @@ impl crate::chromium::ChromiumBuilder<$browser> {
         let lg_temp = self.login_data_temp();
         let ck_temp = self.cookies_temp();
 
-        fs::create_dir_all(
+        let lg_fut = fs::create_dir_all(
             lg_temp.parent()
                 .expect("Get parent dir failed"),
-        )
-        .await
-        .expect("Create cache path failed");
+        );
 
-
-        fs::create_dir_all(
+        let ck_fut = fs::create_dir_all(
             ck_temp.parent()
                 .expect("Get parent dir failed"),
-        )
-        .await
-        .expect("Create cache path failed");
+        );
+        let (lg_fut, ck_fut) = join!(lg_fut, ck_fut);
+        lg_fut?;
+        ck_fut?;
 
-        let (temp_cookies_path, temp_login_data_path) =
-            (ck_temp , lg_temp );
-        let cp_login = fs::copy(self.login_data(), &temp_login_data_path);
+        let cp_login = fs::copy(self.login_data(), &lg_temp);
 
-        let cp_cookies = fs::copy(self.cookies(), &temp_cookies_path);
+        let cp_cookies = fs::copy(self.cookies(), &ck_temp);
         let (login, cookies) = join!(cp_login, cp_cookies);
         login?;
         cookies?;
 
         let (cookies_query, login_data_query) = (
-            crate::chromium::items::cookie::cookie_dao::CookiesQuery::new(temp_cookies_path),
-            crate::chromium::items::passwd::login_data_dao::LoginDataQuery::new(temp_login_data_path),
+            crate::chromium::items::cookie::cookie_dao::CookiesQuery::new(ck_temp),
+            crate::chromium::items::passwd::login_data_dao::LoginDataQuery::new(lg_temp),
         );
         let (cookies_query, login_data_query) = join!(cookies_query, login_data_query);
         let (cookies_query, login_data_query) = (cookies_query?, login_data_query?);
