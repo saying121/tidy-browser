@@ -21,6 +21,9 @@ pub enum InfoError {
     #[cfg(target_os = "windows")]
     #[error("Decrypter error")]
     Decrypter(#[from] crate::chromium::crypto::win::CryptoError),
+    #[cfg(target_os = "macos")]
+    #[error("Decrypt error")]
+    Decrypt(#[from] crate::chromium::crypto::macos::CryptoError),
     #[error("Db err")]
     Db(#[from] sea_orm::DbErr),
 }

@@ -3,7 +3,10 @@ pub mod items;
 use std::path::PathBuf;
 
 pub use self::items::cookie::CookiesGetter;
-use crate::browser::cookies::LeetCodeCookies;
+use crate::{
+    browser::cookies::LeetCodeCookies,
+    utils::binary_cookies::{BinaryCookies, SafariCookie},
+};
 
 type Result<T> = std::result::Result<T, crate::safari::items::cookie::CookiesGetterError>;
 

@@ -50,6 +50,9 @@ pub enum ChromiumError {
     #[cfg(target_os = "windows")]
     #[error("Decrypt error")]
     Decrypt(#[from] crate::chromium::crypto::win::CryptoError),
+    #[cfg(target_os = "macos")]
+    #[error("Decrypt error")]
+    Decrypt(#[from] crate::chromium::crypto::macos::CryptoError),
 }
 
 type Result<T> = std::result::Result<T, ChromiumError>;

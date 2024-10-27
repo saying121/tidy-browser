@@ -1,4 +1,5 @@
 //! reference
+//!
 //! <https://github.com/cixtor/binarycookies>
 //! <https://github.com/libyal/dtformats/blob/main/documentation/Safari%20Cookies.asciidoc>
 //! <https://github.com/interstateone/BinaryCookies>

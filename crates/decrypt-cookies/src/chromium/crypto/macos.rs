@@ -1,6 +1,15 @@
 use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
-use miette::{bail, Result};
 use pbkdf2::pbkdf2_hmac;
+
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum CryptoError {
+    #[error("Get keyring failed")]
+    Keyring(#[from] keyring::Error),
+    #[error("Unpad error: {0}")]
+    Unpadding(block_padding::UnpadError),
+}
+type Result<T> = std::result::Result<T, CryptoError>;
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_mac.mm;l=35
 /// Key size required for 128 bit AES.
@@ -39,14 +48,14 @@ impl Decrypter {
     fn get_pass(safe_storage: &str, safe_name: &str) -> Result<Vec<u8>> {
         let entry = match keyring::Entry::new(safe_storage, safe_name) {
             Ok(res) => res,
-            Err(e) => bail!("Error: {e}.new keyring Entry failed"),
+            Err(e) => return Err(e.into()),
         };
         match entry
             .get_password()
             .map(String::into_bytes)
         {
             Ok(res) => Ok(res),
-            Err(e) => bail!("Error: {e}.new keyring Entry failed"),
+            Err(e) => Err(e.into()),
         }
     }
 
@@ -68,12 +77,9 @@ impl Decrypter {
 
         let decrypter = Aes128CbcDec::new(&key.into(), &iv.into());
 
-        if let Ok(res) =
-            decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..])
-        {
-            return Ok(String::from_utf8_lossy(res).to_string());
+        match decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..]) {
+            Ok(res) => Ok(String::from_utf8_lossy(res).to_string()),
+            Err(e) => Err(CryptoError::Unpadding(e)),
         }
-
-        miette::bail!("decrypt error")
     }
 }
