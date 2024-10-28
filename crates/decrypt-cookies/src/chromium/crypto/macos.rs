@@ -78,7 +78,14 @@ impl Decrypter {
         let decrypter = Aes128CbcDec::new(&key.into(), &iv.into());
 
         match decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..]) {
-            Ok(res) => Ok(String::from_utf8_lossy(res).to_string()),
+            Ok(res) => String::from_utf8(res.to_vec()).map_or_else(
+                // chromium 130.x, it starts with extern value
+                |_| {
+                    tracing::info!("Decoding for chromium 130.x");
+                    Ok(String::from_utf8_lossy(&res[32..]).to_string())
+                },
+                Ok,
+            ),
             Err(e) => Err(CryptoError::Unpadding(e)),
         }
     }
