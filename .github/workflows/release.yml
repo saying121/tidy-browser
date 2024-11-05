@@ -10,7 +10,7 @@ on:
   #     - prereleased
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-(?alpha|beta|nightly).[0-9]+"
 
 env:
   BIN_NAME: tidy-browser

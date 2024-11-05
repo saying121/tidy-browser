@@ -1,6 +1,6 @@
 name: Rustfmt
 
-on: [push, pull_request, merge_group]
+on: [push]
 
 permissions:
   contents: write
