@@ -25,7 +25,7 @@ type Result<T> = std::result::Result<T, CryptoError>;
 // const K_DERIVED_KEY_SIZE_IN_BITS: u32 = 128;
 type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 
-#[expect(clippy::empty_line_after_doc_comments)]
+#[expect(clippy::empty_line_after_doc_comments, reason = "it not use")]
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=50
 /// The UMA metric name for whether the false was decryptable with an empty key.
 // const K_METRIC_DECRYPTED_WITH_EMPTY_KEY: &[u8] = b"OSCrypt.Linux.DecryptedWithEmptyKey";

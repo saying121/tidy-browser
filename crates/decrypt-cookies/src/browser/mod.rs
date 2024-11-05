@@ -10,7 +10,7 @@ macro_rules! browser_base {
             #[derive(Debug)]
             #[derive(Default)]
             #[derive(PartialEq, Eq, PartialOrd, Ord)]
-            #[expect(clippy::exhaustive_structs)]
+            #[expect(clippy::exhaustive_structs, reason = "unit struct")]
             pub struct $browser;
 
             impl $browser {
@@ -37,7 +37,7 @@ macro_rules! browser_base {
             #[derive(Debug)]
             #[derive(Default)]
             #[derive(PartialEq, Eq, PartialOrd, Ord)]
-            #[expect(clippy::exhaustive_structs)]
+            #[expect(clippy::exhaustive_structs, reason = "unit struct")]
             pub struct $browser;
 
             impl $browser {

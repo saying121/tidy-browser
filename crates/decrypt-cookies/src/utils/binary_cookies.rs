@@ -168,7 +168,7 @@ impl BinaryCookies {
             checksum: entry[..8].to_vec(),
         })
     }
-    #[expect(clippy::panic_in_result_fn)]
+    #[expect(clippy::panic_in_result_fn, reason = "it needs some work to fix it")]
     fn parse_page(entry: &mut &[u8]) -> Result<Page> {
         // page start
         if entry.len() < 4 || entry[..4] != Self::PAGE_START_HEADER {
@@ -273,7 +273,7 @@ impl BinaryCookies {
         entry.advance(value_len);
         let value = String::from_utf8_lossy(value).to_string();
 
-        #[expect(clippy::wildcard_in_or_patterns)]
+        #[expect(clippy::wildcard_in_or_patterns, reason = "this is more clear")]
         let same_site = match cookie_flags & 56 {
             40 => SameSite::Lax,
             56 => SameSite::Strict,
