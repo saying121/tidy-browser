@@ -18,6 +18,5 @@ tokio              = { workspace = true, features = ["rt-multi-thread", "macros"
 clap               = { workspace = true }
 miette             = { workspace = true, features = ["fancy"] }
 decrypt-cookies    = { workspace = true }
-strum              = { workspace = true }
 tracing            = { workspace = true }
 tracing-subscriber = { workspace = true }

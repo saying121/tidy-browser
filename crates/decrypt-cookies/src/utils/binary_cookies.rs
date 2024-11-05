@@ -1,19 +1,39 @@
 //! reference
+//!
 //! <https://github.com/cixtor/binarycookies>
 //! <https://github.com/libyal/dtformats/blob/main/documentation/Safari%20Cookies.asciidoc>
 //! <https://github.com/interstateone/BinaryCookies>
 //! <http://justsolve.archiveteam.org/wiki/Safari_cookies>
 
+use std::array::TryFromSliceError;
+
 use bytes::Buf;
 use chrono::{offset::LocalResult, prelude::*, Utc};
-use miette::{bail, IntoDiagnostic, Result};
 
-use crate::browser::{
-    cookies::{CookiesInfo, SameSite},
-    info::BrowserTime,
-};
+use crate::browser::cookies::{CookiesInfo, SameSite};
 
-trait I64ToSafariTime: BrowserTime {
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum ParseError {
+    #[error("Cookies signature broken")]
+    Signature,
+    #[error("Cookies data broken")]
+    Data,
+    #[error("Cookies header broken")]
+    Header,
+    #[error("Cookies end header broken")]
+    EndHeader,
+    #[error("Cookies end broken")]
+    End,
+    #[error("Parser f64 failed")]
+    ParseF64(#[from] std::num::ParseFloatError),
+    #[error("Parser f64 failed")]
+    Array(#[from] TryFromSliceError),
+}
+
+type Result<T> = std::result::Result<T, ParseError>;
+
+trait I64ToSafariTime {
     fn to_utc(&self) -> Option<DateTime<Utc>>;
 }
 impl I64ToSafariTime for i64 {
@@ -32,12 +52,13 @@ impl I64ToSafariTime for i64 {
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
+#[non_exhaustive]
 pub struct BinaryCookies {
-    signature: Vec<u8>,
-    num_pages: u32,         // be
-    pages_offset: Vec<u32>, // be
+    pub signature: Vec<u8>,
+    pub num_pages: u32,         // be
+    pub pages_offset: Vec<u32>, // be
     pub pages: Vec<Page>,
-    checksum: Vec<u8>, // 8 byte
+    pub checksum: Vec<u8>, // 8 byte
 }
 
 impl BinaryCookies {
@@ -72,11 +93,12 @@ impl BinaryCookies {
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
+#[non_exhaustive]
 pub struct Page {
-    pages_start: Vec<u8>,
-    num_cookies: u32,          // le
-    cookies_offsets: Vec<u32>, // le, N * `self.num_cookies`
-    page_end: Vec<u8>,         // Must be equal to []byte{0x00_00_00_00}
+    pub pages_start: Vec<u8>,
+    pub num_cookies: u32,          // le
+    pub cookies_offsets: Vec<u32>, // le, N * `self.num_cookies`
+    pub page_end: Vec<u8>,         // Must be equal to []byte{0x00_00_00_00}
     pub cookies: Vec<SafariCookie>,
 }
 
@@ -107,17 +129,18 @@ impl BinaryCookies {
     const PAGE_START_HEADER: [u8; 4] = [0x00, 0x00, 0x01, 0x00];
     const END_HEADER: [u8; 4] = [0x00, 0x00, 0x00, 0x00];
 
-    #[allow(clippy::panic_in_result_fn)]
     // raw data and some unnecessary data
+    #[expect(
+        clippy::missing_asserts_for_indexing,
+        reason = "The `advance` method can also panic"
+    )]
     pub fn parse(file: &[u8]) -> Result<Self> {
         let mut entry = file;
 
         if entry.len() < 4 || &entry[..4] != Self::SIGNATURE {
-            bail!("wrong SIGNATURE")
+            return Err(ParseError::Signature);
         }
         entry.advance(4);
-
-        assert!(entry.len() > 7);
 
         let num_pages = entry.get_u32();
 
@@ -128,7 +151,7 @@ impl BinaryCookies {
         }
         let page_size = pages_offsets.iter().sum::<u32>() as usize;
         if entry.len() < page_size {
-            bail!("wrong data")
+            return Err(ParseError::Data);
         }
         let mut pages = vec![];
 
@@ -145,11 +168,11 @@ impl BinaryCookies {
             checksum: entry[..8].to_vec(),
         })
     }
-    #[allow(clippy::panic_in_result_fn)]
+    #[expect(clippy::panic_in_result_fn)]
     fn parse_page(entry: &mut &[u8]) -> Result<Page> {
         // page start
         if entry.len() < 4 || entry[..4] != Self::PAGE_START_HEADER {
-            bail!("wrong cookie header")
+            return Err(ParseError::Header);
         }
         assert!(entry.len() > 3);
         entry.advance(4);
@@ -164,7 +187,7 @@ impl BinaryCookies {
 
         // page end
         if entry[..4] != Self::END_HEADER {
-            bail!("wrong cookie end")
+            return Err(ParseError::End);
         }
 
         entry.advance(4);
@@ -185,23 +208,19 @@ impl BinaryCookies {
         };
         Ok(page)
     }
-    #[allow(clippy::panic_in_result_fn)]
+    #[expect(
+        clippy::missing_asserts_for_indexing,
+        reason = "The `advance` method can also panic"
+    )]
     fn parse_cookie(entry: &mut &[u8]) -> Result<SafariCookie> {
         let cookie_size = entry.get_u32_le();
-
-        if entry.len() < 8 {
-            bail!("wrong")
-        }
-        assert!(entry.len() > 7);
 
         let version = entry[..4].to_vec();
         entry.advance(4);
 
         let cookie_flags = entry.get_u32_le();
 
-        let has_port = entry[..4]
-            .try_into()
-            .into_diagnostic()?;
+        let has_port = entry[..4].try_into()?;
         entry.advance(4);
 
         let domain_offset = entry.get_u32_le();
@@ -212,23 +231,15 @@ impl BinaryCookies {
 
         let end_header = &entry[..4];
         if end_header != Self::END_HEADER {
-            bail!("wrong end header")
+            return Err(ParseError::EndHeader);
         }
         entry.advance(4);
 
-        let expires = f64::from_le_bytes(
-            entry[..8]
-                .try_into()
-                .into_diagnostic()?,
-        );
+        let expires = f64::from_le_bytes(entry[..8].try_into()?);
         entry.advance(8);
         let expires = (expires as i64).to_utc();
 
-        let creation = f64::from_le_bytes(
-            entry[..8]
-                .try_into()
-                .into_diagnostic()?,
-        );
+        let creation = f64::from_le_bytes(entry[..8].try_into()?);
         entry.advance(8);
         let creation = (creation as i64).to_utc();
 
@@ -262,7 +273,7 @@ impl BinaryCookies {
         entry.advance(value_len);
         let value = String::from_utf8_lossy(value).to_string();
 
-        #[allow(clippy::wildcard_in_or_patterns)]
+        #[expect(clippy::wildcard_in_or_patterns)]
         let same_site = match cookie_flags & 56 {
             40 => SameSite::Lax,
             56 => SameSite::Strict,
@@ -298,19 +309,20 @@ impl BinaryCookies {
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
+#[non_exhaustive]
 pub struct SafariCookie {
     // cookie_size:    u32, // LE_uint32	Cookie size. Number of bytes associated to the cookie
     pub version: Vec<u8>, // byte    Unknown field possibly related to the cookie flags
-    cookie_flags: u32, /* LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly */
+    pub cookie_flags: u32, /* LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly */
     pub same_site: SameSite,
     pub is_secure: bool,
     pub is_httponly: bool,
-    pub has_port: [u8; 4],  // size:  4    byte    0 or 1
-    pub domain_offset: u32, // LE_uint32    Cookie domain offset
-    name_offset: u32,       // LE_uint32    Cookie name offset
-    path_offset: u32,       // LE_uint32    Cookie path offset
-    value_offset: u32,      // LE_uint32    Cookie value offset
-    comment_offset: u32,    // LE_uint32    Cookie comment offset
+    pub has_port: [u8; 4],   // size:  4    byte    0 or 1
+    pub domain_offset: u32,  // LE_uint32    Cookie domain offset
+    pub name_offset: u32,    // LE_uint32    Cookie name offset
+    pub path_offset: u32,    // LE_uint32    Cookie path offset
+    pub value_offset: u32,   // LE_uint32    Cookie value offset
+    pub comment_offset: u32, // LE_uint32    Cookie comment offset
     // end_header:     Vec<u8>, /* 4    byte    Marks the end of a header. Must be equal to []byte{0x00000000} */
     pub expires: Option<DateTime<Utc>>, /* float64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
     pub creation: Option<DateTime<Utc>>, /* float64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
@@ -324,7 +336,7 @@ pub struct SafariCookie {
 impl TryFrom<SafariCookie> for reqwest::header::HeaderValue {
     type Error = reqwest::header::InvalidHeaderValue;
 
-    fn try_from(value: SafariCookie) -> Result<Self, Self::Error> {
+    fn try_from(value: SafariCookie) -> std::result::Result<Self, Self::Error> {
         Self::from_str(&value.get_set_cookie_header())
     }
 }

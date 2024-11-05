@@ -1,8 +1,7 @@
 use std::io::Write;
 
-use decrypt_cookies::{get_cookie, Browser, LeetCodeCookies};
-use miette::{IntoDiagnostic, Result};
-use strum::IntoEnumIterator;
+use anyhow::Result;
+use decrypt_cookies::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -15,17 +14,14 @@ async fn main() -> Result<()> {
     let mut lock = stdout.lock();
 
     let leetcode_cn = "leetcode.cn";
-    for browser in Browser::iter() {
-        dbg!(browser);
-        let edge = match get_cookie(browser, leetcode_cn).await {
-            Ok(v) => v,
-            Err(err) => {
-                println!("{err}");
-                LeetCodeCookies::default()
-            },
-        };
-        writeln!(lock, "{:#?}", edge).into_diagnostic()?;
-    }
+
+    let getter = ChromiumBuilder::<Chrome>::new()
+        .build()
+        .await?;
+    let ck = getter
+        .get_cookies_session_csrf(leetcode_cn)
+        .await?;
+    writeln!(lock, "{:#?}", ck)?;
 
     Ok(())
 }

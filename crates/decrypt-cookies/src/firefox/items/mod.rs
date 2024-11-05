@@ -1,12 +1,10 @@
 use chrono::{offset::LocalResult, DateTime, TimeZone, Utc};
 
-use crate::browser::info::BrowserTime;
-
 // pub mod passwd;
 pub mod cookie;
 
 // reference: https://support.moonpoint.com/network/web/browser/firefox/sqlite_cookies.php
-pub(super) trait I64ToMozTime: BrowserTime {
+pub(super) trait I64ToMozTime {
     fn micros_to_moz_utc(&self) -> Option<DateTime<Utc>>;
     fn secs_to_moz_utc(&self) -> Option<DateTime<Utc>>;
 }

@@ -1,21 +1,22 @@
 pub mod items;
-mod utils;
 
 use std::path::PathBuf;
 
-pub use items::cookie::CookiesGetter;
-use miette::Result;
-pub use utils::binary_cookies::*;
+pub use self::items::cookie::CookiesGetter;
+use crate::{
+    browser::cookies::LeetCodeCookies,
+    utils::binary_cookies::{BinaryCookies, SafariCookie},
+};
 
-use crate::{Browser, LeetCodeCookies};
+type Result<T> = std::result::Result<T, crate::safari::items::cookie::CookiesGetterError>;
 
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
+#[non_exhaustive]
 pub struct SafariGetter {
     pub cookie_getter: CookiesGetter,
-    browser: Browser,
 }
 
 #[derive(Clone)]
@@ -30,6 +31,8 @@ impl SafariBuilder {
     pub const fn new() -> Self {
         Self { cookies_path: None }
     }
+
+    /// If the Cookies file is not in specified location
     pub fn cookies_path<P>(&mut self, path: P) -> &mut Self
     where
         P: Into<PathBuf>,
@@ -37,28 +40,30 @@ impl SafariBuilder {
         self.cookies_path = Some(path.into());
         self
     }
+
     pub async fn build(&mut self) -> Result<SafariGetter> {
         let cookie_getter = CookiesGetter::build(self.cookies_path.take()).await?;
-        Ok(SafariGetter {
-            cookie_getter,
-            browser: Browser::Safari,
-        })
+        Ok(SafariGetter { cookie_getter })
     }
 }
 
 impl SafariGetter {
+    const NAME: &'static str = "Safari";
+
     pub fn all_cookies(&self) -> Vec<&SafariCookie> {
         self.cookie_getter.all_cookies()
     }
+
     pub fn get_session_csrf(&self, host: &str) -> LeetCodeCookies {
         self.cookie_getter
             .get_session_csrf(host)
     }
+
     pub const fn binary_cookies(&self) -> &BinaryCookies {
         self.cookie_getter.binary_cookies()
     }
 
-    pub const fn browser(&self) -> Browser {
-        self.browser
+    pub const fn browser() -> &'static str {
+        Self::NAME
     }
 }

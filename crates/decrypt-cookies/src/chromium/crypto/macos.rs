@@ -1,8 +1,15 @@
 use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
-use miette::{bail, Result};
 use pbkdf2::pbkdf2_hmac;
 
-use crate::Browser;
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum CryptoError {
+    #[error("Get keyring failed")]
+    Keyring(#[from] keyring::Error),
+    #[error("Unpad error: {0}")]
+    Unpadding(block_padding::UnpadError),
+}
+type Result<T> = std::result::Result<T, CryptoError>;
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_mac.mm;l=35
 /// Key size required for 128 bit AES.
@@ -14,7 +21,6 @@ type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
-    browser: Browser,
     pass_v10: Vec<u8>,
 }
 
@@ -35,21 +41,21 @@ impl Decrypter {
 }
 
 impl Decrypter {
-    pub fn build(browser: Browser, safe_storage: &str, safe_name: &str) -> Result<Self> {
+    pub fn build(safe_storage: &str, safe_name: &str) -> Result<Self> {
         let pass_v10 = Self::get_pass(safe_storage, safe_name)?;
-        Ok(Self { browser, pass_v10 })
+        Ok(Self { pass_v10 })
     }
     fn get_pass(safe_storage: &str, safe_name: &str) -> Result<Vec<u8>> {
         let entry = match keyring::Entry::new(safe_storage, safe_name) {
             Ok(res) => res,
-            Err(e) => bail!("Error: {e}.new keyring Entry failed"),
+            Err(e) => return Err(e.into()),
         };
         match entry
             .get_password()
             .map(String::into_bytes)
         {
             Ok(res) => Ok(res),
-            Err(e) => bail!("Error: {e}.new keyring Entry failed"),
+            Err(e) => Err(e.into()),
         }
     }
 
@@ -71,12 +77,16 @@ impl Decrypter {
 
         let decrypter = Aes128CbcDec::new(&key.into(), &iv.into());
 
-        if let Ok(res) =
-            decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..])
-        {
-            return Ok(String::from_utf8_lossy(res).to_string());
+        match decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..]) {
+            Ok(res) => String::from_utf8(res.to_vec()).map_or_else(
+                // chromium 130.x, it starts with extern value
+                |_| {
+                    tracing::info!("Decoding for chromium 130.x");
+                    Ok(String::from_utf8_lossy(&res[32..]).to_string())
+                },
+                Ok,
+            ),
+            Err(e) => Err(CryptoError::Unpadding(e)),
         }
-
-        miette::bail!("decrypt error")
     }
 }

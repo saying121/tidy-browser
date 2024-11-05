@@ -1,14 +1,16 @@
 use std::path::Path;
 
-use miette::{IntoDiagnostic, Result};
 use sea_orm::{
-    sea_query::IntoCondition, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter,
+    sea_query::IntoCondition, ColumnTrait, Database, DatabaseConnection, DbErr, EntityTrait,
+    QueryFilter,
 };
 
 use super::cookie_entities::{
     cookies::{self, Model},
     prelude::*,
 };
+
+type Result<T> = std::result::Result<T, DbErr>;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -22,9 +24,7 @@ impl CookiesQuery {
     pub async fn new<P: AsRef<Path> + Send>(path: P) -> Result<Self> {
         let db_conn_str = format!("sqlite:{}?mode=rwc", path.as_ref().to_string_lossy());
 
-        let db = Database::connect(db_conn_str)
-            .await
-            .into_diagnostic()?;
+        let db = Database::connect(db_conn_str).await?;
         Ok(Self { conn: db })
     }
 
@@ -37,7 +37,6 @@ impl CookiesQuery {
             .filter(filter)
             .all(&self.conn)
             .await
-            .into_diagnostic()
     }
 
     /// get raw Cookies
@@ -46,13 +45,11 @@ impl CookiesQuery {
             .filter(cookies::Column::HostKey.contains(host))
             .all(&self.conn)
             .await
-            .into_diagnostic()
     }
     /// get raw Cookies
     pub async fn query_all_cookie(&self) -> Result<Vec<Model>> {
         CookiesDB::find()
             .all(&self.conn)
             .await
-            .into_diagnostic()
     }
 }

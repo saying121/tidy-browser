@@ -1,15 +1,35 @@
-use std::{ffi::c_void, path::Path, ptr};
+use std::{ffi::c_void, path::Path, ptr, slice};
 
 use aes_gcm::{
     aead::{generic_array::GenericArray, Aead},
     Aes256Gcm, KeyInit,
 };
 use base64::{engine::general_purpose, Engine};
-use miette::{IntoDiagnostic, Result};
-use tokio::fs::read_to_string;
+use tokio::{fs, task::spawn_blocking};
 use windows::Win32::{Foundation, Security::Cryptography};
 
-use crate::{chromium::local_state::LocalState, Browser};
+use crate::chromium::local_state::LocalState;
+
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum CryptoError {
+    #[error("Io error")]
+    Io(#[from] std::io::Error),
+    #[error("Serialize error")]
+    Serde(#[from] serde_json::Error),
+    #[error("Decode error")]
+    Base64(#[from] base64::DecodeError),
+    #[error("Task failed")]
+    Task(#[from] tokio::task::JoinError),
+    #[error("Task failed")]
+    Aead(String),
+    #[error("Windows CryptUnprotectData")]
+    CryptUnprotectData(#[from] windows::core::Error),
+    #[error("Windows CryptUnprotectData")]
+    CryptUnprotectDataNull(&'static str),
+}
+
+type Result<T> = std::result::Result<T, CryptoError>;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -17,7 +37,6 @@ use crate::{chromium::local_state::LocalState, Browser};
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
     pass: Vec<u8>,
-    browser: Browser,
 }
 
 impl Decrypter {
@@ -41,24 +60,18 @@ impl Decrypter {
 impl Decrypter {
     /// the method will use default `LocalState` path,
     /// custom that path use `DecrypterBuilder`
-    pub async fn build<A: AsRef<Path> + Send>(browser: Browser, key_path: A) -> Result<Self> {
+    pub async fn build<A: AsRef<Path> + Send>(key_path: A) -> Result<Self> {
         let pass = Self::get_pass(key_path).await?;
-        Ok(Self { pass, browser })
+        Ok(Self { pass })
     }
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=108
     async fn get_pass<A: AsRef<Path> + Send>(key_path: A) -> Result<Vec<u8>> {
-        let string_str = read_to_string(key_path)
-            .await
-            .into_diagnostic()?;
-        let local_state: LocalState = serde_json::from_str(&string_str).into_diagnostic()?;
-        let encrypted_key = general_purpose::STANDARD
-            .decode(local_state.os_crypt.encrypted_key)
-            .into_diagnostic()?;
+        let string_str = fs::read_to_string(key_path).await?;
+        let local_state: LocalState = serde_json::from_str(&string_str)?;
+        let encrypted_key = general_purpose::STANDARD.decode(local_state.os_crypt.encrypted_key)?;
         let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
 
-        let key = tokio::task::spawn_blocking(move || decrypt_with_dpapi(&mut key))
-            .await
-            .into_diagnostic()??;
+        let key = spawn_blocking(move || decrypt_with_dpapi(&mut key)).await??;
 
         Ok(key)
     }
@@ -79,11 +92,10 @@ impl Decrypter {
 
         let cipher = Aes256Gcm::new(GenericArray::from_slice(pass));
 
-        if let Ok(decrypted) = cipher.decrypt(nonce.into(), raw_ciphertext) {
-            return Ok(String::from_utf8_lossy(&decrypted).to_string());
-        };
-
-        miette::bail!("decrypt failed");
+        match cipher.decrypt(nonce.into(), raw_ciphertext) {
+            Ok(decrypted) => return Ok(String::from_utf8_lossy(&decrypted).to_string()),
+            Err(e) => Err(CryptoError::Aead(e.to_string())),
+        }
     }
 }
 
@@ -96,7 +108,7 @@ pub fn decrypt_with_dpapi(ciphertext: &mut [u8]) -> Result<Vec<u8>> {
     let mut output = Cryptography::CRYPT_INTEGER_BLOB { cbData: 0, pbData: ptr::null_mut() };
 
     unsafe {
-        let _: Result<_, miette::Report> = match Cryptography::CryptUnprotectData(
+        Cryptography::CryptUnprotectData(
             &input,
             Some(ptr::null_mut()),
             Some(ptr::null()),
@@ -104,17 +116,16 @@ pub fn decrypt_with_dpapi(ciphertext: &mut [u8]) -> Result<Vec<u8>> {
             Some(ptr::null()),
             0,
             &mut output,
-        ) {
-            Ok(()) => Ok(()),
-            Err(err) => miette::bail!("CryptUnprotectData failed: {err}"),
-        };
-    }
+        )?;
+    };
     if output.pbData.is_null() {
-        miette::bail!("CryptUnprotectData returned a null pointer");
+        return Err(CryptoError::CryptUnprotectDataNull(
+            "CryptUnprotectData returned a null pointer",
+        ));
     }
 
     let decrypted_data =
-        unsafe { std::slice::from_raw_parts(output.pbData, output.cbData as usize).to_vec() };
+        unsafe { slice::from_raw_parts(output.pbData, output.cbData as usize).to_vec() };
     let pbdata_hlocal = Foundation::HLOCAL(output.pbData.cast::<c_void>());
     unsafe {
         _ = Foundation::LocalFree(pbdata_hlocal);

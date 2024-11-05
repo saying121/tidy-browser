@@ -1,116 +1,54 @@
 pub mod items;
-use std::path::PathBuf;
+
+use std::{marker::PhantomData, path::PathBuf};
 
 use chrono::Utc;
-pub use items::cookie::entities::moz_cookies::{
-    Column as MozCookiesColumn, ColumnIter as MozCookiesColumnIter,
-};
-use miette::{IntoDiagnostic, Result};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
+use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition, DbErr};
 
+pub use self::items::cookie::entities::moz_cookies::{
+    Column as MozCookiesCol, ColumnIter as MozCookiesColIter,
+};
 use self::items::{
     cookie::{dao::CookiesQuery, MozCookies},
     I64ToMozTime,
 };
-use crate::{browser::info::FfInfo, Browser, LeetCodeCookies};
+use crate::browser::cookies::LeetCodeCookies;
 
-cfg_if::cfg_if!(
-    if #[cfg(target_os = "linux")] {
-        use crate::browser::info::linux::LinuxFFBase;
-    } else if #[cfg(target_os = "macos")] {
-        use crate::browser::info::macos::MacFFBase;
-    } else if #[cfg(target_os = "windows")] {
-        use crate::browser::info::win::WinFFBase;
-    }
-);
+type Result<T> = std::result::Result<T, DbErr>;
 
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct FirefoxGetter {
-    browser: Browser,
-    cookies_query: CookiesQuery,
-
-    #[cfg(target_os = "linux")]
-    info: LinuxFFBase,
-    #[cfg(target_os = "windows")]
-    info: WinFFBase,
-    #[cfg(target_os = "macos")]
-    info: MacFFBase,
+pub struct FirefoxGetter<T> {
+    pub(crate) cookies_query: CookiesQuery,
+    pub(crate) __browser: PhantomData<T>,
 }
 
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct FirefoxBuilder {
-    browser: Browser,
-    cookies_path: Option<PathBuf>,
+pub struct FirefoxBuilder<T> {
+    pub(crate) base: PathBuf,
+    pub(crate) __browser: PhantomData<T>,
 }
 
-impl FirefoxBuilder {
-    /// # Panics
-    ///
-    /// When you use not Firefox based browser
-    pub fn new(browser: Browser) -> Self {
-        assert!(
-            browser.is_firefox_base(),
-            "Firefox based not support: {browser}"
-        );
-        Self { browser, cookies_path: None }
-    }
-    /// set `cookies_path`
-    pub fn cookies_path<P>(&mut self, ck_path: P) -> &mut Self
-    where
-        P: Into<PathBuf>,
-    {
-        self.cookies_path = Some(ck_path.into());
-        self
-    }
-    pub async fn build(&mut self) -> Result<FirefoxGetter> {
-        #[cfg(target_os = "linux")]
-        let info = LinuxFFBase::new(self.browser).await?;
-        #[cfg(target_os = "macos")]
-        let info = MacFFBase::new(self.browser).await?;
-        #[cfg(target_os = "windows")]
-        let info = WinFFBase::new(self.browser).await?;
-
-        let temp_cookies_path = info.cookies_temp();
-        tokio::fs::copy(
-            self.cookies_path
-                .take()
-                .unwrap_or_else(|| info.cookies()),
-            &temp_cookies_path,
-        )
-        .await
-        .into_diagnostic()?;
-
-        let query = CookiesQuery::new(temp_cookies_path).await?;
-
-        Ok(FirefoxGetter {
-            browser: self.browser,
-            cookies_query: query,
-            info,
-        })
-    }
-}
-
-impl FirefoxGetter {
+impl<T: Send + Sync> FirefoxGetter<T> {
     /// filter by condition
     ///
     /// # Example
     ///
     /// ```rust,ignore
-    /// use decrypt_cookies::{firefox::MozCookiesColumn, Browser, FirefoxBuilder,ColumnTrait};
+    /// use decrypt_cookies::{firefox::MozCookiesCol, Browser, FirefoxBuilder,ColumnTrait};
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let ffget = FirefoxBuilder::new(Browser::Firefox)
+    ///     let ffget = FirefoxBuilder::new(Firefox::new().unwrap())
     ///         .build()
     ///         .await
     ///         .unwrap();
     ///     let res = ffget
-    ///         .get_cookies_filter(MozCookiesColumn::Host.contains("mozilla.com"))
+    ///         .get_cookies_filter(MozCookiesCol::Host.contains("mozilla.com"))
     ///         .await
     ///         .unwrap_or_default();
     /// }
@@ -141,6 +79,7 @@ impl FirefoxGetter {
             .collect();
         Ok(res)
     }
+
     pub async fn get_cookies_by_host(&self, host: &str) -> Result<Vec<MozCookies>> {
         let res = self
             .cookies_query
@@ -158,12 +97,12 @@ impl FirefoxGetter {
         let cookies = self
             .cookies_query
             .query_cookie_filter(
-                MozCookiesColumn::Host
+                MozCookiesCol::Host
                     .contains(host)
                     .and(
-                        MozCookiesColumn::Name
+                        MozCookiesCol::Name
                             .eq("csrftoken")
-                            .or(MozCookiesColumn::Name.eq("LEETCODE_SESSION")),
+                            .or(MozCookiesCol::Name.eq("LEETCODE_SESSION")),
                     ),
             )
             .await?;
@@ -203,13 +142,5 @@ impl FirefoxGetter {
             }
         }
         Ok(res)
-    }
-
-    pub const fn browser(&self) -> Browser {
-        self.browser
-    }
-
-    pub fn info(&self) -> &impl crate::browser::info::FfInfo {
-        &self.info
     }
 }

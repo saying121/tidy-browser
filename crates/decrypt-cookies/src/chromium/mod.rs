@@ -1,42 +1,61 @@
 pub mod crypto;
-mod items;
+pub(crate) mod items;
+#[cfg(target_os = "windows")]
 pub mod local_state;
-use std::path::PathBuf;
+use std::{marker::PhantomData, path::PathBuf};
 
 use chrono::prelude::Utc;
-use items::cookie::{cookie_dao::CookiesQuery, cookie_entities::cookies};
+use items::cookie::cookie_entities::cookies;
 pub use items::{
     cookie::{
-        cookie_entities::cookies::{Column as ChromCkColumn, ColumnIter as ChromCkColumnIter},
+        cookie_entities::cookies::{
+            Column as ChromiumCookieCol, ColumnIter as ChromiumCookieColIter,
+        },
         ChromiumCookie,
     },
     passwd::{
-        login_data_entities::logins::{Column as ChromLoginColumn, Column as ChromLoginColumnIter},
+        login_data_entities::logins::{Column as ChromiumLoginCol, Column as ChromiumLoginColIter},
         LoginData,
     },
 };
-use miette::{IntoDiagnostic, Result};
 use rayon::prelude::*;
-use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
-use tokio::{fs, task};
+use sea_orm::{sea_query::IntoCondition, ColumnTrait, DbErr};
+use tokio::task::{self, JoinError};
 
-use self::items::passwd::{login_data_dao::LoginDataQuery, login_data_entities::logins};
+#[cfg(target_os = "linux")]
+use crate::chromium::crypto::linux::Decrypter;
+#[cfg(target_os = "macos")]
+use crate::chromium::crypto::macos::Decrypter;
+#[cfg(target_os = "windows")]
+use crate::chromium::crypto::win::Decrypter;
 use crate::{
-    browser::info::ChromiumInfo, chromium::items::I64ToChromiumDateTime, Browser, LeetCodeCookies,
+    browser::cookies::LeetCodeCookies,
+    chromium::items::{
+        cookie::cookie_dao::CookiesQuery,
+        passwd::{login_data_dao::LoginDataQuery, login_data_entities::logins},
+        I64ToChromiumDateTime,
+    },
 };
 
-cfg_if::cfg_if!(
-    if #[cfg(target_os="linux")] {
-        use crypto::linux::Decrypter;
-        use crate::browser::info::linux::LinuxChromiumBase;
-    } else if #[cfg(target_os="macos")] {
-        use crypto::macos::Decrypter;
-        use crate::browser::info::macos::MacChromiumBase;
-    } else if #[cfg(target_os="windows")] {
-        use crypto::win::Decrypter;
-        use crate::browser::info::win::WinChromiumBase;
-    }
-);
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum ChromiumError {
+    #[error("Tokio task failed")]
+    Task(#[from] JoinError),
+    #[error("Database error")]
+    Db(#[from] DbErr),
+    #[cfg(target_os = "linux")]
+    #[error("Decrypt error")]
+    Decrypt(#[from] crate::chromium::crypto::linux::CryptoError),
+    #[cfg(target_os = "windows")]
+    #[error("Decrypt error")]
+    Decrypt(#[from] crate::chromium::crypto::win::CryptoError),
+    #[cfg(target_os = "macos")]
+    #[error("Decrypt error")]
+    Decrypt(#[from] crate::chromium::crypto::macos::CryptoError),
+}
+
+type Result<T> = std::result::Result<T, ChromiumError>;
 
 /// Chromium based, get cookies, etc. and decrypt
 ///
@@ -44,7 +63,7 @@ cfg_if::cfg_if!(
 ///
 /// # Example
 /// ```rust, ignore
-/// let getter = ChromiumBuilder::new(Browser::Chromium)
+/// let getter = ChromiumBuilder::new(Chromium::new())
 ///     .build()
 ///     .await?;
 /// getter
@@ -54,137 +73,26 @@ cfg_if::cfg_if!(
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct ChromiumGetter {
-    browser: Browser,
-    cookies_query: CookiesQuery,
-    login_data_query: LoginDataQuery,
-    crypto: Decrypter,
-
-    #[cfg(target_os = "linux")]
-    pub info: LinuxChromiumBase,
-    #[cfg(target_os = "windows")]
-    pub info: WinChromiumBase,
-    #[cfg(target_os = "macos")]
-    pub info: MacChromiumBase,
+pub struct ChromiumGetter<T> {
+    pub(crate) cookies_query: CookiesQuery,
+    pub(crate) login_data_query: LoginDataQuery,
+    pub(crate) crypto: Decrypter,
+    pub(crate) __browser: PhantomData<T>,
 }
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
-pub struct ChromiumBuilder {
-    browser: Browser,
-    cookies_path: Option<PathBuf>,
-    /// in windows, it store passwd
-    local_state_path: Option<PathBuf>,
-
-    login_data_path: Option<PathBuf>,
+pub struct ChromiumBuilder<T> {
+    pub(crate) base: PathBuf,
+    pub(crate) __browser: PhantomData<T>,
 }
 
-impl ChromiumBuilder {
-    /// # Panics
-    ///
-    /// When you use not Chromium based browser
-    pub fn new(browser: Browser) -> Self {
-        assert!(
-            browser.is_chromium_base(),
-            "Chromium based not support: {browser}"
-        );
-        Self {
-            browser,
-            cookies_path: None,
-            local_state_path: None,
-            login_data_path: None,
-        }
-    }
-    pub fn login_data_path<P>(&mut self, path: P) -> &mut Self
-    where
-        P: Into<PathBuf>,
-    {
-        self.login_data_path = Some(path.into());
-        self
-    }
-    /// set cookies path
-    pub fn cookies_path<P>(&mut self, path: P) -> &mut Self
-    where
-        P: Into<PathBuf>,
-    {
-        self.cookies_path = Some(path.into());
-        self
-    }
-    /// set `local_state` path
-    pub fn local_state_path<P>(&mut self, path: P) -> &mut Self
-    where
-        P: Into<PathBuf>,
-    {
-        self.local_state_path = Some(path.into());
-        self
-    }
-
-    pub async fn build(self) -> Result<ChromiumGetter> {
-        cfg_if::cfg_if!(
-            if #[cfg(target_os = "linux")] {
-                let info = LinuxChromiumBase::new(self.browser);
-                let crypto = Decrypter::build(self.browser, info.safe_storage()).await?;
-            } else if #[cfg(target_os = "macos")] {
-                let info = MacChromiumBase::new(self.browser);
-                let crypto = Decrypter::build(
-                    self.browser,
-                    info.safe_storage(),
-                    info.safe_name(),
-                )?;
-            } else if #[cfg(target_os = "windows")] {
-                let info = WinChromiumBase::new(self.browser);
-
-                let temp_key_path = info.local_state_temp();
-                fs::copy(
-                    self.local_state_path
-                        .unwrap_or_else(|| info.local_state()),
-                    &temp_key_path,
-                )
-                .await
-                .into_diagnostic()?;
-                let crypto = Decrypter::build(self.browser, temp_key_path).await?;
-            }
-        );
-        let (temp_cookies_path, temp_login_data_path) =
-            (info.cookies_temp(), info.logindata_temp());
-        let cp_login = fs::copy(
-            self.login_data_path
-                .unwrap_or_else(|| info.logindata()),
-            &temp_login_data_path,
-        );
-
-        let cp_cookies = fs::copy(
-            self.cookies_path
-                .unwrap_or_else(|| info.cookies()),
-            &temp_cookies_path,
-        );
-        let (login, cookies) = tokio::join!(cp_login, cp_cookies);
-        login.into_diagnostic()?;
-        cookies.into_diagnostic()?;
-
-        let (cookies_query, login_data_query) = (
-            CookiesQuery::new(temp_cookies_path),
-            LoginDataQuery::new(temp_login_data_path),
-        );
-        let (cookies_query, login_data_query) = tokio::join!(cookies_query, login_data_query);
-        let (cookies_query, login_data_query) = (cookies_query?, login_data_query?);
-
-        Ok(ChromiumGetter {
-            browser: self.browser,
-            cookies_query,
-            login_data_query,
-            crypto,
-            info,
-        })
-    }
-}
-
-impl ChromiumGetter {
+impl<T: Send + Sync> ChromiumGetter<T> {
     async fn par_decrypt_logins(&self, raw: Vec<logins::Model>) -> Result<Vec<LoginData>> {
         let crypto = self.crypto.clone();
 
-        task::spawn_blocking(move || {
+        let login_data = task::spawn_blocking(move || {
             raw.into_par_iter()
                 .map(|mut v| {
                     let res = v
@@ -201,24 +109,24 @@ impl ChromiumGetter {
                 })
                 .collect()
         })
-        .await
-        .into_diagnostic()
+        .await;
+        Ok(login_data?)
     }
     /// contains passwords
     ///
     /// # Example:
     ///
     /// ```rust
-    /// use decrypt_cookies::{chromium::ChromLoginColumn, Browser, ChromiumBuilder, ColumnTrait};
+    /// use decrypt_cookies::prelude::*;
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let edge_getter = ChromiumBuilder::new(Browser::Edge)
+    ///     let edge_getter = ChromiumBuilder::<Chrome>::new()
     ///         .build()
     ///         .await
     ///         .unwrap();
     ///     let res = edge_getter
-    ///         .get_logins_filter(ChromLoginColumn::OriginUrl.contains("google.com"))
+    ///         .get_logins_filter(ChromiumLoginCol::OriginUrl.contains("google.com"))
     ///         .await
     ///         .unwrap_or_default();
     ///     dbg!(res);
@@ -235,14 +143,13 @@ impl ChromiumGetter {
         self.par_decrypt_logins(raw_login)
             .await
     }
-    /// contains passwords
     pub async fn get_logins_by_host<F>(&self, host: F) -> Result<Vec<LoginData>>
     where
         F: AsRef<str> + Send,
     {
         let raw_login = self
             .login_data_query
-            .query_login_dt_filter(ChromLoginColumn::OriginUrl.contains(host.as_ref()))
+            .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host.as_ref()))
             .await?;
         self.par_decrypt_logins(raw_login)
             .await
@@ -258,22 +165,22 @@ impl ChromiumGetter {
     }
 }
 
-impl ChromiumGetter {
+impl<T: Send + Sync> ChromiumGetter<T> {
     /// filter cookies
     ///
     /// # Example:
     ///
     /// ```rust
-    /// use decrypt_cookies::{chromium::ChromCkColumn, Browser, ChromiumBuilder, ColumnTrait};
+    /// use decrypt_cookies::prelude::*;
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let edge_getter = ChromiumBuilder::new(Browser::Edge)
+    ///     let edge_getter = ChromiumBuilder::<Chrome>::new()
     ///         .build()
     ///         .await
     ///         .unwrap();
     ///     let res = edge_getter
-    ///         .get_cookies_filter(ChromCkColumn::HostKey.contains("google.com"))
+    ///         .get_cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
     ///         .await
     ///         .unwrap_or_default();
     ///     dbg!(res);
@@ -318,12 +225,12 @@ impl ChromiumGetter {
         let cookies = self
             .cookies_query
             .query_cookie_filter(
-                ChromCkColumn::HostKey
+                ChromiumCookieCol::HostKey
                     .contains(host.as_ref())
                     .and(
-                        ChromCkColumn::Name
+                        ChromiumCookieCol::Name
                             .eq("csrftoken")
-                            .or(ChromCkColumn::Name.eq("LEETCODE_SESSION")),
+                            .or(ChromiumCookieCol::Name.eq("LEETCODE_SESSION")),
                     ),
             )
             .await?;
@@ -383,7 +290,7 @@ impl ChromiumGetter {
             }
         }
         for (handle, flag) in hds {
-            let res = handle.await.into_diagnostic()?;
+            let res = handle.await?;
             match flag {
                 CsrfSession::Csrf => csrf_token.csrf = res,
                 CsrfSession::Session => csrf_token.session = res,
@@ -411,7 +318,7 @@ impl ChromiumGetter {
     async fn par_decrypt_ck(&self, raw: Vec<cookies::Model>) -> Result<Vec<ChromiumCookie>> {
         let crypto = self.crypto.clone();
 
-        task::spawn_blocking(move || {
+        let decrypted_ck = task::spawn_blocking(move || {
             raw.into_par_iter()
                 .map(|mut v| {
                     let res = crypto
@@ -423,22 +330,14 @@ impl ChromiumGetter {
                 })
                 .collect()
         })
-        .await
-        .into_diagnostic()
+        .await?;
+        Ok(decrypted_ck)
     }
 }
 
-impl ChromiumGetter {
+impl<T: Send + Sync> ChromiumGetter<T> {
     /// the browser's decrypt
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
-        self.crypto.decrypt(ciphertext)
-    }
-
-    pub const fn browser(&self) -> Browser {
-        self.browser
-    }
-
-    pub fn info(&self) -> &impl crate::browser::info::ChromiumInfo {
-        &self.info
+        Ok(self.crypto.decrypt(ciphertext)?)
     }
 }

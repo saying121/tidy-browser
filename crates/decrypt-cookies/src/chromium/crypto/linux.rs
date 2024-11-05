@@ -1,19 +1,31 @@
 use std::collections::HashMap;
 
 use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
-use miette::{IntoDiagnostic, Result};
 use pbkdf2::pbkdf2_hmac;
 use secret_service::{EncryptionType, SecretService};
 use tokio::sync::OnceCell;
 
-use crate::{browser::info::need_safe_storage, Browser};
+use crate::browser::info::need_safe_storage;
+
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum CryptoError {
+    #[error("Get secret failed")]
+    GetPass(#[from] secret_service::Error),
+    #[error("Unpad error: {0}")]
+    Unpadding(block_padding::UnpadError),
+    #[error("Not utf-8: {0}")]
+    StringUtf8(#[from] std::string::FromUtf8Error),
+}
+
+type Result<T> = std::result::Result<T, CryptoError>;
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=32
 /// Key size required for 128 bit AES.
 // const K_DERIVED_KEY_SIZE_IN_BITS: u32 = 128;
 type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 
-#[allow(clippy::empty_line_after_doc_comments)]
+#[expect(clippy::empty_line_after_doc_comments)]
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=50
 /// The UMA metric name for whether the false was decryptable with an empty key.
 // const K_METRIC_DECRYPTED_WITH_EMPTY_KEY: &[u8] = b"OSCrypt.Linux.DecryptedWithEmptyKey";
@@ -24,16 +36,11 @@ type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
     pass_v11: &'static [u8],
-    browser: Browser,
 }
 
 impl Decrypter {
     pub const fn pass_v11(&self) -> &[u8] {
         self.pass_v11
-    }
-
-    pub const fn browser(&self) -> Browser {
-        self.browser
     }
 }
 
@@ -53,29 +60,14 @@ async fn get_pass_once() -> &'static HashMap<&'static str, &'static [u8]> {
 /// from `secret_service` get all password
 async fn get_all_pass() -> Result<HashMap<&'static str, &'static [u8]>> {
     // initialize secret service (dbus connection and encryption session)
-    let ss = SecretService::connect(EncryptionType::Dh)
-        .await
-        .into_diagnostic()?;
+    let ss = SecretService::connect(EncryptionType::Dh).await?;
     // get default collection
-    let collection = ss
-        .get_default_collection()
-        .await
-        .into_diagnostic()?;
+    let collection = ss.get_default_collection().await?;
 
-    if collection
-        .is_locked()
-        .await
-        .into_diagnostic()?
-    {
-        collection
-            .unlock()
-            .await
-            .into_diagnostic()?;
+    if collection.is_locked().await? {
+        collection.unlock().await?;
     }
-    let coll = collection
-        .get_all_items()
-        .await
-        .into_diagnostic()?;
+    let coll = collection.get_all_items().await?;
 
     let mut res = HashMap::new();
     for item in coll {
@@ -101,12 +93,12 @@ async fn get_all_pass() -> Result<HashMap<&'static str, &'static [u8]>> {
 }
 
 impl Decrypter {
-    pub async fn build(browser: Browser, safe_storage: &str) -> Result<Self> {
+    pub async fn build(safe_storage: &str) -> Result<Self> {
         let pass_v11 = get_pass_once()
             .await
             .get(safe_storage)
             .map_or_else(|| Self::PASSWORD_V10, |v| *v);
-        Ok(Self { pass_v11, browser })
+        Ok(Self { pass_v11 })
     }
     // pub fn decrypt_yandex_password(&self, be_decrypte: &mut [u8]) -> Result<String> {
     //     use aes_gcm::{
@@ -137,13 +129,17 @@ impl Decrypter {
         pbkdf2_hmac::<sha1::Sha1>(pass, Self::K_SALT, Self::K_ENCRYPTION_ITERATIONS, &mut key);
         let decrypter = Aes128CbcDec::new(&key.into(), &iv.into());
 
-        if let Ok(res) =
-            decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..])
-        {
-            return Ok(String::from_utf8_lossy(res).to_string());
+        match decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..]) {
+            Ok(res) => String::from_utf8(res.to_vec()).map_or_else(
+                // chromium 130.x, it starts with extern value
+                |_| {
+                    tracing::info!("Decoding for chromium 130.x");
+                    Ok(String::from_utf8_lossy(&res[32..]).to_string())
+                },
+                Ok,
+            ),
+            Err(e) => Err(CryptoError::Unpadding(e)),
         }
-
-        miette::bail!("decrypt failed")
     }
 }
 
@@ -186,8 +182,8 @@ impl Decrypter {
 //     async fn yandex_passwd(path: PathBuf) -> Result<Vec<u8>> {
 //         let string_str = read_to_string(path)
 //             .await
-//             .into_diagnostic()?;
-//         let local_state: YandexLocalState = serde_json::from_str(&string_str).into_diagnostic()?;
+//             ?;
+//         let local_state: YandexLocalState = serde_json::from_str(&string_str)?;
 //         let encrypted_key = general_purpose::STANDARD
 //             .decode(
 //                 local_state
@@ -195,7 +191,7 @@ impl Decrypter {
 //                     .checker_state
 //                     .encrypted_data,
 //             )
-//             .into_diagnostic()?;
+//             ?;
 //         Ok(encrypted_key)
 //     }
 //     #[ignore = "need realy environment"]
