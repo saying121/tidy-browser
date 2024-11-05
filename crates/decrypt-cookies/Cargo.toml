@@ -1,6 +1,6 @@
 [package]
 name = "decrypt-cookies"
-version = "0.6.1"
+version = "0.7.0-alpha.0"
 description = "A decrypt browser crate"
 license = { workspace = true }
 edition = { workspace = true }
