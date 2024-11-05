@@ -1,8 +1,8 @@
-use decrypt_cookies::prelude::*;
-
 #[cfg(target_os = "linux")]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    use decrypt_cookies::prelude::*;
+
     let mut p = dirs::config_dir().expect("Get config dir failed");
     p.push("google-chrome-beta");
 
@@ -12,7 +12,6 @@ async fn main() -> anyhow::Result<()> {
         .await?;
     let all_cookies = chromium.get_cookies_all().await?;
 
-    // In theory it shoule work, but cookies result have some garbled characters
     dbg!(&all_cookies.first());
 
     let filtered_cookies = chromium
@@ -43,4 +42,9 @@ async fn main() -> anyhow::Result<()> {
     dbg!(&filtered_cookies.first());
 
     Ok(())
+}
+
+#[cfg(not(target_os = "linux"))]
+fn main() {
+    unimplemented!();
 }
