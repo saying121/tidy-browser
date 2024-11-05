@@ -30,6 +30,7 @@ serde = { workspace = true }
 
 rust-ini = { workspace = true } # firefox
 
+const_format = { workspace = true }
 dirs = { workspace = true }
 
 reqwest = { workspace = true, default-features = false, features = ["cookies"], optional = true }

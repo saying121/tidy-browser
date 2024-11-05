@@ -1,109 +1,255 @@
 pub mod cookies;
 pub mod info;
 
-use std::fmt::Display;
+use const_format::concatcp;
 
-macro_rules! browser_base {
-    ($({ $browser:ident, $linux_base:literal, $win_base:literal, $mac_base:literal }), *) => {
-        $(
-            #[derive(Clone, Copy)]
-            #[derive(Debug)]
-            #[derive(Default)]
-            #[derive(PartialEq, Eq, PartialOrd, Ord)]
-            #[expect(clippy::exhaustive_structs, reason = "unit struct")]
-            pub struct $browser;
+macro_rules! chromium_common {
+    ($platform:literal, $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, $safe_name:literal)? ) => {
+        #[cfg(target_os = $platform)]
+        #[derive(Clone, Copy)]
+        #[derive(Debug)]
+        #[derive(Default)]
+        #[derive(PartialEq, Eq, PartialOrd, Ord)]
+        #[expect(clippy::exhaustive_structs, reason = "unit struct")]
+        pub struct $browser;
 
-            impl $browser {
-                pub const NAME: &'static str = stringify!($browser);
-
-                #[cfg(target_os = "linux")]
-                pub const BASE: &'static str = $linux_base;
-                #[cfg(target_os = "windows")]
-                pub const BASE: &'static str = $win_base;
-                #[cfg(target_os = "macos")]
-                pub const BASE: &'static str = $mac_base;
-            }
-
-            impl Display for $browser {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    f.write_str(Self::NAME)
-                }
-            }
-        )*
-    };
-    ($({ $browser:ident, $win_base:literal, $mac_base:literal }), *) => {
-        $(
-            #[derive(Clone, Copy)]
-            #[derive(Debug)]
-            #[derive(Default)]
-            #[derive(PartialEq, Eq, PartialOrd, Ord)]
-            #[expect(clippy::exhaustive_structs, reason = "unit struct")]
-            pub struct $browser;
-
-            impl $browser {
-                pub const NAME: &'static str = stringify!($browser);
-
-                #[cfg(target_os = "windows")]
-                pub const BASE: &'static str = $win_base;
-                #[cfg(target_os = "macos")]
-                pub const BASE: &'static str = $mac_base;
-            }
-
-            impl Display for $browser {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    f.write_str(Self::NAME)
-                }
-            }
-        )*
-    };
-}
-
-macro_rules! chromium_safe {
-    ($({ $browser:ident, $safe_storage:literal, $safe_name:literal }), *) => {
-        $(
-            impl $browser {
-                #[cfg(not(target_os = "windows"))]
-                pub const SAFE_STORAGE: &str = $safe_storage;
+        #[cfg(target_os = $platform)]
+        impl $browser {
+            pub const BASE: &'static str = $base;
+            pub const NAME: &'static str = stringify!($browser);
+            /// sqlite3
+            pub const COOKIES: &str = concatcp!($browser::BASE, "/", $cookies);
+            pub const LOGIN_DATA: &str = concatcp!($browser::BASE, "/", $login_data);
+            pub const KEY: &str = concatcp!($browser::BASE, "/", $key);
+            $(
+                pub const SAFE_STORAGE: &str = concatcp!($safe_name, " Safe Storage");
                 #[cfg(target_os = "macos")]
                 pub const SAFE_NAME: &str = $safe_name;
+            )?
+
+            pub fn key() -> std::path::PathBuf {
+                dirs::home_dir().expect("Get home dir failed").join(Self::KEY)
             }
+            pub fn key_temp() -> std::path::PathBuf {
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::KEY))
+            }
+
+            pub fn cookies() -> std::path::PathBuf {
+                dirs::home_dir().expect("Get home dir failed").join(Self::COOKIES)
+            }
+            pub fn cookies_temp() -> std::path::PathBuf {
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::COOKIES))
+            }
+
+            pub fn login_data() -> std::path::PathBuf {
+                dirs::home_dir().expect("Get home dir failed").join(Self::LOGIN_DATA)
+            }
+            pub fn login_data_temp() -> std::path::PathBuf {
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::LOGIN_DATA))
+            }
+        }
+
+        #[cfg(target_os = $platform)]
+        impl std::fmt::Display for $browser {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str(Self::NAME)
+            }
+        }
+    };
+    // firefox
+    ("firefox", $platform:literal, $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal) => {
+        #[cfg(target_os = $platform)]
+        #[derive(Clone, Copy)]
+        #[derive(Debug)]
+        #[derive(Default)]
+        #[derive(PartialEq, Eq, PartialOrd, Ord)]
+        #[expect(clippy::exhaustive_structs, reason = "unit struct")]
+        pub struct $browser;
+
+        #[cfg(target_os = $platform)]
+        impl $browser {
+            pub const BASE: &'static str = $base;
+            pub const NAME: &'static str = stringify!($browser);
+            /// sqlite3
+            pub const COOKIES: &str = $cookies;
+            pub const LOGIN_DATA: &str = $login_data;
+            pub const KEY: &str =  $key;
+
+            pub fn key(base: &Path) -> std::path::PathBuf {
+                base.join(Self::KEY)
+            }
+            pub fn key_temp() -> std::path::PathBuf {
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::KEY))
+            }
+
+            pub fn cookies(base: &Path) -> std::path::PathBuf {
+                base.join(Self::COOKIES)
+            }
+            pub fn cookies_temp() -> std::path::PathBuf {
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::COOKIES))
+            }
+
+            pub fn login_data(base: &Path) -> std::path::PathBuf {
+                base.join(Self::LOGIN_DATA)
+            }
+            pub fn login_data_temp() -> std::path::PathBuf {
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::LOGIN_DATA))
+            }
+        }
+
+        #[cfg(target_os = $platform)]
+        impl std::fmt::Display for $browser {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str(Self::NAME)
+            }
+        }
+    };
+}
+
+macro_rules! chromium_base_linux {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? }), *,) => {
+        $(
+            chromium_common!("linux", $browser, $base, $cookies, $login_data, $key $(, $safe_name)?);
         )*
     };
 }
 
-// TODO: Add more browser
-browser_base!(
-    { Firefox,   ".mozilla/firefox", "Mozilla/Firefox", "Firefox" },
-    { Librewolf, ".librewolf",       "librewolf",       "librewolf" },
+macro_rules! chromium_base_win {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal }), *,) => {
+        $(
+            chromium_common!("windows", $browser, $base, $cookies, $login_data, $key);
+        )*
+    };
+}
 
-    { Chrome,   "google-chrome",               "Google/Chrome/User Data",               "Google/Chrome" },
-    { Edge,     "microsoft-edge",              "Microsoft/Edge/User Data",              "Microsoft Edge" },
-    { Chromium, "chromium",                    "Chromium/User Data",                    "Chromium" },
-    { Brave,    "BraveSoftware/Brave-Browser", "BraveSoftware/Brave-Browser/User Data", "BraveSoftware/Brave-Browser" },
-    { Yandex,   "yandex-browser",              "Yandex/YandexBrowser/User Data",        "Yandex/YandexBrowser" },
-    { Vivaldi,  "vivaldi",                     "Vivaldi/User Data",                     "Vivaldi"},
-    { Opera,    "opera",                       "Opera Software/Opera Stable",           "com.operasoftware.Opera"}
+macro_rules! chromium_base_macos {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? }), *,) => {
+        $(
+            chromium_common!("macos", $browser, $base, $cookies, $login_data, $key $(, $safe_name)?);
+        )*
+    };
+}
+
+chromium_base_linux!(
+    { Chrome  , ".config/google-chrome"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chrome"         },
+    { Edge    , ".config/microsoft-edge"             , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Microsoft Edge" },
+    { Chromium, ".config/chromium"                   , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chromium"       },
+    { Brave   , ".config/BraveSoftware/Brave-Browser", "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Brave"          },
+    { Yandex  , ".config/yandex-browser"             , "Default/Cookies", "Ya Passman Data"   , "Local State", safe_name = "Yandex"         },
+    { Vivaldi , ".config/vivaldi"                    , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Vivaldi"        },
+    { Opera   , ".config/opera"                      , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Opera"          },
 );
-// WARN: `Arc` is no test
-// TODO: Test `Arc`
-#[cfg(not(target_os = "linux"))]
-browser_base!(
-    { OperaGX, "Opera Software/Opera GX Stable", "com.operasoftware.OperaGX" },
-    { CocCoc,  "CocCoc/Browser/User Data",       "Coccoc"},
-    { Arc,     "Packages/TheBrowserCompany.Arc_ttt1ap7aakyb4/LocalCache/Local/Arc/User Data",                  "Arc/User Data"}
+
+chromium_base_macos!(
+    { Chrome  , "Library/Application Support/Google/Chrome"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chrome"         },
+    { Edge    , "Library/Application Support/Microsoft Edge"             , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Microsoft Edge" },
+    { Chromium, "Library/Application Support/Chromium"                   , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chromium"       },
+    { Brave   , "Library/Application Support/BraveSoftware/Brave-Browser", "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Brave"          },
+    { Yandex  , "Library/Application Support/Yandex/YandexBrowser"       , "Default/Cookies", "Ya Passman Data"   , "Local State", safe_name = "Yandex"         },
+    { Vivaldi , "Library/Application Support/Vivaldi"                    , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Vivaldi"        },
+    { Opera   , "Library/Application Support/com.operasoftware.Opera"    , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Opera"          },
+    { OperaGX , "Library/Application Support/com.operasoftware.OperaGX"  , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Opera"          },
+    { CocCoc  , "Library/Application Support/Coccoc"                     , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "CocCoc"         },
+    { Arc     , "Library/Application Support/Arc/User Data"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Arc"            },
 );
-chromium_safe!(
-    { Chrome,   "Chrome Safe Storage",         "Chrome" },
-    { Edge,     "Microsoft Edge Safe Storage", "Microsoft Edge" },
-    { Chromium, "Chromium Safe Storage",       "Chromium" },
-    { Brave,    "Brave Safe Storage",          "Brave" },
-    { Yandex,   "Yandex Safe Storage",         "Yandex" },
-    { Vivaldi,  "Vivaldi Safe Storage",        "Vivaldi" },
-    { Opera,    "Opera Safe Storage",          "Opera" }
+
+chromium_base_win!(
+    { Chrome  , r"AppData\Local\Google\Chrome\User Data"              , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Edge    , r"AppData\Local\Microsoft\Edge\User Data"             , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Chromium, r"AppData\Local\Chromium\User Data"                   , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Brave   , r"AppData\Local\BraveSoftware\Brave-Browser\User Data", r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Yandex  , r"AppData\Local\Yandex\YandexBrowser\User Data"       , r"Default\Network\Cookies", "Ya Passman Data"   , "Local State" },
+    { Vivaldi , r"AppData\Local\Vivaldi\User Data"                    , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Opera   , r"AppData\Roaming\Opera Software\Opera Stable"        , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { OperaGX , r"AppData\Roaming\Opera Software\Opera GX Stable"     , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { CocCoc  , r"AppData\Local\CocCoc\Browser\User Data"             , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Arc     , r"AppData\Local\Packages\TheBrowserCompany.Arc_ttt1ap7aakyb4\LocalCache\Local\Arc\User Data", r"Default\Network\Cookies", "Default/Login Data", "Local State" },
 );
-#[cfg(not(target_os = "linux"))]
-chromium_safe!(
-    { OperaGX, "Opera Safe Storage",  "Opera" },
-    { CocCoc,  "CocCoc Safe Storage", "CocCoc" },
-    { Arc,     "Arc Safe Storage",    "Arc" }
+
+macro_rules! firefox_common {
+    ($platform:literal, $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal) => {
+        #[cfg(target_os = $platform)]
+        #[derive(Clone, Copy)]
+        #[derive(Debug)]
+        #[derive(Default)]
+        #[derive(PartialEq, Eq, PartialOrd, Ord)]
+        #[expect(clippy::exhaustive_structs, reason = "unit struct")]
+        pub struct $browser;
+
+        #[cfg(target_os = $platform)]
+        impl $browser {
+            pub const BASE: &'static str = $base;
+            pub const NAME: &'static str = stringify!($browser);
+            /// sqlite3
+            pub const COOKIES: &str = $cookies;
+            pub const LOGIN_DATA: &str = $login_data;
+            pub const KEY: &str =  $key;
+
+            pub fn key(base: &std::path::Path) -> std::path::PathBuf {
+                base.join(Self::KEY)
+            }
+            pub fn key_temp() -> std::path::PathBuf {
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::KEY))
+            }
+
+            pub fn cookies(base: &std::path::Path) -> std::path::PathBuf {
+                base.join(Self::COOKIES)
+            }
+            pub fn cookies_temp() -> std::path::PathBuf {
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::COOKIES))
+            }
+
+            pub fn login_data(base: &std::path::Path) -> std::path::PathBuf {
+                base.join(Self::LOGIN_DATA)
+            }
+            pub fn login_data_temp() -> std::path::PathBuf {
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::LOGIN_DATA))
+            }
+        }
+
+        #[cfg(target_os = $platform)]
+        impl std::fmt::Display for $browser {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str(Self::NAME)
+            }
+        }
+    };
+}
+
+macro_rules! firefox_base_linux {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? }), *,) => {
+        $(
+            firefox_common!("linux", $browser, $base, $cookies, $login_data, $key $(, $safe_name)?);
+        )*
+    };
+}
+
+macro_rules! firefox_base_win {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal }), *,) => {
+        $(
+            firefox_common!("windows", $browser, $base, $cookies, $login_data, $key);
+        )*
+    };
+}
+
+macro_rules! firefox_base_macos {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? }), *,) => {
+        $(
+            firefox_common!("macos", $browser, $base, $cookies, $login_data, $key $(, $safe_name)?);
+        )*
+    };
+}
+
+firefox_base_linux!(
+    { Firefox  , ".mozilla/firefox", "cookies.sqlite", "logins.json", "key4.db" },
+    { Librewolf, ".librewolf"      , "cookies.sqlite", "logins.json", "key4.db" },
+);
+firefox_base_macos!(
+    { Firefox  , "Library/Application Support/Firefox"  , "cookies.sqlite", "logins.json", "key4.db" },
+    { Librewolf, "Library/Application Support/librewolf", "cookies.sqlite", "logins.json", "key4.db" },
+);
+
+firefox_base_win!(
+    { Firefox  , r"AppData\Roaming\Mozilla\Firefox", "cookies.sqlite", "logins.json", "key4.db" },
+    { Librewolf, r"AppData\Roaming\librewolf"      , "cookies.sqlite", "logins.json", "key4.db" },
 );

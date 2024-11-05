@@ -1,14 +1,19 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use tokio::{fs, join};
 
 use super::*;
 
+// TODO: add browser name in error
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum InfoError {
     #[error("No such file")]
     Io(#[from] std::io::Error),
+    #[error("No such file: {0:?}")]
+    NoFile(PathBuf),
+    #[error("Create dir failed: {0:?}")]
+    CreateDir(PathBuf),
     #[error("Ini load error")]
     Ini(#[from] ini::Error),
     #[error("Profile {0} missing `Name` properties")]
@@ -30,148 +35,132 @@ pub enum InfoError {
 
 type Result<T> = std::result::Result<T, InfoError>;
 
-/// just impl `browser` method
-pub trait TempPath {
-    fn browser(&self) -> &'static str;
-
-    /// for gen temp path
-    fn temp_path_prefix(&self) -> PathBuf {
-        let mut temp_path = dirs::cache_dir().expect("get cache_dir failed");
-        temp_path.push(format!("decrypt-cookies/{}", self.browser()));
-
-        temp_path
-    }
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub struct TempPaths {
+    cookies_temp: PathBuf,
+    login_data_temp: PathBuf,
+    key_temp: PathBuf,
 }
 
-/// just impl the `base` method
-pub trait ChromiumInfo: TempPath {
-    const BOOKMARKS: &'static str = "Default/Bookmarks"; // json
-    #[cfg(not(target_os = "windows"))]
-    const COOKIES: &'static str = "Default/Cookies"; // sqlite3
-    #[cfg(target_os = "windows")]
-    const COOKIES: &'static str = "Default/Network/Cookies"; // sqlite3
+macro_rules! chromium_copy_temp {
+    ($browser:ident) => {
+        async fn copy_temp_() -> Result<TempPaths> {
+            let cookies = $browser::cookies();
+            let cookies_temp = $browser::cookies_temp();
 
-    // const PROFILE_PICTURE: &'static str = "Edge Profile Picture.png";
-    const EXTENSION_COOKIES: &'static str = "Extension Cookies";
-    // const FAVICONS: &'static str = "Favicons"; // sqlite3
-    const HISTORY: &'static str = "Default/History"; // sqlite3
-    const LOAD_STATISTICS: &'static str = "load_statistics.db"; // sqlite3
-    const LOGIN_DATA: &'static str = "Default/Login Data"; // sqlite3
-    const MEDIA_DEVICE_SALTS: &'static str = "MediaDeviceSalts"; // sqlite3, https://source.chromium.org/chromium/chromium/src/+/main:components/media_device_salt/README.md
-    const NETWORK_ACTION_PREDICTOR: &'static str = "Network Action Predictor"; // sqlite3
-    const LOCAL_STORAGE: &'static str = "Default/Local Storage/leveldb";
-    const EXTENSIONS: &'static str = "Default/Extensions"; // a directory
-    const SESSION_STORAGE: &'static str = "Default/Session Storage"; // leveldb
-    /// The webdata component manages the "web database", a `SQLite` database stored in the user's profile
-    /// containing various webpage-related metadata such as autofill and web search engine data.
-    const WEB_DATA: &'static str = "Default/Web Data"; // sqlite3, https://source.chromium.org/chromium/chromium/src/+/main:components/webdata/README.md
-    /// This directory contains shared files for the implementation of the <chrome://local-state> `WebUI` page.
-    const LOCAL_STATE: &'static str = "Local State"; // key, json, https://source.chromium.org/chromium/chromium/src/+/main:components/local_state/README.md
+            let login_data = $browser::login_data();
+            let login_data_temp = $browser::login_data_temp();
 
-    #[cfg(not(target_os = "windows"))]
-    const SAFE_NAME: &'static str = "Unimplemented Safe Name";
-    #[cfg(not(target_os = "windows"))]
-    const SAFE_STORAGE: &'static str = "Unimplemented Safe Storage";
+            let key = $browser::key();
+            let key_temp = $browser::key_temp();
 
-    fn base(&self) -> &Path;
+            let ck_temp_p = cookies_temp
+                .parent()
+                .expect("Get parent dir failed");
+            let cd_ck = fs::create_dir_all(ck_temp_p);
+            let lg_temp_p = login_data_temp
+                .parent()
+                .expect("Get parent dir failed");
+            let cd_lg = fs::create_dir_all(lg_temp_p);
+            let k_temp_p = key_temp
+                .parent()
+                .expect("Get parent dir failed");
+            let cd_k = fs::create_dir_all(k_temp_p);
+            let (cd_ck, cd_lg, cd_k) = tokio::join!(cd_ck, cd_lg, cd_k);
+            if cd_ck.is_err() {
+                return Err(InfoError::CreateDir(ck_temp_p.to_owned()));
+            }
+            if cd_lg.is_err() {
+                return Err(InfoError::CreateDir(lg_temp_p.to_owned()));
+            }
+            if cd_k.is_err() {
+                return Err(InfoError::CreateDir(k_temp_p.to_owned()));
+            }
 
-    /// json, for windows fetch password
-    #[cfg(target_os = "windows")]
-    fn local_state(&self) -> PathBuf {
-        self.base().join(Self::LOCAL_STATE)
-    }
-    #[cfg(target_os = "windows")]
-    fn local_state_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::LOCAL_STATE)
-    }
+            let cookies_cp = tokio::fs::copy(&cookies, &cookies_temp);
+            let login_cp = tokio::fs::copy(&login_data, &login_data_temp);
+            let key_cp = tokio::fs::copy(&key, &key_temp);
 
-    /// sqlite3
-    fn credit(&self) -> PathBuf {
-        let path = self.base().join(Self::WEB_DATA);
-        path
-    }
-    fn credit_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::WEB_DATA)
-    }
+            let (ck, lg, k) = tokio::join!(cookies_cp, login_cp, key_cp);
+            if ck.is_err() {
+                return Err(InfoError::NoFile(cookies));
+            }
+            if lg.is_err() {
+                return Err(InfoError::NoFile(login_data));
+            }
+            if k.is_err() {
+                return Err(InfoError::NoFile(key));
+            }
 
-    /// leveldb
-    fn session(&self) -> PathBuf {
-        self.base()
-            .join(Self::SESSION_STORAGE)
-    }
-    fn session_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::SESSION_STORAGE)
-    }
+            Ok(TempPaths {
+                cookies_temp,
+                login_data_temp,
+                key_temp,
+            })
+        }
+    };
+}
+macro_rules! firefox_copy_temp {
+    ($browser:ident) => {
+        async fn copy_temp_(base: PathBuf, profile: Option<&str>) -> Result<TempPaths> {
+            let base = firefox_profile(base, profile)?;
+            let cookies = Firefox::cookies(&base);
+            let cookies_temp = Firefox::cookies_temp();
 
-    /// a directory
-    fn extensions(&self) -> PathBuf {
-        self.base().join(Self::EXTENSIONS)
-    }
-    fn extensions_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::EXTENSIONS)
-    }
+            let login_data = Firefox::login_data(&base);
+            let login_data_temp = Firefox::login_data_temp();
 
-    /// sqlite3
-    fn login_data(&self) -> PathBuf {
-        self.base().join(Self::LOGIN_DATA)
-    }
-    fn login_data_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::LOGIN_DATA)
-    }
+            let key = Firefox::key(&base);
+            let key_temp = Firefox::key_temp();
 
-    /// leveldb
-    fn storage(&self) -> PathBuf {
-        self.base()
-            .join(Self::LOCAL_STORAGE)
-    }
-    fn storage_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::LOCAL_STORAGE)
-    }
+            let ck_temp_p = cookies_temp
+                .parent()
+                .expect("Get parent dir failed");
+            let cd_ck = fs::create_dir_all(ck_temp_p);
+            let lg_temp_p = login_data_temp
+                .parent()
+                .expect("Get parent dir failed");
+            let cd_lg = fs::create_dir_all(lg_temp_p);
+            let k_temp_p = key_temp
+                .parent()
+                .expect("Get parent dir failed");
+            let cd_k = fs::create_dir_all(k_temp_p);
+            let (cd_ck, cd_lg, cd_k) = tokio::join!(cd_ck, cd_lg, cd_k);
+            if cd_ck.is_err() {
+                return Err(InfoError::CreateDir(ck_temp_p.to_owned()));
+            }
+            if cd_lg.is_err() {
+                return Err(InfoError::CreateDir(lg_temp_p.to_owned()));
+            }
+            if cd_k.is_err() {
+                return Err(InfoError::CreateDir(k_temp_p.to_owned()));
+            }
 
-    /// json
-    fn bookmarks(&self) -> PathBuf {
-        self.base().join(Self::BOOKMARKS)
-    }
-    fn bookmarks_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::BOOKMARKS)
-    }
+            let cookies_cp = tokio::fs::copy(&cookies, &cookies_temp);
+            let login_cp = tokio::fs::copy(&login_data, &login_data_temp);
+            let key_cp = tokio::fs::copy(&key, &key_temp);
 
-    /// sqlite3
-    fn history(&self) -> PathBuf {
-        self.base().join(Self::HISTORY)
-    }
-    fn history_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::HISTORY)
-    }
+            let (ck, lg, k) = tokio::join!(cookies_cp, login_cp, key_cp);
+            if ck.is_err() {
+                return Err(InfoError::NoFile(cookies));
+            }
+            if lg.is_err() {
+                return Err(InfoError::NoFile(login_data));
+            }
+            if k.is_err() {
+                return Err(InfoError::NoFile(key));
+            }
 
-    /// sqlite3
-    fn cookies(&self) -> PathBuf {
-        self.base().join(Self::COOKIES)
-    }
-    fn cookies_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::COOKIES)
-    }
-
-    /// for fetch password
-    #[cfg(target_os = "macos")]
-    fn safe_name(&self) -> &str {
-        Self::SAFE_NAME
-    }
-
-    /// for fetch password
-    #[cfg(not(target_os = "windows"))]
-    fn safe_storage(&self) -> &str {
-        Self::SAFE_STORAGE
-    }
+            Ok(TempPaths {
+                cookies_temp,
+                login_data_temp,
+                key_temp,
+            })
+        }
+    };
 }
 
 /// on Linux cache this
@@ -189,129 +178,56 @@ pub(crate) fn need_safe_storage(lab: &str) -> bool {
     )
 }
 
-pub trait FirefoxInfo: TempPath {
-    const COOKIES: &'static str = "cookies.sqlite";
-    const DATAS: &'static str = "places.sqlite"; // Bookmarks, Downloads and Browsing History:
-    const BOOKMARKBACKUPS: &'static str = "bookmarkbackups/bookmarks-date.jsonlz4";
-    const FAVICONS: &'static str = "favicons.sqlite"; // sqlite3, This file contains all of the favicons for your Firefox bookmarks.
-    const KEY: &'static str = "key4.db"; // key sqlite3
-    const PASSWD: &'static str = "logins.json"; // passwd
-    const SEARCH: &'static str = "search.json.mozlz4"; // This file stores user-installed search engines.
-    const STORAGE: &'static str = "webappsstore.sqlite"; // web storage data
-    const EXTENSIONS: &'static str = "extensions.json";
-    const CERT9: &'static str = "cert9.db"; // This file stores all your security certificate settings and any SSL certificates you have imported into Firefox.
+fn firefox_profile(mut base: PathBuf, profile: Option<&str>) -> Result<PathBuf> {
+    let ini_path = base.join("profiles.ini");
 
-    // fn base_str(&self) -> &str;
-    fn base(&self) -> &Path;
-
-    /// json
-    fn extensions(&self) -> PathBuf {
-        self.base().join(Self::EXTENSIONS)
-    }
-    fn extensions_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::EXTENSIONS)
-    }
-
-    /// json
-    fn passwd(&self) -> PathBuf {
-        self.base().join(Self::PASSWD)
-    }
-    fn passwd_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::PASSWD)
-    }
-
-    /// sqlite3
-    fn storage(&self) -> PathBuf {
-        self.base().join(Self::STORAGE)
-    }
-    fn storage_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::STORAGE)
-    }
-
-    /// sqlite3
-    fn key(&self) -> PathBuf {
-        self.base().join(Self::KEY)
-    }
-    fn key_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::KEY)
-    }
-
-    /// sqlite3
-    fn datas(&self) -> PathBuf {
-        self.base().join(Self::DATAS)
-    }
-    fn datas_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::DATAS)
-    }
-
-    /// sqlite3
-    fn cookies(&self) -> PathBuf {
-        self.base().join(Self::COOKIES)
-    }
-    fn cookies_temp(&self) -> PathBuf {
-        self.temp_path_prefix()
-            .join(Self::COOKIES)
-    }
-
-    fn helper_profile(mut base: PathBuf, profile: Option<&str>) -> Result<PathBuf> {
-        let ini_path = base.join("profiles.ini");
-
-        let ini_file = ini::Ini::load_from_file(ini_path)?;
-        for (sec, prop) in ini_file {
-            let Some(sec) = sec
+    let Ok(ini_file) = ini::Ini::load_from_file(&ini_path)
+    else {
+        return Err(InfoError::NoFile(ini_path));
+    };
+    for (sec, prop) in ini_file {
+        let Some(sec) = sec
+        else {
+            continue;
+        };
+        if let Some(profile) = profile {
+            if !sec.starts_with("Profile") {
+                continue;
+            }
+            let Some(profile_name) = prop.get("Name")
             else {
                 continue;
             };
-            if let Some(profile) = profile {
-                if !sec.starts_with("Profile") {
-                    continue;
-                }
-                let Some(profile_name) = prop.get("Name")
+            if profile_name == profile {
+                let Some(var) = prop.get("Path")
                 else {
-                    continue;
+                    return Err(InfoError::ProfilePath(profile_name.to_owned()));
                 };
-                if profile_name == profile {
-                    let Some(var) = prop.get("Path")
-                    else {
-                        return Err(InfoError::ProfilePath(profile_name.to_owned()));
-                    };
-                    base.push(var);
-                    break;
-                }
-            }
-            else {
-                if !sec.starts_with("Install") {
-                    continue;
-                }
-                let Some(default) = prop.get("Default")
-                else {
-                    return Err(InfoError::InstallPath(sec));
-                };
-                base.push(default);
+                base.push(var);
                 break;
             }
         }
-
-        tracing::debug!("path: {:?}", base);
-
-        Ok(base)
+        else {
+            if !sec.starts_with("Install") {
+                continue;
+            }
+            let Some(default) = prop.get("Default")
+            else {
+                return Err(InfoError::InstallPath(sec));
+            };
+            base.push(default);
+            break;
+        }
     }
+
+    tracing::debug!("path: {:?}", base);
+
+    Ok(base)
 }
 
 macro_rules! chromium_builder_temp_path_display_impl {
     ($($browser:ident), *) => {
         $(
-            impl TempPath for crate::chromium::ChromiumBuilder<$browser> {
-                fn browser(&self) -> &'static str {
-                    $browser::NAME
-                }
-            }
-
             impl std::fmt::Display for crate::chromium::ChromiumGetter<$browser> {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                     f.write_str($browser::NAME)
@@ -326,14 +242,7 @@ macro_rules! chromium_builder_new_impl {
         $(
             impl crate::chromium::ChromiumBuilder<$browser> {
                 pub fn new() -> Self {
-                    #[cfg(target_os = "linux")]
-                    let mut base = dirs::config_dir().expect("Get config dir failed");
-
-                    #[cfg(target_os = "windows")]
-                    let mut base = dirs::data_local_dir().expect("Get data local dir failed");
-
-                    #[cfg(target_os = "macos")]
-                    let mut base = dirs::config_local_dir().expect("Get config dir failed");
+                    let mut base = dirs::home_dir().expect("Get home dir failed");
 
                     base.push($browser::BASE);
 
@@ -354,53 +263,23 @@ macro_rules! chromium_builder_build_impl {
         $(
 impl crate::chromium::ChromiumBuilder<$browser> {
     pub async fn build(self) -> Result<crate::chromium::ChromiumGetter<$browser>> {
+        chromium_copy_temp!($browser);
+        let temp_paths = copy_temp_().await?;
+
         #[cfg(target_os = "linux")]
-        let crypto = crate::chromium::crypto::linux::Decrypter::build(self.safe_storage()).await?;
+        let crypto = crate::chromium::crypto::linux::Decrypter::build($browser::SAFE_STORAGE).await?;
 
         #[cfg(target_os = "macos")]
-        let crypto = crate::chromium::crypto::macos::Decrypter::build(self.safe_storage(), self.safe_name())?;
+        let crypto = crate::chromium::crypto::macos::Decrypter::build($browser::SAFE_STORAGE, $browser::SAFE_NAME)?;
 
         #[cfg(target_os = "windows")]
         let crypto = {
-            let temp_key_path = self.local_state_temp();
-
-            fs::create_dir_all(
-                temp_key_path.parent()
-                    .expect("Get parent dir failed"),
-            )
-            .await
-            .expect("Create cache path failed");
-
-            fs::copy(self.local_state(), &temp_key_path).await?;
-            crate::chromium::crypto::win::Decrypter::build(temp_key_path).await?
+            crate::chromium::crypto::win::Decrypter::build(temp_paths.key_temp).await?
         };
 
-        let lg_temp = self.login_data_temp();
-        let ck_temp = self.cookies_temp();
-
-        let lg_fut = fs::create_dir_all(
-            lg_temp.parent()
-                .expect("Get parent dir failed"),
-        );
-
-        let ck_fut = fs::create_dir_all(
-            ck_temp.parent()
-                .expect("Get parent dir failed"),
-        );
-        let (lg_fut, ck_fut) = join!(lg_fut, ck_fut);
-        lg_fut?;
-        ck_fut?;
-
-        let cp_login = fs::copy(self.login_data(), &lg_temp);
-
-        let cp_cookies = fs::copy(self.cookies(), &ck_temp);
-        let (login, cookies) = join!(cp_login, cp_cookies);
-        login?;
-        cookies?;
-
         let (cookies_query, login_data_query) = (
-            crate::chromium::items::cookie::cookie_dao::CookiesQuery::new(ck_temp),
-            crate::chromium::items::passwd::login_data_dao::LoginDataQuery::new(lg_temp),
+            crate::chromium::items::cookie::cookie_dao::CookiesQuery::new(temp_paths.cookies_temp),
+            crate::chromium::items::passwd::login_data_dao::LoginDataQuery::new(temp_paths.login_data_temp),
         );
         let (cookies_query, login_data_query) = join!(cookies_query, login_data_query);
         let (cookies_query, login_data_query) = (cookies_query?, login_data_query?);
@@ -417,77 +296,9 @@ impl crate::chromium::ChromiumBuilder<$browser> {
     };
 }
 
-macro_rules! chromium_builder_new_opera_impl {
-    ($($browser:ident), *) => {
-        $(
-            impl crate::chromium::ChromiumBuilder<$browser> {
-                pub fn new() -> Self {
-                    #[cfg(target_os = "linux")]
-                    let mut base = dirs::config_dir().expect("Get config dir failed");
-
-                    #[cfg(target_os = "windows")]
-                    let mut base = dirs::data_dir().expect("Get data dir failed");
-
-                    #[cfg(target_os = "macos")]
-                    let mut base = dirs::config_local_dir().expect("Get config dir failed");
-
-                    base.push($browser::BASE);
-
-                    Self { base, __browser: core::marker::PhantomData::<$browser> }
-                }
-
-                /// When browser start with `--user-data-dir=DIR` or special other channel
-                pub const fn with_user_data_dir(base: PathBuf) -> Self {
-                    Self { base, __browser: core::marker::PhantomData::<$browser> }
-                }
-            }
-        )*
-    };
-}
-
-macro_rules! chromium_builder_info_impl {
-    ($($browser:ident), *) => {
-        $(
-            impl ChromiumInfo for crate::chromium::ChromiumBuilder<$browser> {
-                #[cfg(target_os = "macos")]
-                const SAFE_NAME: &'static str = $browser::SAFE_NAME;
-                #[cfg(not(target_os = "windows"))]
-                const SAFE_STORAGE: &'static str = $browser::SAFE_STORAGE;
-
-                fn base(&self) -> &Path {
-                    &self.base
-                }
-            }
-        )*
-    };
-}
-
-macro_rules! chromium_builder_info_yandex_impl {
-    ($($browser:ident), *) => {
-        $(
-            impl ChromiumInfo for crate::chromium::ChromiumBuilder<$browser> {
-                #[cfg(target_os = "macos")]
-                const SAFE_NAME: &'static str = $browser::SAFE_NAME;
-                #[cfg(not(target_os = "windows"))]
-                const SAFE_STORAGE: &'static str = $browser::SAFE_STORAGE;
-
-                const LOGIN_DATA: &'static str = "Ya Passman Data"; // sqlite3
-
-                fn base(&self) -> &Path {
-                    &self.base
-                }
-            }
-        )*
-    };
-}
-
 chromium_builder_temp_path_display_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera, Yandex);
 
-chromium_builder_info_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera);
-chromium_builder_info_yandex_impl!(Yandex);
-
-chromium_builder_new_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Yandex);
-chromium_builder_new_opera_impl!(Opera);
+chromium_builder_new_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Yandex, Opera);
 
 chromium_builder_build_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera, Yandex);
 
@@ -495,76 +306,39 @@ chromium_builder_build_impl!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera, Yand
 chromium_builder_temp_path_display_impl!(OperaGX, CocCoc, Arc);
 
 #[cfg(not(target_os = "linux"))]
-chromium_builder_info_impl!(OperaGX, CocCoc, Arc);
-
-#[cfg(not(target_os = "linux"))]
 chromium_builder_new_impl!(CocCoc, Arc);
 #[cfg(not(target_os = "linux"))]
-chromium_builder_new_opera_impl!(OperaGX);
+chromium_builder_new_impl!(OperaGX);
 #[cfg(not(target_os = "linux"))]
 chromium_builder_build_impl!(OperaGX, CocCoc, Arc);
 
 macro_rules! firefox_impl {
     ($($browser:ident), *) => {
         $(
-            impl TempPath for crate::firefox::FirefoxBuilder<$browser> {
-                fn browser(&self) -> &'static str {
-                    $browser::NAME
-                }
-            }
-
-            impl crate::firefox::FirefoxBuilder<$browser> {
+            impl<'b> crate::firefox::FirefoxBuilder<'b, $browser> {
                 pub fn new() -> Result<Self> {
-                    let mut init = Self::init_path();
-
-                    init.push($browser::BASE);
-                    let base = Self::helper_profile(init, None)?;
-                    Ok(Self { base, __browser: core::marker::PhantomData::<$browser>  })
-                }
-
-                fn init_path() -> PathBuf {
-                    #[cfg(target_os = "linux")]
-                    let init = dirs::home_dir().expect("Get home dir failed");
-                    #[cfg(target_os = "macos")]
-                    let init = dirs::config_local_dir().expect("get config local dir failed");
-                    #[cfg(target_os = "windows")]
-                    let init = dirs::data_dir().expect("get data local dir failed");
-
-                    init
+                    Ok(Self { init: Some(Self::init()), profile: None, __browser: core::marker::PhantomData::<$browser>  })
                 }
 
                 /// `base`: When firefox base path changed
                 /// `profile`: When start with `-P <profile>`
-                pub fn with_path_profile<'a, I, P>(init: I, profile: P) -> Result<Self>
+                pub fn with_path_profile<I, P>(init: I, profile: P) -> Result<Self>
                 where
                     I: Into<Option<PathBuf>>,
-                    P: Into<Option<&'a str>>,
+                    P: Into<Option<&'b str>>,
                 {
-                    let init = match init.into() {
-                        Some(init) => init,
-                        None => {
-                            let mut init = Self::init_path();
-                            init.push($browser::BASE);
-                            init
-                        }
-                    };
-                    let base = Self::helper_profile(init, profile.into())?;
-                    Ok(Self { base, __browser: core::marker::PhantomData::<$browser> })
+                    Ok(Self { init: init.into(), profile: profile.into(), __browser: core::marker::PhantomData::<$browser> })
+                }
+
+                pub fn init() -> std::path::PathBuf {
+                    dirs::home_dir().expect("Get home dir failed").join($browser::BASE)
                 }
 
                 pub async fn build(self) -> Result<crate::firefox::FirefoxGetter<$browser>> {
-                    let temp_cookies_path = self.cookies_temp();
+                    firefox_copy_temp!($browser);
+                    let temp_paths = copy_temp_(self.init.unwrap_or_else(Self::init), self.profile).await?;
 
-                    fs::create_dir_all(
-                        temp_cookies_path.parent()
-                            .expect("Get parent dir failed"),
-                    )
-                    .await
-                    .expect("Create cache path failed");
-
-                    fs::copy(self.cookies(), &temp_cookies_path).await?;
-
-                    let query = crate::firefox::items::cookie::dao::CookiesQuery::new(temp_cookies_path).await?;
+                    let query = crate::firefox::items::cookie::dao::CookiesQuery::new(temp_paths.cookies_temp).await?;
 
                     Ok(crate::firefox::FirefoxGetter {
                         cookies_query: query,
@@ -572,13 +346,6 @@ macro_rules! firefox_impl {
                     })
                 }
             }
-
-            impl FirefoxInfo for crate::firefox::FirefoxBuilder<$browser> {
-                fn base(&self) -> &Path {
-                    &self.base
-                }
-            }
-
         )*
     };
 }
