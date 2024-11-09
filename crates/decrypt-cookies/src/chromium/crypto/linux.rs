@@ -5,7 +5,7 @@ use pbkdf2::pbkdf2_hmac;
 use secret_service::{EncryptionType, SecretService};
 use tokio::sync::OnceCell;
 
-use crate::browser::info::need_safe_storage;
+use crate::browser::need_safe_storage;
 
 #[derive(Debug)]
 #[derive(thiserror::Error)]

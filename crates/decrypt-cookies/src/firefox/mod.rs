@@ -28,8 +28,9 @@ pub struct FirefoxGetter<T> {
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct FirefoxBuilder<T> {
-    pub(crate) base: PathBuf,
+pub struct FirefoxBuilder<'a, T> {
+    pub(crate) init: Option<PathBuf>,
+    pub(crate) profile: Option<&'a str>,
     pub(crate) __browser: PhantomData<T>,
 }
 

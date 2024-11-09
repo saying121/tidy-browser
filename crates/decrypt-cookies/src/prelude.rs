@@ -8,9 +8,8 @@ pub use crate::safari::{SafariBuilder, SafariGetter};
 pub use crate::utils::binary_cookies::SafariCookie;
 pub use crate::{
     browser::{
-        cookies::LeetCodeCookies,
-        info::{ChromiumInfo, FirefoxInfo},
-        Brave, Chrome, Chromium, Edge, Firefox, Librewolf, Opera, Vivaldi, Yandex,
+        cookies::LeetCodeCookies, Brave, Chrome, Chromium, Edge, Firefox, Librewolf, Opera,
+        Vivaldi, Yandex,
     },
     chromium::{
         ChromiumBuilder, ChromiumCookieCol, ChromiumCookieColIter, ChromiumGetter,
