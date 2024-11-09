@@ -3,7 +3,7 @@ use std::path::PathBuf;
 // TODO: add browser name in error
 #[derive(Debug)]
 #[derive(thiserror::Error)]
-pub enum InfoError {
+pub enum BuilderError {
     #[error("No such file")]
     Io(#[from] std::io::Error),
     #[error("No such file: {0:?}")]
@@ -29,7 +29,7 @@ pub enum InfoError {
     Db(#[from] sea_orm::DbErr),
 }
 
-pub type Result<T> = std::result::Result<T, InfoError>;
+pub type Result<T> = std::result::Result<T, BuilderError>;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -43,9 +43,9 @@ pub(crate) struct TempPaths {
 
 macro_rules! chromium_copy_temp {
     ($browser:ident) => {
-        async fn copy_temp_() -> $crate::browser::info::Result<$crate::browser::info::TempPaths> {
+        async fn copy_temp_() -> $crate::browser::builder::Result<$crate::browser::builder::TempPaths> {
             use tokio::{fs, join};
-            use $crate::browser::info::{InfoError, TempPaths};
+            use $crate::browser::builder::{BuilderError, TempPaths};
 
             let cookies = $browser::cookies();
             let cookies_temp = $browser::cookies_temp();
@@ -70,13 +70,13 @@ macro_rules! chromium_copy_temp {
             let cd_k = fs::create_dir_all(k_temp_p);
             let (cd_ck, cd_lg, cd_k) = join!(cd_ck, cd_lg, cd_k);
             if cd_ck.is_err() {
-                return Err(InfoError::CreateDir(ck_temp_p.to_owned()));
+                return Err(BuilderError::CreateDir(ck_temp_p.to_owned()));
             }
             if cd_lg.is_err() {
-                return Err(InfoError::CreateDir(lg_temp_p.to_owned()));
+                return Err(BuilderError::CreateDir(lg_temp_p.to_owned()));
             }
             if cd_k.is_err() {
-                return Err(InfoError::CreateDir(k_temp_p.to_owned()));
+                return Err(BuilderError::CreateDir(k_temp_p.to_owned()));
             }
 
             let cookies_cp = fs::copy(&cookies, &cookies_temp);
@@ -85,13 +85,13 @@ macro_rules! chromium_copy_temp {
 
             let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
             if ck.is_err() {
-                return Err(InfoError::NoFile(cookies));
+                return Err(BuilderError::NoFile(cookies));
             }
             if lg.is_err() {
-                return Err(InfoError::NoFile(login_data));
+                return Err(BuilderError::NoFile(login_data));
             }
             if k.is_err() {
-                return Err(InfoError::NoFile(key));
+                return Err(BuilderError::NoFile(key));
             }
 
             Ok(TempPaths {
@@ -107,10 +107,10 @@ macro_rules! firefox_copy_temp {
         async fn copy_temp_(
             base: std::path::PathBuf,
             profile: Option<&str>,
-        ) -> $crate::browser::info::Result<$crate::browser::info::TempPaths> {
+        ) -> $crate::browser::builder::Result<$crate::browser::builder::TempPaths> {
             use tokio::{fs, join};
 
-            let base = $crate::browser::info::firefox_profile(base, profile)?;
+            let base = $crate::browser::builder::firefox_profile(base, profile)?;
             let cookies = Firefox::cookies(&base);
             let cookies_temp = Firefox::cookies_temp();
 
@@ -134,17 +134,17 @@ macro_rules! firefox_copy_temp {
             let cd_k = fs::create_dir_all(k_temp_p);
             let (cd_ck, cd_lg, cd_k) = join!(cd_ck, cd_lg, cd_k);
             if cd_ck.is_err() {
-                return Err($crate::browser::info::InfoError::CreateDir(
+                return Err($crate::browser::builder::BuilderError::CreateDir(
                     ck_temp_p.to_owned(),
                 ));
             }
             if cd_lg.is_err() {
-                return Err($crate::browser::info::InfoError::CreateDir(
+                return Err($crate::browser::builder::BuilderError::CreateDir(
                     lg_temp_p.to_owned(),
                 ));
             }
             if cd_k.is_err() {
-                return Err($crate::browser::info::InfoError::CreateDir(
+                return Err($crate::browser::builder::BuilderError::CreateDir(
                     k_temp_p.to_owned(),
                 ));
             }
@@ -155,16 +155,16 @@ macro_rules! firefox_copy_temp {
 
             let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
             if ck.is_err() {
-                return Err($crate::browser::info::InfoError::NoFile(cookies));
+                return Err($crate::browser::builder::BuilderError::NoFile(cookies));
             }
             if lg.is_err() {
-                return Err($crate::browser::info::InfoError::NoFile(login_data));
+                return Err($crate::browser::builder::BuilderError::NoFile(login_data));
             }
             if k.is_err() {
-                return Err($crate::browser::info::InfoError::NoFile(key));
+                return Err($crate::browser::builder::BuilderError::NoFile(key));
             }
 
-            Ok($crate::browser::info::TempPaths {
+            Ok($crate::browser::builder::TempPaths {
                 cookies_temp,
                 login_data_temp,
                 key_temp,
@@ -178,7 +178,7 @@ pub(crate) fn firefox_profile(mut base: PathBuf, profile: Option<&str>) -> Resul
 
     let Ok(ini_file) = ini::Ini::load_from_file(&ini_path)
     else {
-        return Err(InfoError::NoFile(ini_path));
+        return Err(BuilderError::NoFile(ini_path));
     };
     for (sec, prop) in ini_file {
         let Some(sec) = sec
@@ -196,7 +196,7 @@ pub(crate) fn firefox_profile(mut base: PathBuf, profile: Option<&str>) -> Resul
             if profile_name == profile {
                 let Some(var) = prop.get("Path")
                 else {
-                    return Err(InfoError::ProfilePath(profile_name.to_owned()));
+                    return Err(BuilderError::ProfilePath(profile_name.to_owned()));
                 };
                 base.push(var);
                 break;
@@ -208,7 +208,7 @@ pub(crate) fn firefox_profile(mut base: PathBuf, profile: Option<&str>) -> Resul
             }
             let Some(default) = prop.get("Default")
             else {
-                return Err(InfoError::InstallPath(sec));
+                return Err(BuilderError::InstallPath(sec));
             };
             base.push(default);
             break;
@@ -260,7 +260,7 @@ macro_rules! chromium_builder_build_impl {
         impl $crate::chromium::ChromiumBuilder<$browser> {
             pub async fn build(
                 self,
-            ) -> $crate::browser::info::Result<$crate::chromium::ChromiumGetter<$browser>> {
+            ) -> $crate::browser::builder::Result<$crate::chromium::ChromiumGetter<$browser>> {
                 use tokio::join;
 
                 chromium_copy_temp!($browser);
@@ -306,7 +306,7 @@ macro_rules! chromium_builder_build_impl {
 macro_rules! firefox_impl {
     ($browser:ident) => {
         impl<'b> $crate::firefox::FirefoxBuilder<'b, $browser> {
-            pub fn new() -> $crate::browser::info::Result<Self> {
+            pub fn new() -> $crate::browser::builder::Result<Self> {
                 Ok(Self {
                     init: Some(Self::init()),
                     profile: None,
@@ -319,7 +319,7 @@ macro_rules! firefox_impl {
             pub fn with_path_profile<I, P>(
                 init: I,
                 profile: P,
-            ) -> $crate::browser::info::Result<Self>
+            ) -> $crate::browser::builder::Result<Self>
             where
                 I: Into<Option<std::path::PathBuf>>,
                 P: Into<Option<&'b str>>,
@@ -339,7 +339,7 @@ macro_rules! firefox_impl {
 
             pub async fn build(
                 self,
-            ) -> $crate::browser::info::Result<$crate::firefox::FirefoxGetter<$browser>> {
+            ) -> $crate::browser::builder::Result<$crate::firefox::FirefoxGetter<$browser>> {
                 firefox_copy_temp!($browser);
                 let temp_paths = copy_temp_(
                     self.init

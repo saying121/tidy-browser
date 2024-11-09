@@ -1,6 +1,6 @@
 pub mod cookies;
 #[macro_use]
-pub mod info;
+pub mod builder;
 
 use const_format::concatcp;
 
