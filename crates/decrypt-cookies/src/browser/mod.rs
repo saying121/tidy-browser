@@ -1,6 +1,6 @@
-pub mod cookies;
 #[macro_use]
 pub mod builder;
+pub mod cookies;
 
 use const_format::concatcp;
 
@@ -98,42 +98,6 @@ macro_rules! chromium_base_macos {
     };
 }
 
-chromium_base_linux!(
-    { Chrome  , ".config/google-chrome"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chrome"         },
-    { Edge    , ".config/microsoft-edge"             , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Microsoft Edge" },
-    { Chromium, ".config/chromium"                   , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chromium"       },
-    { Brave   , ".config/BraveSoftware/Brave-Browser", "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Brave"          },
-    { Yandex  , ".config/yandex-browser"             , "Default/Cookies", "Ya Passman Data"   , "Local State", safe_name = "Yandex"         },
-    { Vivaldi , ".config/vivaldi"                    , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Vivaldi"        },
-    { Opera   , ".config/opera"                      , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Opera"          },
-);
-
-chromium_base_macos!(
-    { Chrome  , "Library/Application Support/Google/Chrome"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chrome"         },
-    { Edge    , "Library/Application Support/Microsoft Edge"             , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Microsoft Edge" },
-    { Chromium, "Library/Application Support/Chromium"                   , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chromium"       },
-    { Brave   , "Library/Application Support/BraveSoftware/Brave-Browser", "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Brave"          },
-    { Yandex  , "Library/Application Support/Yandex/YandexBrowser"       , "Default/Cookies", "Ya Passman Data"   , "Local State", safe_name = "Yandex"         },
-    { Vivaldi , "Library/Application Support/Vivaldi"                    , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Vivaldi"        },
-    { Opera   , "Library/Application Support/com.operasoftware.Opera"    , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Opera"          },
-    { OperaGX , "Library/Application Support/com.operasoftware.OperaGX"  , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Opera"          },
-    { CocCoc  , "Library/Application Support/Coccoc"                     , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "CocCoc"         },
-    { Arc     , "Library/Application Support/Arc/User Data"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Arc"            },
-);
-
-chromium_base_win!(
-    { Chrome  , r"AppData\Local\Google\Chrome\User Data"              , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { Edge    , r"AppData\Local\Microsoft\Edge\User Data"             , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { Chromium, r"AppData\Local\Chromium\User Data"                   , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { Brave   , r"AppData\Local\BraveSoftware\Brave-Browser\User Data", r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { Yandex  , r"AppData\Local\Yandex\YandexBrowser\User Data"       , r"Default\Network\Cookies", "Ya Passman Data"   , "Local State" },
-    { Vivaldi , r"AppData\Local\Vivaldi\User Data"                    , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { Opera   , r"AppData\Roaming\Opera Software\Opera Stable"        , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { OperaGX , r"AppData\Roaming\Opera Software\Opera GX Stable"     , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { CocCoc  , r"AppData\Local\CocCoc\Browser\User Data"             , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { Arc     , r"AppData\Local\Packages\TheBrowserCompany.Arc_ttt1ap7aakyb4\LocalCache\Local\Arc\User Data", r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-);
-
 macro_rules! firefox_common {
     (
         $platform:literal,
@@ -224,6 +188,42 @@ macro_rules! firefox_base_macos {
         )*
     };
 }
+
+chromium_base_linux!(
+    { Chrome  , ".config/google-chrome"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chrome"         },
+    { Edge    , ".config/microsoft-edge"             , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Microsoft Edge" },
+    { Chromium, ".config/chromium"                   , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chromium"       },
+    { Brave   , ".config/BraveSoftware/Brave-Browser", "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Brave"          },
+    { Yandex  , ".config/yandex-browser"             , "Default/Cookies", "Ya Passman Data"   , "Local State", safe_name = "Yandex"         },
+    { Vivaldi , ".config/vivaldi"                    , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Vivaldi"        },
+    { Opera   , ".config/opera"                      , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Opera"          },
+);
+
+chromium_base_macos!(
+    { Chrome  , "Library/Application Support/Google/Chrome"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chrome"         },
+    { Edge    , "Library/Application Support/Microsoft Edge"             , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Microsoft Edge" },
+    { Chromium, "Library/Application Support/Chromium"                   , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chromium"       },
+    { Brave   , "Library/Application Support/BraveSoftware/Brave-Browser", "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Brave"          },
+    { Yandex  , "Library/Application Support/Yandex/YandexBrowser"       , "Default/Cookies", "Ya Passman Data"   , "Local State", safe_name = "Yandex"         },
+    { Vivaldi , "Library/Application Support/Vivaldi"                    , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Vivaldi"        },
+    { Opera   , "Library/Application Support/com.operasoftware.Opera"    , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Opera"          },
+    { OperaGX , "Library/Application Support/com.operasoftware.OperaGX"  , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Opera"          },
+    { CocCoc  , "Library/Application Support/Coccoc"                     , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "CocCoc"         },
+    { Arc     , "Library/Application Support/Arc/User Data"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Arc"            },
+);
+
+chromium_base_win!(
+    { Chrome  , r"AppData\Local\Google\Chrome\User Data"              , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Edge    , r"AppData\Local\Microsoft\Edge\User Data"             , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Chromium, r"AppData\Local\Chromium\User Data"                   , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Brave   , r"AppData\Local\BraveSoftware\Brave-Browser\User Data", r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Yandex  , r"AppData\Local\Yandex\YandexBrowser\User Data"       , r"Default\Network\Cookies", "Ya Passman Data"   , "Local State" },
+    { Vivaldi , r"AppData\Local\Vivaldi\User Data"                    , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Opera   , r"AppData\Roaming\Opera Software\Opera Stable"        , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { OperaGX , r"AppData\Roaming\Opera Software\Opera GX Stable"     , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { CocCoc  , r"AppData\Local\CocCoc\Browser\User Data"             , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Arc     , r"AppData\Local\Packages\TheBrowserCompany.Arc_ttt1ap7aakyb4\LocalCache\Local\Arc\User Data", r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+);
 
 firefox_base_linux!(
     { Firefox  , ".mozilla/firefox", "cookies.sqlite", "logins.json", "key4.db" },

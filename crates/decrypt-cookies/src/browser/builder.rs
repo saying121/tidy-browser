@@ -43,7 +43,8 @@ pub(crate) struct TempPaths {
 
 macro_rules! chromium_copy_temp {
     ($browser:ident) => {
-        async fn copy_temp_() -> $crate::browser::builder::Result<$crate::browser::builder::TempPaths> {
+        async fn copy_temp_(
+        ) -> $crate::browser::builder::Result<$crate::browser::builder::TempPaths> {
             use tokio::{fs, join};
             use $crate::browser::builder::{BuilderError, TempPaths};
 
