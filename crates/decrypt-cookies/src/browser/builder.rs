@@ -111,14 +111,14 @@ macro_rules! firefox_copy_temp {
             use tokio::{fs, join};
 
             let base = $crate::browser::builder::firefox_profile(base, profile)?;
-            let cookies = Firefox::cookies(&base);
-            let cookies_temp = Firefox::cookies_temp();
+            let cookies = $browser::cookies(&base);
+            let cookies_temp = $browser::cookies_temp();
 
-            let login_data = Firefox::login_data(&base);
-            let login_data_temp = Firefox::login_data_temp();
+            let login_data = $browser::login_data(&base);
+            let login_data_temp = $browser::login_data_temp();
 
-            let key = Firefox::key(&base);
-            let key_temp = Firefox::key_temp();
+            let key = $browser::key(&base);
+            let key_temp = $browser::key_temp();
 
             let ck_temp_p = cookies_temp
                 .parent()
