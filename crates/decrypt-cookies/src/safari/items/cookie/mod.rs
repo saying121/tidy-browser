@@ -11,11 +11,15 @@ use crate::{
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum CookiesGetterError {
-    #[error("Parse cookies failed")]
+    #[error(transparent)]
     Parse(#[from] crate::utils::binary_cookies::ParseError),
-    #[error("Io error")]
-    Io(#[from] std::io::Error),
-    #[error("Tokio task failed")]
+    #[error("{source}, path: {path}")]
+    Io {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error(transparent)]
     Task(#[from] tokio::task::JoinError),
 }
 
@@ -59,11 +63,14 @@ impl CookiesGetter {
                 cookie_path.push(Self::COOKIES_OLD);
             }
         }
-        let content = fs::read(cookie_path).await?;
+        let content = fs::read(&cookie_path)
+            .await
+            .map_err(|e| CookiesGetterError::Io { path: cookie_path, source: e })?;
         let binary_cookies = spawn_blocking(move || BinaryCookies::parse(&content)).await??;
 
         Ok(Self { binary_cookies })
     }
+
     pub fn get_session_csrf(&self, host: &str) -> LeetCodeCookies {
         let mut lc_cookies = LeetCodeCookies::default();
         for ck in self

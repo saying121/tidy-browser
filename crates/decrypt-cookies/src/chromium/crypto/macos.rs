@@ -4,7 +4,7 @@ use pbkdf2::pbkdf2_hmac;
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum CryptoError {
-    #[error("Get keyring failed")]
+    #[error(transparent)]
     Keyring(#[from] keyring::Error),
     #[error("Unpad error: {0}")]
     Unpadding(block_padding::UnpadError),

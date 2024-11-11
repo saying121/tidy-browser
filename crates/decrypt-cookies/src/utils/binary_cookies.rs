@@ -25,9 +25,9 @@ pub enum ParseError {
     EndHeader,
     #[error("Cookies end broken")]
     End,
-    #[error("Parser f64 failed")]
+    #[error(transparent)]
     ParseF64(#[from] std::num::ParseFloatError),
-    #[error("Parser f64 failed")]
+    #[error(transparent)]
     Array(#[from] TryFromSliceError),
 }
 

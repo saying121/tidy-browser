@@ -1,4 +1,8 @@
-use std::{ffi::c_void, path::Path, ptr, slice};
+use std::{
+    ffi::c_void,
+    path::{Path, PathBuf},
+    ptr, slice,
+};
 
 use aes_gcm::{
     aead::{generic_array::GenericArray, Aead},
@@ -13,20 +17,24 @@ use crate::chromium::local_state::LocalState;
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum CryptoError {
-    #[error("Io error")]
-    Io(#[from] std::io::Error),
-    #[error("Serialize error")]
+    #[error("{source}, path: {path}")]
+    IO {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error(transparent)]
     Serde(#[from] serde_json::Error),
-    #[error("Decode error")]
+    #[error(transparent)]
     Base64(#[from] base64::DecodeError),
-    #[error("Task failed")]
+    #[error(transparent)]
     Task(#[from] tokio::task::JoinError),
-    #[error("Task failed")]
+    #[error("{0}")]
     Aead(String),
-    #[error("Windows CryptUnprotectData")]
+    #[error(transparent)]
     CryptUnprotectData(#[from] windows::core::Error),
-    #[error("Windows CryptUnprotectData")]
-    CryptUnprotectDataNull(&'static str),
+    #[error("CryptUnprotectData returned a null pointer")]
+    CryptUnprotectDataNull,
 }
 
 type Result<T> = std::result::Result<T, CryptoError>;
@@ -60,13 +68,18 @@ impl Decrypter {
 impl Decrypter {
     /// the method will use default `LocalState` path,
     /// custom that path use `DecrypterBuilder`
-    pub async fn build<A: AsRef<Path> + Send>(key_path: A) -> Result<Self> {
+    pub async fn build<A: AsRef<Path> + Send + Sync>(key_path: A) -> Result<Self> {
         let pass = Self::get_pass(key_path).await?;
         Ok(Self { pass })
     }
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=108
-    async fn get_pass<A: AsRef<Path> + Send>(key_path: A) -> Result<Vec<u8>> {
-        let string_str = fs::read_to_string(key_path).await?;
+    async fn get_pass<A: AsRef<Path> + Send + Sync>(key_path: A) -> Result<Vec<u8>> {
+        let string_str = fs::read_to_string(&key_path)
+            .await
+            .map_err(|e| CryptoError::IO {
+                path: key_path.as_ref().to_owned(),
+                source: e,
+            })?;
         let local_state: LocalState = serde_json::from_str(&string_str)?;
         let encrypted_key = general_purpose::STANDARD.decode(local_state.os_crypt.encrypted_key)?;
         let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
@@ -119,9 +132,7 @@ pub fn decrypt_with_dpapi(ciphertext: &mut [u8]) -> Result<Vec<u8>> {
         )?;
     };
     if output.pbData.is_null() {
-        return Err(CryptoError::CryptUnprotectDataNull(
-            "CryptUnprotectData returned a null pointer",
-        ));
+        return Err(CryptoError::CryptUnprotectDataNull);
     }
 
     let decrypted_data =

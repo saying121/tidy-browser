@@ -4,28 +4,26 @@ use std::path::PathBuf;
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum BuilderError {
-    #[error("No such file")]
-    Io(#[from] std::io::Error),
     #[error("No such file: {0:?}")]
     NoFile(PathBuf),
     #[error("Create dir failed: {0:?}")]
     CreateDir(PathBuf),
-    #[error("Ini load error")]
+    #[error(transparent)]
     Ini(#[from] ini::Error),
     #[error("Profile {0} missing `Name` properties")]
     ProfilePath(String),
     #[error("Install {0} missing `Default` properties")]
     InstallPath(String),
     #[cfg(target_os = "linux")]
-    #[error("Decrypter error")]
+    #[error(transparent)]
     Decrypter(#[from] crate::chromium::crypto::linux::CryptoError),
     #[cfg(target_os = "windows")]
-    #[error("Decrypter error")]
+    #[error(transparent)]
     Decrypter(#[from] crate::chromium::crypto::win::CryptoError),
     #[cfg(target_os = "macos")]
-    #[error("Decrypt error")]
+    #[error(transparent)]
     Decrypt(#[from] crate::chromium::crypto::macos::CryptoError),
-    #[error("Db err")]
+    #[error(transparent)]
     Db(#[from] sea_orm::DbErr),
 }
 
