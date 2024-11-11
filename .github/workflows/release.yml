@@ -31,8 +31,8 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.6
 
       - name: Install cargo-binstall
         uses: taiki-e/install-action@v2
@@ -155,8 +155,11 @@ jobs:
           toolchain: stable
           targets: ${{ matrix.target }}
 
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.6
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+          RUSTC_WRAPPER: "sccache"
 
       - name: Install cross-compilation tools
         if: ${{ matrix.cross }}
