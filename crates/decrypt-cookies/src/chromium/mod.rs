@@ -40,18 +40,18 @@ use crate::{
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum ChromiumError {
-    #[error("Tokio task failed")]
+    #[error(transparent)]
     Task(#[from] JoinError),
-    #[error("Database error")]
+    #[error(transparent)]
     Db(#[from] DbErr),
     #[cfg(target_os = "linux")]
-    #[error("Decrypt error")]
+    #[error(transparent)]
     Decrypt(#[from] crate::chromium::crypto::linux::CryptoError),
     #[cfg(target_os = "windows")]
-    #[error("Decrypt error")]
+    #[error(transparent)]
     Decrypt(#[from] crate::chromium::crypto::win::CryptoError),
     #[cfg(target_os = "macos")]
-    #[error("Decrypt error")]
+    #[error(transparent)]
     Decrypt(#[from] crate::chromium::crypto::macos::CryptoError),
 }
 

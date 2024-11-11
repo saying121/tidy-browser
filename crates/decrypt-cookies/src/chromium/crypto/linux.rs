@@ -10,11 +10,11 @@ use crate::browser::need_safe_storage;
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum CryptoError {
-    #[error("Get secret failed")]
+    #[error(transparent)]
     GetPass(#[from] secret_service::Error),
     #[error("Unpad error: {0}")]
     Unpadding(block_padding::UnpadError),
-    #[error("Not utf-8: {0}")]
+    #[error(transparent)]
     StringUtf8(#[from] std::string::FromUtf8Error),
 }
 
