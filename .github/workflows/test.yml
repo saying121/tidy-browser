@@ -13,6 +13,9 @@ jobs:
   test:
     name: Test
     runs-on: ${{ matrix.os }}
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
     strategy:
       fail-fast: false
       matrix:
@@ -24,7 +27,7 @@ jobs:
       - name: Install rust-toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: 1.82
 
       - name: Install cargo-nextest
         uses: taiki-e/install-action@v2
@@ -33,9 +36,6 @@ jobs:
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.6
-        env:
-          SCCACHE_GHA_ENABLED: "true"
-          RUSTC_WRAPPER: "sccache"
 
       - name: Run Test
         run: |

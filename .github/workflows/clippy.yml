@@ -14,18 +14,18 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [stable]
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
+
     steps:
       - uses: actions/checkout/@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
-          components: clippy
+          toolchain: 1.82
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.6
-        env:
-          SCCACHE_GHA_ENABLED: "true"
-          RUSTC_WRAPPER: "sccache"
 
       - name: Run Clippy Deny Warning
         run: cargo clippy --tests --locked -- -D warnings
