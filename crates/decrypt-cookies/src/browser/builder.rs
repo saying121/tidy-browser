@@ -4,12 +4,20 @@ use std::path::PathBuf;
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum BuilderError {
-    #[error("No such file: {0:?}")]
-    NoFile(PathBuf),
+    #[error("File operation failed: {path:?}")]
+    FileOp {
+        #[source]
+        source: std::io::Error,
+        path: PathBuf,
+    },
     #[error("Create dir failed: {0:?}")]
     CreateDir(PathBuf),
-    #[error(transparent)]
-    Ini(#[from] ini::Error),
+    #[error("Ini operation failed: {path:?}")]
+    Ini {
+        #[source]
+        source: ini::Error,
+        path: PathBuf,
+    },
     #[error("Profile {0} missing `Name` properties")]
     ProfilePath(String),
     #[error("Install {0} missing `Default` properties")]
@@ -83,14 +91,14 @@ macro_rules! chromium_copy_temp {
             let key_cp = fs::copy(&key, &key_temp);
 
             let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
-            if ck.is_err() {
-                return Err(BuilderError::NoFile(cookies));
+            if let Err(e) = ck {
+                return Err(BuilderError::FileOp { source: e, path: cookies });
             }
-            if lg.is_err() {
-                return Err(BuilderError::NoFile(login_data));
+            if let Err(e) = lg {
+                return Err(BuilderError::FileOp { source: e, path: login_data });
             }
-            if k.is_err() {
-                return Err(BuilderError::NoFile(key));
+            if let Err(e) = k {
+                return Err(BuilderError::FileOp { source: e, path: key });
             }
 
             Ok(TempPaths {
@@ -153,14 +161,23 @@ macro_rules! firefox_copy_temp {
             let key_cp = fs::copy(&key, &key_temp);
 
             let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
-            if ck.is_err() {
-                return Err($crate::browser::builder::BuilderError::NoFile(cookies));
+            if let Err(e) = ck {
+                return Err($crate::browser::builder::BuilderError::FileOp {
+                    source: e,
+                    path: cookies,
+                });
             }
-            if lg.is_err() {
-                return Err($crate::browser::builder::BuilderError::NoFile(login_data));
+            if let Err(e) = lg {
+                return Err($crate::browser::builder::BuilderError::FileOp {
+                    source: e,
+                    path: login_data,
+                });
             }
-            if k.is_err() {
-                return Err($crate::browser::builder::BuilderError::NoFile(key));
+            if let Err(e) = k {
+                return Err($crate::browser::builder::BuilderError::FileOp {
+                    source: e,
+                    path: key,
+                });
             }
 
             Ok($crate::browser::builder::TempPaths {
@@ -175,9 +192,9 @@ macro_rules! firefox_copy_temp {
 pub(crate) fn firefox_profile(mut base: PathBuf, profile: Option<&str>) -> Result<PathBuf> {
     let ini_path = base.join("profiles.ini");
 
-    let Ok(ini_file) = ini::Ini::load_from_file(&ini_path)
-    else {
-        return Err(BuilderError::NoFile(ini_path));
+    let ini_file = match ini::Ini::load_from_file(&ini_path) {
+        Ok(v) => v,
+        Err(e) => return Err(BuilderError::Ini { source: e, path: ini_path }),
     };
     for (sec, prop) in ini_file {
         let Some(sec) = sec

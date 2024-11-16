@@ -19,9 +19,9 @@ macro_rules! chromium_common {
             pub const BASE: &'static str = $base;
             pub const NAME: &'static str = stringify!($browser);
             /// sqlite3
-            pub const COOKIES: &str = concatcp!($browser::BASE, "/", $cookies);
-            pub const LOGIN_DATA: &str = concatcp!($browser::BASE, "/", $login_data);
-            pub const KEY: &str = concatcp!($browser::BASE, "/", $key);
+            pub const COOKIES: &str = concatcp!($browser::BASE, std::path::MAIN_SEPARATOR, $cookies);
+            pub const LOGIN_DATA: &str = concatcp!($browser::BASE, std::path::MAIN_SEPARATOR, $login_data);
+            pub const KEY: &str = concatcp!($browser::BASE, std::path::MAIN_SEPARATOR, $key);
             $(
                 pub const SAFE_STORAGE: &str = concatcp!($safe_name, " Safe Storage");
                 #[cfg(target_os = "macos")]
@@ -32,21 +32,21 @@ macro_rules! chromium_common {
                 dirs::home_dir().expect("Get home dir failed").join(Self::KEY)
             }
             pub fn key_temp() -> std::path::PathBuf {
-                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::KEY))
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies", std::path::MAIN_SEPARATOR, $browser::KEY))
             }
 
             pub fn cookies() -> std::path::PathBuf {
                 dirs::home_dir().expect("Get home dir failed").join(Self::COOKIES)
             }
             pub fn cookies_temp() -> std::path::PathBuf {
-                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::COOKIES))
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies", std::path::MAIN_SEPARATOR, $browser::COOKIES))
             }
 
             pub fn login_data() -> std::path::PathBuf {
                 dirs::home_dir().expect("Get home dir failed").join(Self::LOGIN_DATA)
             }
             pub fn login_data_temp() -> std::path::PathBuf {
-                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::LOGIN_DATA))
+                dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies", std::path::MAIN_SEPARATOR, $browser::LOGIN_DATA))
             }
         }
 
@@ -130,7 +130,13 @@ macro_rules! firefox_common {
             pub fn key_temp() -> std::path::PathBuf {
                 dirs::cache_dir()
                     .expect("Get cache dir failed")
-                    .join(concatcp!("decrypt-cookies/", $browser::KEY))
+                    .join(concatcp!(
+                        "decrypt-cookies",
+                        std::path::MAIN_SEPARATOR,
+                        $browser::NAME,
+                        std::path::MAIN_SEPARATOR,
+                        $browser::KEY
+                    ))
             }
 
             pub fn cookies(base: &std::path::Path) -> std::path::PathBuf {
@@ -139,7 +145,13 @@ macro_rules! firefox_common {
             pub fn cookies_temp() -> std::path::PathBuf {
                 dirs::cache_dir()
                     .expect("Get cache dir failed")
-                    .join(concatcp!("decrypt-cookies/", $browser::COOKIES))
+                    .join(concatcp!(
+                        "decrypt-cookies",
+                        std::path::MAIN_SEPARATOR,
+                        $browser::NAME,
+                        std::path::MAIN_SEPARATOR,
+                        $browser::COOKIES
+                    ))
             }
 
             pub fn login_data(base: &std::path::Path) -> std::path::PathBuf {
@@ -148,7 +160,13 @@ macro_rules! firefox_common {
             pub fn login_data_temp() -> std::path::PathBuf {
                 dirs::cache_dir()
                     .expect("Get cache dir failed")
-                    .join(concatcp!("decrypt-cookies/", $browser::LOGIN_DATA))
+                    .join(concatcp!(
+                        "decrypt-cookies",
+                        std::path::MAIN_SEPARATOR,
+                        $browser::NAME,
+                        std::path::MAIN_SEPARATOR,
+                        $browser::LOGIN_DATA
+                    ))
             }
         }
 
