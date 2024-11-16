@@ -1,3 +1,5 @@
+#[cfg(target_os = "windows")]
+use std::path::Path;
 use std::path::PathBuf;
 
 // TODO: add browser name in error
@@ -8,6 +10,12 @@ pub enum BuilderError {
     FileOp {
         #[source]
         source: std::io::Error,
+        path: PathBuf,
+    },
+    #[cfg(target_os = "windows")]
+    #[error("Shadow copy operation failed: {path:?}, cause by: {source}")]
+    ShadowCopyOp {
+        r#source: String,
         path: PathBuf,
     },
     #[error("Create dir failed: {0:?}")]
@@ -33,6 +41,14 @@ pub enum BuilderError {
     Decrypt(#[from] crate::chromium::crypto::macos::CryptoError),
     #[error(transparent)]
     Db(#[from] sea_orm::DbErr),
+    #[error(transparent)]
+    TokioJoin(#[from] tokio::task::JoinError),
+    #[cfg(target_os = "windows")]
+    #[error("Not Administrator")]
+    Privilege,
+    #[cfg(target_os = "windows")]
+    #[error(transparent)]
+    AnyhowErr(#[from] anyhow::Error),
 }
 
 pub type Result<T> = std::result::Result<T, BuilderError>;
@@ -45,6 +61,36 @@ pub(crate) struct TempPaths {
     pub(crate) cookies_temp: PathBuf,
     pub(crate) login_data_temp: PathBuf,
     pub(crate) key_temp: PathBuf,
+}
+
+#[cfg(target_os = "windows")]
+pub(crate) fn shadow_copy(from: &Path, to: &Path) -> Result<()> {
+    // shadow copy `to` must is dir
+    if !to.is_dir() && to.exists() {
+        if let Err(e) = std::fs::remove_file(to) {
+            return Err(BuilderError::FileOp { source: e, path: to.to_owned() });
+        }
+    }
+
+    if !privilege::user::privileged() {
+        return Err(BuilderError::Privilege);
+    }
+
+    let to = if to.is_dir() {
+        to
+    }
+    else {
+        to.parent()
+            .expect("Get shadow copy dir failed")
+    };
+    rawcopy_rs::rawcopy(
+        from.to_str()
+            .expect("`from` path to str failed"),
+        to.to_str()
+            .expect("`to` path to str failed"),
+    )?;
+
+    Ok(())
 }
 
 macro_rules! chromium_copy_temp {
@@ -86,11 +132,29 @@ macro_rules! chromium_copy_temp {
                 return Err(BuilderError::CreateDir(k_temp_p.to_owned()));
             }
 
+            #[cfg(target_os = "windows")]
+            let cookies_cp = {
+                let cookies = cookies.clone();
+                let cookies_temp = cookies_temp.clone();
+                tokio::task::spawn_blocking(move || {
+                    $crate::browser::builder::shadow_copy(&cookies, &cookies_temp)
+                })
+            };
+            #[cfg(not(target_os = "windows"))]
             let cookies_cp = fs::copy(&cookies, &cookies_temp);
             let login_cp = fs::copy(&login_data, &login_data_temp);
             let key_cp = fs::copy(&key, &key_temp);
 
             let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
+
+            #[cfg(target_os = "windows")]
+            if let Err(e) = ck? {
+                return Err(BuilderError::ShadowCopyOp {
+                    source: e.to_string(),
+                    path: cookies,
+                });
+            }
+            #[cfg(not(target_os = "windows"))]
             if let Err(e) = ck {
                 return Err(BuilderError::FileOp { source: e, path: cookies });
             }

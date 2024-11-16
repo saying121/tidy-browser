@@ -28,6 +28,8 @@ reqwest = { version = "^0.12", default-features = false }
 
 sea-orm = { version = "^1", default-features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
 
+rawcopy-rs = "0.1"
+privilege = "0.3.0"
 dirs = { version = "^5" }
 const_format = { version = "0.2" }
 
