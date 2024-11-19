@@ -1,8 +1,5 @@
 use anyhow::Result;
-use decrypt_cookies::{
-    browser::{Chrome, Firefox},
-    prelude::*,
-};
+use decrypt_cookies::prelude::*;
 
 #[ignore = "need realy environment"]
 #[tokio::test]

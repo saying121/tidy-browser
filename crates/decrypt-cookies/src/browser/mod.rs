@@ -228,7 +228,9 @@ chromium_base_win!(
 firefox_base_linux!(
     { Firefox  , ".mozilla/firefox", "cookies.sqlite", "logins.json", "key4.db" },
     { Librewolf, ".librewolf"      , "cookies.sqlite", "logins.json", "key4.db" },
+    { Floorp   , ".floorp"         , "cookies.sqlite", "logins.json", "key4.db" },
 );
+
 firefox_base_macos!(
     { Firefox  , "Library/Application Support/Firefox"  , "cookies.sqlite", "logins.json", "key4.db" },
     { Librewolf, "Library/Application Support/librewolf", "cookies.sqlite", "logins.json", "key4.db" },
