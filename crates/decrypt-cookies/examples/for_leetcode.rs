@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
         .build()
         .await?;
     let ck = getter
-        .get_cookies_session_csrf(leetcode_cn)
+        .get_session_csrf(leetcode_cn)
         .await?;
     writeln!(lock, "{:#?}", ck)?;
 
