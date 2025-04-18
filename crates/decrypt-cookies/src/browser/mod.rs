@@ -66,7 +66,7 @@ macro_rules! chromium_common {
 }
 
 macro_rules! chromium_base_linux {
-    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? }), *,) => {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? },) *) => {
         $(
             chromium_common!("linux", $browser, $base, $cookies, $login_data, $key $(, $safe_name)?);
         )*
@@ -83,7 +83,7 @@ macro_rules! chromium_base_linux {
 }
 
 macro_rules! chromium_base_win {
-    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal }), *,) => {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal },) *) => {
         $(
             chromium_common!("windows", $browser, $base, $cookies, $login_data, $key);
         )*
@@ -91,7 +91,7 @@ macro_rules! chromium_base_win {
 }
 
 macro_rules! chromium_base_macos {
-    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? }), *,) => {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? },) *) => {
         $(
             chromium_common!("macos", $browser, $base, $cookies, $login_data, $key $(, $safe_name)?);
         )*
@@ -166,7 +166,7 @@ macro_rules! firefox_common {
 }
 
 macro_rules! firefox_base_linux {
-    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? }), *,) => {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? },) *) => {
         $(
             firefox_common!("linux", $browser, $base, $cookies, $login_data, $key $(, $safe_name)?);
         )*
@@ -174,7 +174,7 @@ macro_rules! firefox_base_linux {
 }
 
 macro_rules! firefox_base_win {
-    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal }), *,) => {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal },) *) => {
         $(
             firefox_common!("windows", $browser, $base, $cookies, $login_data, $key);
         )*
@@ -182,14 +182,14 @@ macro_rules! firefox_base_win {
 }
 
 macro_rules! firefox_base_macos {
-    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? }), *,) => {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? },) *) => {
         $(
             firefox_common!("macos", $browser, $base, $cookies, $login_data, $key $(, $safe_name)?);
         )*
     };
 }
 
-chromium_base_linux!(
+chromium_base_linux! {
     { Chrome  , ".config/google-chrome"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chrome"         },
     { Edge    , ".config/microsoft-edge"             , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Microsoft Edge" },
     { Chromium, ".config/chromium"                   , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chromium"       },
@@ -197,9 +197,9 @@ chromium_base_linux!(
     { Yandex  , ".config/yandex-browser"             , "Default/Cookies", "Ya Passman Data"   , "Local State", safe_name = "Yandex"         },
     { Vivaldi , ".config/vivaldi"                    , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Vivaldi"        },
     { Opera   , ".config/opera"                      , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Opera"          },
-);
+}
 
-chromium_base_macos!(
+chromium_base_macos! {
     { Chrome  , "Library/Application Support/Google/Chrome"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chrome"         },
     { Edge    , "Library/Application Support/Microsoft Edge"             , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Microsoft Edge" },
     { Chromium, "Library/Application Support/Chromium"                   , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Chromium"       },
@@ -210,9 +210,9 @@ chromium_base_macos!(
     { OperaGX , "Library/Application Support/com.operasoftware.OperaGX"  , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Opera"          },
     { CocCoc  , "Library/Application Support/Coccoc"                     , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "CocCoc"         },
     { Arc     , "Library/Application Support/Arc/User Data"              , "Default/Cookies", "Default/Login Data", "Local State", safe_name = "Arc"            },
-);
+}
 
-chromium_base_win!(
+chromium_base_win! {
     { Chrome  , r"AppData\Local\Google\Chrome\User Data"              , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
     { Edge    , r"AppData\Local\Microsoft\Edge\User Data"             , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
     { Chromium, r"AppData\Local\Chromium\User Data"                   , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
@@ -223,18 +223,18 @@ chromium_base_win!(
     { OperaGX , r"AppData\Roaming\Opera Software\Opera GX Stable"     , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
     { CocCoc  , r"AppData\Local\CocCoc\Browser\User Data"             , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
     { Arc     , r"AppData\Local\Packages\TheBrowserCompany.Arc_ttt1ap7aakyb4\LocalCache\Local\Arc\User Data", r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-);
+}
 
-firefox_base_linux!(
+firefox_base_linux! {
     { Firefox  , ".mozilla/firefox", "cookies.sqlite", "logins.json", "key4.db" },
     { Librewolf, ".librewolf"      , "cookies.sqlite", "logins.json", "key4.db" },
-);
-firefox_base_macos!(
+}
+firefox_base_macos! {
     { Firefox  , "Library/Application Support/Firefox"  , "cookies.sqlite", "logins.json", "key4.db" },
     { Librewolf, "Library/Application Support/librewolf", "cookies.sqlite", "logins.json", "key4.db" },
-);
+}
 
-firefox_base_win!(
+firefox_base_win! {
     { Firefox  , r"AppData\Roaming\Mozilla\Firefox", "cookies.sqlite", "logins.json", "key4.db" },
     { Librewolf, r"AppData\Roaming\librewolf"      , "cookies.sqlite", "logins.json", "key4.db" },
-);
+}
