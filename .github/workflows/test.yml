@@ -35,7 +35,9 @@ jobs:
           tool: nextest
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.6
+        uses: mozilla-actions/sccache-action@v0.0.9
+        with:
+          version: '0.10.0'
 
       - name: Run Test
         run: |

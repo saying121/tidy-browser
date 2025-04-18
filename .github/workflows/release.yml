@@ -36,7 +36,9 @@ jobs:
           toolchain: 1.82
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.6
+        uses: mozilla-actions/sccache-action@v0.0.9
+        with:
+          version: '0.10.0'
 
       - name: Install cargo-binstall
         uses: taiki-e/install-action@v2
@@ -160,7 +162,9 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.6
+        uses: mozilla-actions/sccache-action@v0.0.9
+        with:
+          version: '0.10.0'
 
       - name: Install cross-compilation tools
         if: ${{ matrix.cross }}
