@@ -218,10 +218,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     }
 
     /// get `LEETCODE_SESSION` and `csrftoken` for leetcode
-    pub async fn get_session_csrf<A: AsRef<str> + Send>(
-        &self,
-        host: A,
-    ) -> Result<LeetCodeCookies> {
+    pub async fn get_session_csrf<A: AsRef<str> + Send>(&self, host: A) -> Result<LeetCodeCookies> {
         let cookies = self
             .cookies_query
             .query_cookie_filter(
