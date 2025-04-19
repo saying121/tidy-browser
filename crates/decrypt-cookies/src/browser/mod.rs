@@ -4,6 +4,46 @@ pub mod cookies;
 
 use const_format::concatcp;
 
+pub trait ChromiumPath {
+    const BASE: &'static str;
+    const NAME: &'static str;
+    /// sqlite3
+    const COOKIES: &str;
+    const LOGIN_DATA: &str;
+    const KEY: &str;
+    #[cfg(not(target_os = "windows"))]
+    const SAFE_STORAGE: &str;
+    #[cfg(target_os = "macos")]
+    const SAFE_NAME: &str;
+
+    fn key() -> std::path::PathBuf;
+    fn key_temp() -> std::path::PathBuf;
+
+    fn cookies() -> std::path::PathBuf;
+    fn cookies_temp() -> std::path::PathBuf;
+
+    fn login_data() -> std::path::PathBuf;
+    fn login_data_temp() -> std::path::PathBuf;
+}
+
+pub trait FirefoxPath {
+    const BASE: &'static str;
+    const NAME: &'static str;
+    /// sqlite3
+    const COOKIES: &str;
+    const LOGIN_DATA: &str;
+    const KEY: &str;
+
+    fn key(base: &std::path::Path) -> std::path::PathBuf;
+    fn key_temp() -> std::path::PathBuf;
+
+    fn cookies(base: &std::path::Path) -> std::path::PathBuf;
+    fn cookies_temp() -> std::path::PathBuf;
+
+    fn login_data(base: &std::path::Path) -> std::path::PathBuf;
+    fn login_data_temp() -> std::path::PathBuf;
+}
+
 macro_rules! chromium_common {
     ($platform:literal, $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, $safe_name:literal)? ) => {
         #[cfg(target_os = $platform)]
@@ -15,37 +55,37 @@ macro_rules! chromium_common {
         pub struct $browser;
 
         #[cfg(target_os = $platform)]
-        impl $browser {
-            pub const BASE: &'static str = $base;
-            pub const NAME: &'static str = stringify!($browser);
+        impl ChromiumPath for $browser {
+            const BASE: &'static str = $base;
+            const NAME: &'static str = stringify!($browser);
             /// sqlite3
-            pub const COOKIES: &str = concatcp!($browser::BASE, "/", $cookies);
-            pub const LOGIN_DATA: &str = concatcp!($browser::BASE, "/", $login_data);
-            pub const KEY: &str = concatcp!($browser::BASE, "/", $key);
+            const COOKIES: &str = concatcp!($browser::BASE, "/", $cookies);
+            const LOGIN_DATA: &str = concatcp!($browser::BASE, "/", $login_data);
+            const KEY: &str = concatcp!($browser::BASE, "/", $key);
             $(
-                pub const SAFE_STORAGE: &str = concatcp!($safe_name, " Safe Storage");
+                const SAFE_STORAGE: &str = concatcp!($safe_name, " Safe Storage");
                 #[cfg(target_os = "macos")]
-                pub const SAFE_NAME: &str = $safe_name;
+                const SAFE_NAME: &str = $safe_name;
             )?
 
-            pub fn key() -> std::path::PathBuf {
+            fn key() -> std::path::PathBuf {
                 dirs::home_dir().expect("Get home dir failed").join(Self::KEY)
             }
-            pub fn key_temp() -> std::path::PathBuf {
+            fn key_temp() -> std::path::PathBuf {
                 dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::KEY))
             }
 
-            pub fn cookies() -> std::path::PathBuf {
+            fn cookies() -> std::path::PathBuf {
                 dirs::home_dir().expect("Get home dir failed").join(Self::COOKIES)
             }
-            pub fn cookies_temp() -> std::path::PathBuf {
+            fn cookies_temp() -> std::path::PathBuf {
                 dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::COOKIES))
             }
 
-            pub fn login_data() -> std::path::PathBuf {
+            fn login_data() -> std::path::PathBuf {
                 dirs::home_dir().expect("Get home dir failed").join(Self::LOGIN_DATA)
             }
-            pub fn login_data_temp() -> std::path::PathBuf {
+            fn login_data_temp() -> std::path::PathBuf {
                 dirs::cache_dir().expect("Get cache dir failed").join(concatcp!("decrypt-cookies/", $browser::LOGIN_DATA))
             }
         }
@@ -56,12 +96,6 @@ macro_rules! chromium_common {
                 f.write_str(Self::NAME)
             }
         }
-        #[cfg(target_os = $platform)]
-        chromium_builder_display_impl!($browser);
-        #[cfg(target_os = $platform)]
-        chromium_builder_new_impl!($browser);
-        #[cfg(target_os = $platform)]
-        chromium_builder_build_impl!($browser);
     };
 }
 
@@ -116,36 +150,36 @@ macro_rules! firefox_common {
         pub struct $browser;
 
         #[cfg(target_os = $platform)]
-        impl $browser {
-            pub const BASE: &'static str = $base;
-            pub const NAME: &'static str = stringify!($browser);
+        impl FirefoxPath for $browser {
+            const BASE: &'static str = $base;
+            const NAME: &'static str = stringify!($browser);
             /// sqlite3
-            pub const COOKIES: &str = $cookies;
-            pub const LOGIN_DATA: &str = $login_data;
-            pub const KEY: &str = $key;
+            const COOKIES: &str = $cookies;
+            const LOGIN_DATA: &str = $login_data;
+            const KEY: &str = $key;
 
-            pub fn key(base: &std::path::Path) -> std::path::PathBuf {
+            fn key(base: &std::path::Path) -> std::path::PathBuf {
                 base.join(Self::KEY)
             }
-            pub fn key_temp() -> std::path::PathBuf {
+            fn key_temp() -> std::path::PathBuf {
                 dirs::cache_dir()
                     .expect("Get cache dir failed")
                     .join(concatcp!("decrypt-cookies/", $browser::KEY))
             }
 
-            pub fn cookies(base: &std::path::Path) -> std::path::PathBuf {
+            fn cookies(base: &std::path::Path) -> std::path::PathBuf {
                 base.join(Self::COOKIES)
             }
-            pub fn cookies_temp() -> std::path::PathBuf {
+            fn cookies_temp() -> std::path::PathBuf {
                 dirs::cache_dir()
                     .expect("Get cache dir failed")
                     .join(concatcp!("decrypt-cookies/", $browser::COOKIES))
             }
 
-            pub fn login_data(base: &std::path::Path) -> std::path::PathBuf {
+            fn login_data(base: &std::path::Path) -> std::path::PathBuf {
                 base.join(Self::LOGIN_DATA)
             }
-            pub fn login_data_temp() -> std::path::PathBuf {
+            fn login_data_temp() -> std::path::PathBuf {
                 dirs::cache_dir()
                     .expect("Get cache dir failed")
                     .join(concatcp!("decrypt-cookies/", $browser::LOGIN_DATA))
@@ -158,10 +192,6 @@ macro_rules! firefox_common {
                 f.write_str(Self::NAME)
             }
         }
-        #[cfg(target_os = $platform)]
-        firefox_getter_display_impl!($browser);
-        #[cfg(target_os = $platform)]
-        firefox_impl!($browser);
     };
 }
 
