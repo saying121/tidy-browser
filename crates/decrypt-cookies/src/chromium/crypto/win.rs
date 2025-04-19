@@ -139,7 +139,7 @@ pub fn decrypt_with_dpapi(ciphertext: &mut [u8]) -> Result<Vec<u8>> {
         unsafe { slice::from_raw_parts(output.pbData, output.cbData as usize).to_vec() };
     let pbdata_hlocal = Foundation::HLOCAL(output.pbData.cast::<c_void>());
     unsafe {
-        _ = Foundation::LocalFree(pbdata_hlocal);
+        _ = Foundation::LocalFree(Some(pbdata_hlocal));
     };
     Ok(decrypted_data)
 }

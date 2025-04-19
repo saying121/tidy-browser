@@ -28,7 +28,7 @@ reqwest = { version = "^0.12", default-features = false }
 
 sea-orm = { version = "^1", default-features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
 
-dirs = { version = "^5" }
+dirs = { version = "^6" }
 const_format = { version = "0.2" }
 
 tracing = { version = "^0.1" }
@@ -41,7 +41,7 @@ thiserror = { version = "^2" }
 serde = { version = "^1", default-features = false, features = ["derive"] }
 serde_json = { version = "^1", default-features = false }
 
-secret-service = { version = "^4" }
+secret-service = { version = "^5" }
 bytes = { version = "^1" }
 keyring = { version = "^3", default-features = false }
 aes = { version = "^0.8" }
@@ -50,7 +50,7 @@ pbkdf2 = { version = "^0.12" }
 sha1 = { version = "^0.10" }
 aes-gcm = { version = "^0.10" }
 base64 = { version = "^0.22" }
-windows = { version = "^0.58" }
+windows = { version = "^0.61" }
 
 rayon = { version = "^1" }
 chrono = { version = "^0.4" }
