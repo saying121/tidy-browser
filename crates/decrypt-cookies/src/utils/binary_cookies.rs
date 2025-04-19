@@ -286,7 +286,7 @@ impl BinaryCookies {
             cookie_flags,
             same_site,
             is_secure: cookie_flags & 0x1 == 0x1,
-            is_httponly: cookie_flags & 0x4 == 0x4,
+            is_http_only: cookie_flags & 0x4 == 0x4,
             has_port,
             domain_offset,
             name_offset,
@@ -316,7 +316,7 @@ pub struct SafariCookie {
     pub cookie_flags: u32, /* LE_uint32    0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly */
     pub same_site: SameSite,
     pub is_secure: bool,
-    pub is_httponly: bool,
+    pub is_http_only: bool,
     pub has_port: [u8; 4],   // size:  4    byte    0 or 1
     pub domain_offset: u32,  // LE_uint32    Cookie domain offset
     pub name_offset: u32,    // LE_uint32    Cookie name offset
@@ -375,7 +375,7 @@ impl CookiesInfo for SafariCookie {
         self.is_secure
     }
     fn is_http_only(&self) -> bool {
-        self.is_httponly
+        self.is_http_only
     }
     fn same_site(&self) -> SameSite {
         self.same_site
