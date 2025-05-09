@@ -62,11 +62,11 @@ pub trait FirefoxPath {
     /// Name for [`std::fmt::Display`]
     const NAME: &'static str;
     /// Cookies data path (sqlite3 database)
-    const COOKIES: &str;
+    const COOKIES: &str = "cookies.sqlite";
     /// Login data path (json)
-    const LOGIN_DATA: &str;
+    const LOGIN_DATA: &str = "logins.json";
     /// Decryption key path
-    const KEY: &str;
+    const KEY: &str = "key4.db";
 
     fn key(base: &std::path::Path) -> std::path::PathBuf {
         base.join(Self::KEY)
