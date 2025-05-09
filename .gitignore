@@ -18,7 +18,6 @@ logs/*
 nohup.out
 .vale.ini
 styles/
-/.vscode
 .idea
 node_modules/
 silicon-*
