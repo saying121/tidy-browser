@@ -30,7 +30,6 @@ serde = { workspace = true }
 
 rust-ini = { workspace = true } # firefox
 
-const_format = { workspace = true }
 dirs = { workspace = true }
 
 reqwest = { workspace = true, default-features = false, features = ["cookies"], optional = true }
@@ -52,6 +51,7 @@ aes = { workspace = true }
 cbc = { workspace = true }
 pbkdf2 = { workspace = true, features = ["sha1"] }
 sha1 = { workspace = true }
+const_format = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 aes-gcm = { workspace = true }
