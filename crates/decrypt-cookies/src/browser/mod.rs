@@ -6,19 +6,19 @@ pub mod cookies;
 use const_format::concatcp;
 
 pub trait ChromiumPath {
-    /// Browser data path
+    /// Suffix for browser data path
     const BASE: &'static str;
     /// Browser name for [`std::fmt::Display`]
     const NAME: &'static str;
     #[cfg(not(target_os = "windows"))]
-    /// Cookies data path (sqlite3 database)
+    /// Suffix for cookies data path (sqlite3 database)
     const COOKIES: &str = "Default/Cookies";
     #[cfg(target_os = "windows")]
-    /// Cookies data path (sqlite3 database)
+    /// Suffix for cookies data path (sqlite3 database)
     const COOKIES: &str = r"Default\Network\Cookies";
-    /// Login data path (sqlite3 database)
+    /// Suffix for login data path (sqlite3 database)
     const LOGIN_DATA: &str = "Default/Login Data";
-    /// Decryption key path (json)
+    /// Suffix for decryption key path (json)
     const KEY: &str = "Local State";
     #[cfg(not(target_os = "windows"))]
     /// Safe keyring Storage name
@@ -27,33 +27,39 @@ pub trait ChromiumPath {
     /// Safe keyring name
     const SAFE_NAME: &str;
 
+    /// Decryption key path (json)
     fn key() -> std::path::PathBuf {
         let mut home = dirs::home_dir().expect("Get home dir failed");
         home.push(format!("{}/{}", Self::BASE, Self::KEY));
         home
     }
+    /// Copy the decryption key file to a location to avoid conflicts with the browser over access to it.
     fn key_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.push(format!("decrypt-cookies/{}/{}", Self::NAME, Self::KEY));
         cache
     }
 
+    /// Cookies path (sqlite3 database)
     fn cookies() -> std::path::PathBuf {
         let mut home = dirs::home_dir().expect("Get home dir failed");
         home.push(format!("{}/{}", Self::BASE, Self::COOKIES));
         home
     }
+    /// Copy the cookies file to a location to avoid conflicts with the browser over access to it.
     fn cookies_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.push(format!("decrypt-cookies/{}/{}", Self::NAME, Self::COOKIES));
         cache
     }
 
+    /// Login data file (sqlite3 database)
     fn login_data() -> std::path::PathBuf {
         let mut home = dirs::home_dir().expect("Get home dir failed");
         home.push(format!("{}/{}", Self::BASE, Self::LOGIN_DATA));
         home
     }
+    /// Copy the Login data file to a location to avoid conflicts with the browser over access to it.
     fn login_data_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.push(format!(
@@ -66,38 +72,44 @@ pub trait ChromiumPath {
 }
 
 pub trait FirefoxPath {
-    /// Data path
+    /// Suffix for data path
     const BASE: &'static str;
     /// Name for [`std::fmt::Display`]
     const NAME: &'static str;
-    /// Cookies data path (sqlite3 database)
+    /// Suffix for cookies data path (sqlite3 database)
     const COOKIES: &str = "cookies.sqlite";
-    /// Login data path (json)
+    /// Suffix for login data path (json)
     const LOGIN_DATA: &str = "logins.json";
-    /// Decryption key path (sqlite3 database)
+    /// Suffix for decryption key path (sqlite3 database)
     const KEY: &str = "key4.db";
 
+    /// Decryption key path (sqlite3 database)
     fn key(base: &std::path::Path) -> std::path::PathBuf {
         base.join(Self::KEY)
     }
+    /// Copy the decryption key file to a location to avoid conflicts with the browser over access to it.
     fn key_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.push(format!("decrypt-cookies/{}/{}", Self::NAME, Self::KEY));
         cache
     }
 
+    /// Cookies path (sqlite3 database)
     fn cookies(base: &std::path::Path) -> std::path::PathBuf {
         base.join(Self::COOKIES)
     }
+    /// Copy the cookies file to a location to avoid conflicts with the browser over access to it.
     fn cookies_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.push(format!("decrypt-cookies/{}/{}", Self::NAME, Self::COOKIES));
         cache
     }
 
+    /// Login data path (json)
     fn login_data(base: &std::path::Path) -> std::path::PathBuf {
         base.join(Self::LOGIN_DATA)
     }
+    /// Copy the login data file to a location to avoid conflicts with the browser over access to it.
     fn login_data_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.push(format!(
