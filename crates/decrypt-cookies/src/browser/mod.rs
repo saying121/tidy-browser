@@ -2,6 +2,7 @@
 pub mod builder;
 pub mod cookies;
 
+#[cfg(not(target_os = "windows"))]
 use const_format::concatcp;
 
 pub trait ChromiumPath {
