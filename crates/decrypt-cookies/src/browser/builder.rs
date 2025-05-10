@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{fmt::Display, path::PathBuf};
 
 use tokio::{fs, join};
 
@@ -52,15 +52,27 @@ pub(crate) struct TempPaths {
     pub(crate) key_temp: PathBuf,
 }
 
-impl<B: ChromiumPath> std::fmt::Display for ChromiumGetter<B> {
+impl<B: ChromiumPath> Display for ChromiumGetter<B> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(B::NAME)
     }
 }
 
-impl<B: FirefoxPath> std::fmt::Display for FirefoxGetter<B> {
+impl<B: FirefoxPath> Display for FirefoxGetter<B> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(B::NAME)
+    }
+}
+
+impl<B: ChromiumPath> Display for ChromiumBuilder<B> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}Builder", B::NAME))
+    }
+}
+
+impl<B: FirefoxPath> Display for FirefoxBuilder<'_, B> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}Builder", B::NAME))
     }
 }
 
@@ -132,7 +144,7 @@ impl<B: ChromiumPath> ChromiumBuilder<B> {
     }
 
     /// When browser start with `--user-data-dir=DIR` or special other channel
-    pub const fn with_user_data_dir(base: std::path::PathBuf) -> Self {
+    pub const fn with_user_data_dir(base: PathBuf) -> Self {
         Self {
             base,
             __browser: core::marker::PhantomData::<B>,
@@ -181,7 +193,7 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
         })
     }
 
-    pub fn init() -> std::path::PathBuf {
+    pub fn init() -> PathBuf {
         dirs::home_dir()
             .expect("Get home dir failed")
             .join(B::BASE)
@@ -191,7 +203,7 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
     /// `profile`: When start with `-P <profile>`
     pub fn with_path_profile<I, P>(init: I, profile: P) -> Result<Self>
     where
-        I: Into<Option<std::path::PathBuf>>,
+        I: Into<Option<PathBuf>>,
         P: Into<Option<&'b str>>,
     {
         Ok(Self {
@@ -253,10 +265,7 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
         Ok(base)
     }
 
-    async fn copy_temp_firefox(
-        base: std::path::PathBuf,
-        profile: Option<&str>,
-    ) -> Result<TempPaths> {
+    async fn copy_temp_firefox(base: PathBuf, profile: Option<&str>) -> Result<TempPaths> {
         let base = Self::firefox_profile(base, profile).await?;
         let cookies = B::cookies(&base);
         let cookies_temp = B::cookies_temp();
