@@ -9,12 +9,16 @@ pub trait ChromiumPath {
     const BASE: &'static str;
     /// Browser name for [`std::fmt::Display`]
     const NAME: &'static str;
+    #[cfg(not(target_os = "windows"))]
     /// Cookies data path (sqlite3 database)
-    const COOKIES: &str;
+    const COOKIES: &str = "Default/Cookies";
+    #[cfg(target_os = "windows")]
+    /// Cookies data path (sqlite3 database)
+    const COOKIES: &str = r"Default\Network\Cookies";
     /// Login data path (sqlite3 database)
-    const LOGIN_DATA: &str;
-    /// Decryption key path
-    const KEY: &str;
+    const LOGIN_DATA: &str = "Default/Login Data";
+    /// Decryption key path (json)
+    const KEY: &str = "Local State";
     #[cfg(not(target_os = "windows"))]
     /// Safe keyring Storage name
     const SAFE_STORAGE: &str;
@@ -23,35 +27,39 @@ pub trait ChromiumPath {
     const SAFE_NAME: &str;
 
     fn key() -> std::path::PathBuf {
-        dirs::home_dir()
-            .expect("Get home dir failed")
-            .join(Self::KEY)
+        let mut home = dirs::home_dir().expect("Get home dir failed");
+        home.push(format!("{}/{}", Self::BASE, Self::KEY));
+        home
     }
     fn key_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
-        cache.push(format!("decrypt-cookies/{}", Self::KEY));
+        cache.push(format!("decrypt-cookies/{}/{}", Self::NAME, Self::KEY));
         cache
     }
 
     fn cookies() -> std::path::PathBuf {
-        dirs::home_dir()
-            .expect("Get home dir failed")
-            .join(Self::COOKIES)
+        let mut home = dirs::home_dir().expect("Get home dir failed");
+        home.push(format!("{}/{}", Self::BASE, Self::COOKIES));
+        home
     }
     fn cookies_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
-        cache.push(format!("decrypt-cookies/{}", Self::COOKIES));
+        cache.push(format!("decrypt-cookies/{}/{}", Self::NAME, Self::COOKIES));
         cache
     }
 
     fn login_data() -> std::path::PathBuf {
-        dirs::home_dir()
-            .expect("Get home dir failed")
-            .join(Self::LOGIN_DATA)
+        let mut home = dirs::home_dir().expect("Get home dir failed");
+        home.push(format!("{}/{}", Self::BASE, Self::LOGIN_DATA));
+        home
     }
     fn login_data_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
-        cache.push(format!("decrypt-cookies/{}", Self::LOGIN_DATA));
+        cache.push(format!(
+            "decrypt-cookies/{}/{}",
+            Self::NAME,
+            Self::LOGIN_DATA
+        ));
         cache
     }
 }
@@ -65,7 +73,7 @@ pub trait FirefoxPath {
     const COOKIES: &str = "cookies.sqlite";
     /// Login data path (json)
     const LOGIN_DATA: &str = "logins.json";
-    /// Decryption key path
+    /// Decryption key path (sqlite3 database)
     const KEY: &str = "key4.db";
 
     fn key(base: &std::path::Path) -> std::path::PathBuf {
@@ -73,7 +81,7 @@ pub trait FirefoxPath {
     }
     fn key_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
-        cache.push(format!("decrypt-cookies/{}", Self::KEY));
+        cache.push(format!("decrypt-cookies/{}/{}", Self::NAME, Self::KEY));
         cache
     }
 
@@ -82,7 +90,7 @@ pub trait FirefoxPath {
     }
     fn cookies_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
-        cache.push(format!("decrypt-cookies/{}", Self::COOKIES));
+        cache.push(format!("decrypt-cookies/{}/{}", Self::NAME, Self::COOKIES));
         cache
     }
 
@@ -91,7 +99,11 @@ pub trait FirefoxPath {
     }
     fn login_data_temp() -> std::path::PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
-        cache.push(format!("decrypt-cookies/{}", Self::LOGIN_DATA));
+        cache.push(format!(
+            "decrypt-cookies/{}/{}",
+            Self::NAME,
+            Self::LOGIN_DATA
+        ));
         cache
     }
 }
@@ -110,9 +122,9 @@ macro_rules! chromium_common {
         impl ChromiumPath for $browser {
             const BASE: &'static str = $base;
             const NAME: &'static str = stringify!($browser);
-            const COOKIES: &str = concatcp!($browser::BASE, "/", $cookies);
-            const LOGIN_DATA: &str = concatcp!($browser::BASE, "/", $login_data);
-            const KEY: &str = concatcp!($browser::BASE, "/", $key);
+            const COOKIES: &str = $cookies;
+            const LOGIN_DATA: &str = $login_data;
+            const KEY: &str = $key;
             $(
                 const SAFE_STORAGE: &str = concatcp!($safe_name, " Safe Storage");
                 #[cfg(target_os = "macos")]
