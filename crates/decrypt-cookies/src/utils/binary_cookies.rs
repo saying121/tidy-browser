@@ -67,8 +67,7 @@ impl BinaryCookies {
     }
     /// iter all pages cookies
     pub fn iter_cookies(&self) -> impl Iterator<Item = &SafariCookie> {
-        self.pages
-            .iter()
+        self.pages()
             .flat_map(Page::iter_cookies)
     }
 }
