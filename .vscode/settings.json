@@ -1,8 +1,8 @@
 {
-	"rust-analyzer": {
-		"cargo": {},
-		"rustfmt": {
-			"extraArgs": ["+nightly"]
-		}
-	}
+	"rust-analyzer.check.command": "clippy",
+	"rust-analyzer.check.extraArgs": [
+		"--no-deps",
+		"--message-format=json-diagnostic-rendered-ansi"
+	],
+	"rust-analyzer.rustfmt.extraArgs": ["+nightly"]
 }
