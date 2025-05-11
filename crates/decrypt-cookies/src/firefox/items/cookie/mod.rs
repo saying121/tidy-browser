@@ -81,7 +81,6 @@ impl CookiesInfo for MozCookies {
 
 impl From<moz_cookies::Model> for MozCookies {
     fn from(value: moz_cookies::Model) -> Self {
-        #[expect(clippy::wildcard_in_or_patterns, reason = "this is more clear")]
         Self {
             id: value.id,
             origin_attributes: value.origin_attributes,

@@ -77,10 +77,11 @@ pub enum SameSite {
 
 impl From<i32> for SameSite {
     fn from(value: i32) -> Self {
+        #[expect(clippy::wildcard_in_or_patterns, reason = "this is more clear")]
         match value {
-            1 => SameSite::Lax,
-            2 => SameSite::Strict,
-            0 | _ => SameSite::None,
+            1 => Self::Lax,
+            2 => Self::Strict,
+            0 | _ => Self::None,
         }
     }
 }

@@ -92,7 +92,6 @@ impl ChromiumCookie {
 
 impl From<cookies::Model> for ChromiumCookie {
     fn from(value: cookies::Model) -> Self {
-        #[expect(clippy::wildcard_in_or_patterns, reason = "this is more clear")]
         Self {
             creation_utc: value
                 .creation_utc
