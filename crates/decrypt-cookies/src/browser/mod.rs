@@ -288,16 +288,16 @@ chromium_base_macos! {
 }
 
 chromium_base_win! {
-    { Chrome  , r"AppData\Local\Google\Chrome\User Data"              , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { Edge    , r"AppData\Local\Microsoft\Edge\User Data"             , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { Chromium, r"AppData\Local\Chromium\User Data"                   , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { Brave   , r"AppData\Local\BraveSoftware\Brave-Browser\User Data", r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Chrome  , r"AppData\Local\Google\Chrome\User Data"              , r"Default\Network\Cookies", r"Default\Login Data", "Local State" },
+    { Edge    , r"AppData\Local\Microsoft\Edge\User Data"             , r"Default\Network\Cookies", r"Default\Login Data", "Local State" },
+    { Chromium, r"AppData\Local\Chromium\User Data"                   , r"Default\Network\Cookies", r"Default\Login Data", "Local State" },
+    { Brave   , r"AppData\Local\BraveSoftware\Brave-Browser\User Data", r"Default\Network\Cookies", r"Default\Login Data", "Local State" },
     { Yandex  , r"AppData\Local\Yandex\YandexBrowser\User Data"       , r"Default\Network\Cookies", "Ya Passman Data"   , "Local State" },
-    { Vivaldi , r"AppData\Local\Vivaldi\User Data"                    , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { Opera   , r"AppData\Roaming\Opera Software\Opera Stable"        , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { OperaGX , r"AppData\Roaming\Opera Software\Opera GX Stable"     , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { CocCoc  , r"AppData\Local\CocCoc\Browser\User Data"             , r"Default\Network\Cookies", "Default/Login Data", "Local State" },
-    { Arc     , r"AppData\Local\Packages\TheBrowserCompany.Arc_ttt1ap7aakyb4\LocalCache\Local\Arc\User Data", r"Default\Network\Cookies", "Default/Login Data", "Local State" },
+    { Vivaldi , r"AppData\Local\Vivaldi\User Data"                    , r"Default\Network\Cookies", r"Default\Login Data", "Local State" },
+    { Opera   , r"AppData\Roaming\Opera Software\Opera Stable"        , r"Default\Network\Cookies", r"Default\Login Data", "Local State" },
+    { OperaGX , r"AppData\Roaming\Opera Software\Opera GX Stable"     , r"Default\Network\Cookies", r"Default\Login Data", "Local State" },
+    { CocCoc  , r"AppData\Local\CocCoc\Browser\User Data"             , r"Default\Network\Cookies", r"Default\Login Data", "Local State" },
+    { Arc     , r"AppData\Local\Packages\TheBrowserCompany.Arc_ttt1ap7aakyb4\LocalCache\Local\Arc\User Data", r"Default\Network\Cookies", r"Default\Login Data", "Local State" },
 }
 
 firefox_base_linux! {
