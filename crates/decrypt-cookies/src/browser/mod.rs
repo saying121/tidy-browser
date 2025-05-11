@@ -241,9 +241,9 @@ macro_rules! firefox_common {
 }
 
 macro_rules! firefox_base_linux {
-    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? },) *) => {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal },) *) => {
         $(
-            firefox_common!("linux", $browser, $base, $cookies, $login_data, $key $(, $safe_name)?);
+            firefox_common!("linux", $browser, $base, $cookies, $login_data, $key);
         )*
     };
 }
@@ -257,9 +257,9 @@ macro_rules! firefox_base_win {
 }
 
 macro_rules! firefox_base_macos {
-    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal $(, safe_name = $safe_name:literal)? },) *) => {
+    ($({ $browser:ident, $base:literal, $cookies:literal, $login_data:literal, $key:literal },) *) => {
         $(
-            firefox_common!("macos", $browser, $base, $cookies, $login_data, $key $(, $safe_name)?);
+            firefox_common!("macos", $browser, $base, $cookies, $login_data, $key);
         )*
     };
 }
