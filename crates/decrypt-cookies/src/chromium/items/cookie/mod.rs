@@ -114,11 +114,7 @@ impl From<cookies::Model> for ChromiumCookie {
             has_expires: value.has_expires != 0,
             is_persistent: value.is_persistent != 0,
             priority: value.priority,
-            samesite: match value.samesite {
-                1 => SameSite::Lax,
-                2 => SameSite::Strict,
-                0 | _ => SameSite::None,
-            },
+            samesite: value.samesite.into(),
             source_scheme: value.source_scheme,
             source_port: value.source_port,
             last_update_utc: value

@@ -75,6 +75,22 @@ pub enum SameSite {
     Strict,
 }
 
+impl From<i32> for SameSite {
+    fn from(value: i32) -> Self {
+        match value {
+            1 => SameSite::Lax,
+            2 => SameSite::Strict,
+            0 | _ => SameSite::None,
+        }
+    }
+}
+
+impl From<Option<i32>> for SameSite {
+    fn from(value: Option<i32>) -> Self {
+        value.unwrap_or_default().into()
+    }
+}
+
 impl Display for SameSite {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

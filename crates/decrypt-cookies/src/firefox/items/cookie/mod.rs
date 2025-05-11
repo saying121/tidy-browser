@@ -110,11 +110,7 @@ impl From<moz_cookies::Model> for MozCookies {
             in_browser_element: value
                 .in_browser_element
                 .unwrap_or_default(),
-            same_site: match value.same_site.unwrap_or_default() {
-                1 => SameSite::Lax,
-                2 => SameSite::Strict,
-                0 | _ => SameSite::None,
-            },
+            same_site: value.same_site.into(),
             raw_same_site: value
                 .raw_same_site
                 .unwrap_or_default(),
