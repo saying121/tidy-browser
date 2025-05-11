@@ -12,12 +12,10 @@ use crate::{
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum BuilderError {
-    #[error("No such file: {0}")]
-    NoFile(PathBuf),
-    #[error("Create dir failed: {0}")]
-    CreateDir(PathBuf),
     #[error(transparent)]
     Ini(#[from] ini::Error),
+    #[error(transparent)]
+    IniParser(#[from] ini::ParseError),
     #[error("Profile {0} missing `Name` properties")]
     ProfilePath(String),
     #[error("Install {0} missing `Default` properties")]
@@ -33,9 +31,9 @@ pub enum BuilderError {
     Decrypt(#[from] crate::chromium::crypto::macos::CryptoError),
     #[error(transparent)]
     Db(#[from] sea_orm::DbErr),
-    #[error("Io:{io}, path: {path}")]
+    #[error("Io: {source}, path: {path}")]
     Io {
-        io: std::io::Error,
+        source: std::io::Error,
         path: PathBuf,
     },
 }
@@ -111,30 +109,27 @@ impl<B: ChromiumPath> ChromiumBuilder<B> {
             .expect("Get parent dir failed");
         let cd_k = fs::create_dir_all(k_temp_p);
         let (cd_ck, cd_lg, cd_k) = join!(cd_ck, cd_lg, cd_k);
-        if cd_ck.is_err() {
-            return Err(BuilderError::CreateDir(ck_temp_p.to_owned()));
-        }
-        if cd_lg.is_err() {
-            return Err(BuilderError::CreateDir(lg_temp_p.to_owned()));
-        }
-        if cd_k.is_err() {
-            return Err(BuilderError::CreateDir(k_temp_p.to_owned()));
-        }
+        cd_ck.map_err(|e| BuilderError::Io {
+            source: e,
+            path: ck_temp_p.to_owned(),
+        })?;
+        cd_lg.map_err(|e| BuilderError::Io {
+            source: e,
+            path: lg_temp_p.to_owned(),
+        })?;
+        cd_k.map_err(|e| BuilderError::Io {
+            source: e,
+            path: k_temp_p.to_owned(),
+        })?;
 
         let cookies_cp = fs::copy(&cookies, &cookies_temp);
         let login_cp = fs::copy(&login_data, &login_data_temp);
         let key_cp = fs::copy(&key, &key_temp);
 
         let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
-        if ck.is_err() {
-            return Err(BuilderError::NoFile(cookies));
-        }
-        if lg.is_err() {
-            return Err(BuilderError::NoFile(login_data));
-        }
-        if k.is_err() {
-            return Err(BuilderError::NoFile(key));
-        }
+        ck.map_err(|e| BuilderError::Io { source: e, path: cookies })?;
+        lg.map_err(|e| BuilderError::Io { source: e, path: login_data })?;
+        k.map_err(|e| BuilderError::Io { source: e, path: key })?;
 
         Ok(TempPaths {
             cookies_temp,
@@ -219,12 +214,9 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
 
         let ini_str = fs::read_to_string(&ini_path)
             .await
-            .map_err(|e| BuilderError::Io { io: e, path: ini_path.clone() })?;
+            .map_err(|e| BuilderError::Io { source: e, path: ini_path.clone() })?;
 
-        let Ok(ini_file) = ini::Ini::load_from_str(&ini_str)
-        else {
-            return Err(BuilderError::NoFile(ini_path));
-        };
+        let ini_file = ini::Ini::load_from_str(&ini_str)?;
         for (sec, prop) in ini_file {
             let Some(sec) = sec
             else {
@@ -289,30 +281,27 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
             .expect("Get parent dir failed");
         let cd_k = fs::create_dir_all(k_temp_p);
         let (cd_ck, cd_lg, cd_k) = join!(cd_ck, cd_lg, cd_k);
-        if cd_ck.is_err() {
-            return Err(BuilderError::CreateDir(ck_temp_p.to_owned()));
-        }
-        if cd_lg.is_err() {
-            return Err(BuilderError::CreateDir(lg_temp_p.to_owned()));
-        }
-        if cd_k.is_err() {
-            return Err(BuilderError::CreateDir(k_temp_p.to_owned()));
-        }
+        cd_ck.map_err(|e| BuilderError::Io {
+            source: e,
+            path: ck_temp_p.to_owned(),
+        })?;
+        cd_lg.map_err(|e| BuilderError::Io {
+            source: e,
+            path: lg_temp_p.to_owned(),
+        })?;
+        cd_k.map_err(|e| BuilderError::Io {
+            source: e,
+            path: k_temp_p.to_owned(),
+        })?;
 
         let cookies_cp = fs::copy(&cookies, &cookies_temp);
         let login_cp = fs::copy(&login_data, &login_data_temp);
         let key_cp = fs::copy(&key, &key_temp);
 
         let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
-        if ck.is_err() {
-            return Err(BuilderError::NoFile(cookies));
-        }
-        if lg.is_err() {
-            return Err(BuilderError::NoFile(login_data));
-        }
-        if k.is_err() {
-            return Err(BuilderError::NoFile(key));
-        }
+        ck.map_err(|e| BuilderError::Io { source: e, path: cookies })?;
+        lg.map_err(|e| BuilderError::Io { source: e, path: login_data })?;
+        k.map_err(|e| BuilderError::Io { source: e, path: key })?;
 
         Ok(TempPaths {
             cookies_temp,
