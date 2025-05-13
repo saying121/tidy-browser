@@ -1,3 +1,5 @@
+use std::convert::Into;
+
 use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
 use pbkdf2::pbkdf2_hmac;
 
@@ -46,17 +48,12 @@ impl Decrypter {
         Ok(Self { pass_v10 })
     }
     fn get_pass(safe_storage: &str, safe_name: &str) -> Result<Vec<u8>> {
-        let entry = match keyring::Entry::new(safe_storage, safe_name) {
-            Ok(res) => res,
-            Err(e) => return Err(e.into()),
-        };
-        match entry
+        let entry = keyring::Entry::new(safe_storage, safe_name)
+            .map_err(|e| -> CryptoError { e.into() })?;
+        entry
             .get_password()
             .map(String::into_bytes)
-        {
-            Ok(res) => Ok(res),
-            Err(e) => Err(e.into()),
-        }
+            .map_err(Into::into)
     }
 
     pub fn decrypt(&self, be_decrypte: &mut [u8]) -> Result<String> {
@@ -77,16 +74,14 @@ impl Decrypter {
 
         let decrypter = Aes128CbcDec::new(&key.into(), &iv.into());
 
-        match decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..]) {
-            Ok(res) => String::from_utf8(res.to_vec()).map_or_else(
-                // chromium 130.x, it starts with extern value
-                |_| {
-                    tracing::info!("Decoding for chromium 130.x");
-                    Ok(String::from_utf8_lossy(&res[32..]).to_string())
-                },
-                Ok,
-            ),
-            Err(e) => Err(CryptoError::Unpadding(e)),
-        }
+        decrypter
+            .decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..])
+            .map_err(CryptoError::Unpadding)
+            .map(|res| {
+                String::from_utf8(res.to_vec()).unwrap_or_else(|_| {
+                    tracing::info!("Decoding for chromium >= 130.x");
+                    String::from_utf8_lossy(&res[32..]).to_string()
+                })
+            })
     }
 }
