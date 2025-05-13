@@ -1,3 +1,4 @@
+pub mod builder;
 pub mod crypto;
 pub(crate) mod items;
 #[cfg(target_os = "windows")]

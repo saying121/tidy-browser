@@ -1,3 +1,4 @@
+pub mod builder;
 pub mod items;
 
 use std::{marker::PhantomData, path::PathBuf};
@@ -15,7 +16,14 @@ use self::items::{
 };
 use crate::browser::cookies::LeetCodeCookies;
 
-type Result<T> = std::result::Result<T, DbErr>;
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum FirefoxError {
+    #[error(transparent)]
+    Db(#[from] DbErr),
+}
+
+type Result<T> = std::result::Result<T, FirefoxError>;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -40,7 +48,7 @@ impl<T: Send + Sync> FirefoxGetter<T> {
     /// # Example
     ///
     /// ```rust,ignore
-    /// use decrypt_cookies::{firefox::MozCookiesCol, Browser, FirefoxBuilder,ColumnTrait};
+    /// use decrypt_cookies::{firefox::MozCookiesCol, Browser, FirefoxBuilder, ColumnTrait};
     ///
     /// #[tokio::main]
     /// async fn main() {

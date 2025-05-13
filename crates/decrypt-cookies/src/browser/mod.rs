@@ -1,5 +1,3 @@
-#[macro_use]
-pub mod builder;
 pub mod cookies;
 
 #[cfg(not(target_os = "windows"))]
