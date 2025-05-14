@@ -15,6 +15,7 @@ mod tests {
 
     use super::*;
 
+    #[cfg(not(target_os = "windows"))]
     #[test]
     fn need_sep_test() {
         let Ok(path) = PathBuf::from_str("/abc/");
@@ -27,6 +28,22 @@ mod tests {
         assert!(need_sep(&path));
 
         let Ok(path) = PathBuf::from_str("/a/b/c/");
+        assert!(!need_sep(&path));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn need_sep_test() {
+        let Ok(path) = PathBuf::from_str(r"\abc\");
+        assert!(!need_sep(&path));
+
+        let Ok(path) = PathBuf::from_str(r"\abc");
+        assert!(need_sep(&path));
+
+        let Ok(path) = PathBuf::from_str(r"\a\b\c");
+        assert!(need_sep(&path));
+
+        let Ok(path) = PathBuf::from_str(r"\a\b\c\");
         assert!(!need_sep(&path));
     }
 }
