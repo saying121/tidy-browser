@@ -3,7 +3,11 @@ use std::{fmt::Display, path::PathBuf};
 use tokio::{fs, join};
 
 use super::{ChromiumBuilder, ChromiumGetter};
-use crate::{browser::ChromiumPath, BuilderError};
+use crate::{
+    browser::ChromiumPath,
+    chromium::items::{cookie::cookie_dao::CookiesQuery, passwd::login_data_dao::LoginDataQuery},
+    BuilderError,
+};
 
 pub type Result<T> = std::result::Result<T, BuilderError>;
 
@@ -41,14 +45,52 @@ impl<B: ChromiumPath> ChromiumBuilder<B> {
         }
     }
 
-    async fn copy_temp_chromium() -> Result<TempPaths> {
-        let cookies = B::cookies();
+    /// When browser start with `--user-data-dir=DIR` or special other channel
+    pub const fn with_user_data_dir(base: PathBuf) -> Self {
+        Self {
+            base,
+            __browser: core::marker::PhantomData::<B>,
+        }
+    }
+}
+
+impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
+    pub async fn build(self) -> Result<ChromiumGetter<B>> {
+        let temp_paths = self.cache_data().await?;
+
+        #[cfg(target_os = "linux")]
+        let crypto = crate::chromium::crypto::linux::Decrypter::build(B::SAFE_STORAGE).await?;
+
+        #[cfg(target_os = "macos")]
+        let crypto =
+            crate::chromium::crypto::macos::Decrypter::build(B::SAFE_STORAGE, B::SAFE_NAME)?;
+
+        #[cfg(target_os = "windows")]
+        let crypto = { crate::chromium::crypto::win::Decrypter::build(temp_paths.key_temp).await? };
+
+        let (cookies_query, login_data_query) = (
+            CookiesQuery::new(temp_paths.cookies_temp),
+            LoginDataQuery::new(temp_paths.login_data_temp),
+        );
+        let (cookies_query, login_data_query) = join!(cookies_query, login_data_query);
+        let (cookies_query, login_data_query) = (cookies_query?, login_data_query?);
+
+        Ok(ChromiumGetter {
+            cookies_query,
+            login_data_query,
+            crypto,
+            __browser: self.__browser,
+        })
+    }
+
+    async fn cache_data(&self) -> Result<TempPaths> {
+        let cookies = B::cookies(self.base.clone());
         let cookies_temp = B::cookies_temp();
 
-        let login_data = B::login_data();
+        let login_data = B::login_data(self.base.clone());
         let login_data_temp = B::login_data_temp();
 
-        let key = B::key();
+        let key = B::key(self.base.clone());
         let key_temp = B::key_temp();
 
         let ck_temp_p = cookies_temp
@@ -90,46 +132,6 @@ impl<B: ChromiumPath> ChromiumBuilder<B> {
             cookies_temp,
             login_data_temp,
             key_temp,
-        })
-    }
-
-    /// When browser start with `--user-data-dir=DIR` or special other channel
-    pub const fn with_user_data_dir(base: PathBuf) -> Self {
-        Self {
-            base,
-            __browser: core::marker::PhantomData::<B>,
-        }
-    }
-}
-
-impl<B: ChromiumPath + Send> ChromiumBuilder<B> {
-    pub async fn build(self) -> Result<ChromiumGetter<B>> {
-        let temp_paths = Self::copy_temp_chromium().await?;
-
-        #[cfg(target_os = "linux")]
-        let crypto = crate::chromium::crypto::linux::Decrypter::build(B::SAFE_STORAGE).await?;
-
-        #[cfg(target_os = "macos")]
-        let crypto =
-            crate::chromium::crypto::macos::Decrypter::build(B::SAFE_STORAGE, B::SAFE_NAME)?;
-
-        #[cfg(target_os = "windows")]
-        let crypto = { crate::chromium::crypto::win::Decrypter::build(temp_paths.key_temp).await? };
-
-        let (cookies_query, login_data_query) = (
-            crate::chromium::items::cookie::cookie_dao::CookiesQuery::new(temp_paths.cookies_temp),
-            crate::chromium::items::passwd::login_data_dao::LoginDataQuery::new(
-                temp_paths.login_data_temp,
-            ),
-        );
-        let (cookies_query, login_data_query) = join!(cookies_query, login_data_query);
-        let (cookies_query, login_data_query) = (cookies_query?, login_data_query?);
-
-        Ok(ChromiumGetter {
-            cookies_query,
-            login_data_query,
-            crypto,
-            __browser: self.__browser,
         })
     }
 }

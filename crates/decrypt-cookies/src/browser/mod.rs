@@ -1,5 +1,7 @@
 pub mod cookies;
 
+use std::path::PathBuf;
+
 #[cfg(not(target_os = "windows"))]
 use const_format::concatcp;
 
@@ -28,15 +30,14 @@ pub trait ChromiumPath {
     const SAFE_NAME: &str;
 
     /// Decryption key path (json)
-    fn key() -> std::path::PathBuf {
-        let mut home = dirs::home_dir().expect("Get home dir failed");
-        home.reserve_exact(Self::BASE.len() + Self::KEY.len() + 2);
-        home.push(Self::BASE);
-        home.push(Self::KEY);
-        home
+    fn key(mut base: PathBuf) -> PathBuf {
+        base.reserve_exact(Self::KEY.len() + 1);
+
+        base.push(Self::KEY);
+        base
     }
     /// Copy the decryption key file to a location to avoid conflicts with the browser over access to it.
-    fn key_temp() -> std::path::PathBuf {
+    fn key_temp() -> PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.reserve_exact(CACHE_PATH.len() + Self::NAME.len() + Self::KEY.len() + 3);
         cache.push(CACHE_PATH);
@@ -46,15 +47,14 @@ pub trait ChromiumPath {
     }
 
     /// Cookies path (sqlite3 database)
-    fn cookies() -> std::path::PathBuf {
-        let mut home = dirs::home_dir().expect("Get home dir failed");
-        home.reserve_exact(Self::BASE.len() + Self::COOKIES.len() + 2);
-        home.push(Self::BASE);
-        home.push(Self::COOKIES);
-        home
+    fn cookies(mut base: PathBuf) -> PathBuf {
+        base.reserve_exact(Self::COOKIES.len() + 1);
+
+        base.push(Self::KEY);
+        base
     }
     /// Copy the cookies file to a location to avoid conflicts with the browser over access to it.
-    fn cookies_temp() -> std::path::PathBuf {
+    fn cookies_temp() -> PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.reserve_exact(CACHE_PATH.len() + Self::NAME.len() + Self::COOKIES.len() + 3);
         cache.push(CACHE_PATH);
@@ -64,15 +64,13 @@ pub trait ChromiumPath {
     }
 
     /// Login data file (sqlite3 database)
-    fn login_data() -> std::path::PathBuf {
-        let mut home = dirs::home_dir().expect("Get home dir failed");
-        home.reserve_exact(Self::BASE.len() + Self::LOGIN_DATA.len() + 2);
-        home.push(Self::BASE);
-        home.push(Self::LOGIN_DATA);
-        home
+    fn login_data(mut base: PathBuf) -> PathBuf {
+        base.reserve_exact(Self::LOGIN_DATA.len() + 1);
+        base.push(Self::LOGIN_DATA);
+        base
     }
     /// Copy the Login data file to a location to avoid conflicts with the browser over access to it.
-    fn login_data_temp() -> std::path::PathBuf {
+    fn login_data_temp() -> PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.reserve_exact(CACHE_PATH.len() + Self::NAME.len() + Self::LOGIN_DATA.len() + 3);
         cache.push(CACHE_PATH);
@@ -95,11 +93,13 @@ pub trait FirefoxPath {
     const KEY: &str = "key4.db";
 
     /// Decryption key path (sqlite3 database)
-    fn key(base: &std::path::Path) -> std::path::PathBuf {
-        base.join(Self::KEY)
+    fn key(mut base: PathBuf) -> PathBuf {
+        base.reserve_exact(Self::KEY.len() + 1);
+        base.push(Self::KEY);
+        base
     }
     /// Copy the decryption key file to a location to avoid conflicts with the browser over access to it.
-    fn key_temp() -> std::path::PathBuf {
+    fn key_temp() -> PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.reserve_exact(CACHE_PATH.len() + Self::NAME.len() + Self::KEY.len() + 3);
         cache.push(CACHE_PATH);
@@ -109,11 +109,13 @@ pub trait FirefoxPath {
     }
 
     /// Cookies path (sqlite3 database)
-    fn cookies(base: &std::path::Path) -> std::path::PathBuf {
-        base.join(Self::COOKIES)
+    fn cookies(mut base: PathBuf) -> PathBuf {
+        base.reserve_exact(Self::COOKIES.len() + 1);
+        base.push(Self::COOKIES);
+        base
     }
     /// Copy the cookies file to a location to avoid conflicts with the browser over access to it.
-    fn cookies_temp() -> std::path::PathBuf {
+    fn cookies_temp() -> PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.reserve_exact(CACHE_PATH.len() + Self::NAME.len() + Self::COOKIES.len() + 3);
         cache.push(CACHE_PATH);
@@ -123,11 +125,13 @@ pub trait FirefoxPath {
     }
 
     /// Login data path (json)
-    fn login_data(base: &std::path::Path) -> std::path::PathBuf {
-        base.join(Self::LOGIN_DATA)
+    fn login_data(mut base: PathBuf) -> PathBuf {
+        base.reserve_exact(Self::LOGIN_DATA.len() + 1);
+        base.push(Self::LOGIN_DATA);
+        base
     }
     /// Copy the login data file to a location to avoid conflicts with the browser over access to it.
-    fn login_data_temp() -> std::path::PathBuf {
+    fn login_data_temp() -> PathBuf {
         let mut cache = dirs::cache_dir().expect("Get cache dir failed");
         cache.reserve_exact(CACHE_PATH.len() + Self::NAME.len() + Self::LOGIN_DATA.len() + 3);
         cache.push(CACHE_PATH);

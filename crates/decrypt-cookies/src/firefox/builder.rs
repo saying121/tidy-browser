@@ -3,7 +3,7 @@ use std::{fmt::Display, path::PathBuf};
 use tokio::{fs, join};
 
 use crate::{
-    firefox::{FirefoxBuilder, FirefoxGetter},
+    firefox::{items::cookie::dao::CookiesQuery, FirefoxBuilder, FirefoxGetter},
     prelude::FirefoxPath,
 };
 
@@ -139,15 +139,15 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
         Ok(base)
     }
 
-    async fn copy_temp_firefox(base: PathBuf, profile: Option<&str>) -> Result<TempPaths> {
+    async fn cache_data(base: PathBuf, profile: Option<&str>) -> Result<TempPaths> {
         let base = Self::firefox_profile(base, profile).await?;
-        let cookies = B::cookies(&base);
+        let cookies = B::cookies(base.clone());
         let cookies_temp = B::cookies_temp();
 
-        let login_data = B::login_data(&base);
+        let login_data = B::login_data(base.clone());
         let login_data_temp = B::login_data_temp();
 
-        let key = B::key(&base);
+        let key = B::key(base.clone());
         let key_temp = B::key_temp();
 
         let ck_temp_p = cookies_temp
@@ -195,15 +195,14 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
 
 impl<'b, B: FirefoxPath + Send> FirefoxBuilder<'b, B> {
     pub async fn build(self) -> Result<FirefoxGetter<B>> {
-        let temp_paths = Self::copy_temp_firefox(
+        let temp_paths = Self::cache_data(
             self.init
                 .unwrap_or_else(Self::init),
             self.profile,
         )
         .await?;
 
-        let query =
-            crate::firefox::items::cookie::dao::CookiesQuery::new(temp_paths.cookies_temp).await?;
+        let query = CookiesQuery::new(temp_paths.cookies_temp).await?;
 
         Ok(FirefoxGetter {
             cookies_query: query,
