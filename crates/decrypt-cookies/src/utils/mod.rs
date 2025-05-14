@@ -1,5 +1,6 @@
 use std::path::Path;
 
+#[cfg(any(target_os = "macos", feature = "binary_cookies"))]
 pub mod binary_cookies;
 
 pub fn need_sep(path: &Path) -> bool {
