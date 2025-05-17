@@ -20,6 +20,7 @@ tracing = { workspace = true }
 cfg-if = { workspace = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
+TinyUFO = { workspace = true }
 aes = { workspace = true }
 cbc = { workspace = true }
 pbkdf2 = { workspace = true, features = ["sha1"] }

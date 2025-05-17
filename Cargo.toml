@@ -22,6 +22,7 @@ panic = "abort"
 
 
 [workspace.dependencies]
+TinyUFO = "0.5"
 cfg-if = "1"
 tokio = { version = "^1", features = ["macros"] }
 # futures = { version = "^0.3", default-features = false }

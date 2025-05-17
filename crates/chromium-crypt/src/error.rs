@@ -5,6 +5,8 @@
 pub enum CryptError {
     #[error(transparent)]
     GetPass(#[from] secret_service::Error),
+    #[error("Not exists: {0}")]
+    NoPass(String),
     #[error("Crypt unpad error: {0}")]
     Unpadding(aes::cipher::block_padding::UnpadError),
 }

@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::sync::LazyLock;
 
 use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
 use pbkdf2::pbkdf2_hmac;
 use secret_service::{EncryptionType, SecretService};
-use tokio::sync::OnceCell;
+use tinyufo::TinyUfo;
 
 use crate::error::{CryptError, Result};
 
@@ -31,62 +31,50 @@ impl Decrypter {
     }
 }
 
-static ALL_PASSWD: OnceCell<HashMap<&'static str, &'static [u8]>> = OnceCell::const_new();
-
-// lab: Brave Safe Storage
-/// from `secret_service` get all password
-async fn get_all_pass() -> Result<HashMap<&'static str, &'static [u8]>> {
-    // initialize secret service (dbus connection and encryption session)
-    let ss = SecretService::connect(EncryptionType::Dh).await?;
-    // get default collection
-    let collection = ss.get_default_collection().await?;
-
-    if collection.is_locked().await? {
-        collection.unlock().await?;
-    }
-    let coll = collection.get_all_items().await?;
-
-    let mut res = HashMap::new();
-    for item in coll {
-        let Ok(label) = item.get_label().await
-        else {
-            continue;
-        };
-
-        // PERF: filter it
-        // if !need_safe_storage(&label) {
-        //     continue;
-        // }
-
-        let Ok(s) = item.get_secret().await
-        else {
-            continue;
-        };
-        let l: &'static str = label.leak();
-        let s: &'static [u8] = s.leak();
-        res.insert(l, s);
-    }
-
-    Ok(res)
-}
+static CACHE_PASSWD: LazyLock<TinyUfo<&str, &'static [u8]>> =
+    LazyLock::new(|| TinyUfo::new_compact(10, 10));
 
 impl Decrypter {
+    /// `safe_storage` example: Brave Safe Storage
     pub async fn build(safe_storage: &str) -> Result<Self> {
-        let pass_v11 = Self::get_pass()
+        let pass_v11 = Self::get_pass(safe_storage)
             .await
-            .get(safe_storage)
-            .map_or_else(|| Self::PASSWORD_V10, |v| *v);
+            .unwrap_or(Self::PASSWORD_V10);
         Ok(Self { pass_v11 })
     }
 
-    async fn get_pass() -> &'static HashMap<&'static str, &'static [u8]> {
-        ALL_PASSWD
-            .get_or_init(|| async {
-                get_all_pass()
-                    .await
-                    .unwrap_or_default()
-            })
-            .await
+    async fn get_pass(safe_storage: &str) -> Result<&'static [u8]> {
+        if let Some(v) = CACHE_PASSWD.get(&safe_storage) {
+            return Ok(v);
+        }
+
+        // initialize secret service (dbus connection and encryption session)
+        let ss = SecretService::connect(EncryptionType::Dh).await?;
+        // get default collection
+        let collection = ss.get_default_collection().await?;
+
+        if collection.is_locked().await? {
+            collection.unlock().await?;
+        }
+        let coll = collection.get_all_items().await?;
+
+        for item in coll {
+            let Ok(label) = item.get_label().await
+            else {
+                continue;
+            };
+            if label == safe_storage {
+                let Ok(s) = item.get_secret().await
+                else {
+                    continue;
+                };
+                let s = s.leak();
+                CACHE_PASSWD.put(&label, s, 1);
+                return Ok(s);
+            }
+        }
+
+        Ok(Self::PASSWORD_V10)
     }
     // pub fn decrypt_yandex_password(&self, ciphertext: &mut [u8]) -> Result<String> {
     //     use aes_gcm::{
