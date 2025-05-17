@@ -22,6 +22,7 @@ panic = "abort"
 
 
 [workspace.dependencies]
+cfg-if = "1"
 tokio = { version = "^1", features = ["macros"] }
 # futures = { version = "^0.3", default-features = false }
 reqwest = { version = "^0.12", default-features = false }
@@ -59,6 +60,7 @@ rust-ini = { version = "^0.21" }
 clap = { version = "^4" }
 
 decrypt-cookies = { path = "./crates/decrypt-cookies", version = "0.7.0-alpha.0" }
+chromium-crypt = { path = "./crates/chromium-crypt", version = "0.1" }
 
 [workspace.lints.rust]
 temporary_cstring_as_ptr = "deny"

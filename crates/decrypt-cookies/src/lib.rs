@@ -23,15 +23,8 @@ pub enum BuilderError {
     ProfilePath(String),
     #[error("Install {0} missing `Default` properties")]
     InstallPath(String),
-    #[cfg(target_os = "linux")]
     #[error(transparent)]
-    Decrypter(#[from] crate::chromium::crypto::linux::CryptoError),
-    #[cfg(target_os = "windows")]
-    #[error(transparent)]
-    Decrypter(#[from] crate::chromium::crypto::win::CryptoError),
-    #[cfg(target_os = "macos")]
-    #[error(transparent)]
-    Decrypt(#[from] crate::chromium::crypto::macos::CryptoError),
+    Decrypter(#[from] chromium_crypt::error::CryptError),
     #[error(transparent)]
     Db(#[from] sea_orm::DbErr),
     #[error("Io: {source}, path: {path}")]

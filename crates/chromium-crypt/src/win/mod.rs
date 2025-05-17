@@ -1,43 +1,17 @@
-use std::{
-    ffi::c_void,
-    path::{Path, PathBuf},
-    ptr, slice,
-};
+pub mod local_state;
+
+use std::{ffi::c_void, path::Path, ptr, slice};
 
 use aes_gcm::{
     aead::{generic_array::GenericArray, Aead},
     Aes256Gcm, KeyInit,
 };
 use base64::{engine::general_purpose, Engine};
+use local_state::LocalState;
 use tokio::{fs, task::spawn_blocking};
 use windows::Win32::{Foundation, Security::Cryptography};
 
-use crate::chromium::local_state::LocalState;
-
-#[derive(Debug)]
-#[derive(thiserror::Error)]
-pub enum CryptoError {
-    #[error("{source}, path: {path}")]
-    IO {
-        path: PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
-    #[error(transparent)]
-    Serde(#[from] serde_json::Error),
-    #[error(transparent)]
-    Base64(#[from] base64::DecodeError),
-    #[error(transparent)]
-    Task(#[from] tokio::task::JoinError),
-    #[error("{0}")]
-    Aead(String),
-    #[error(transparent)]
-    CryptUnprotectData(#[from] windows::core::Error),
-    #[error("CryptUnprotectData returned a null pointer")]
-    CryptUnprotectDataNull,
-}
-
-type Result<T> = std::result::Result<T, CryptoError>;
+use crate::error::{CryptError, Result};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -76,7 +50,7 @@ impl Decrypter {
     async fn get_pass<A: AsRef<Path> + Send + Sync>(key_path: A) -> Result<Vec<u8>> {
         let string_str = fs::read_to_string(&key_path)
             .await
-            .map_err(|e| CryptoError::IO {
+            .map_err(|e| CryptError::IO {
                 path: key_path.as_ref().to_owned(),
                 source: e,
             })?;
@@ -105,10 +79,10 @@ impl Decrypter {
 
         let cipher = Aes256Gcm::new(GenericArray::from_slice(pass));
 
-        match cipher.decrypt(nonce.into(), raw_ciphertext) {
-            Ok(decrypted) => return Ok(String::from_utf8_lossy(&decrypted).to_string()),
-            Err(e) => Err(CryptoError::Aead(e.to_string())),
-        }
+        cipher
+            .decrypt(nonce.into(), raw_ciphertext)
+            .map(|v| String::from_utf8_lossy(&v).to_string())
+            .map_err(|e| CryptError::AesGcm { e })
     }
 }
 
@@ -132,7 +106,7 @@ pub fn decrypt_with_dpapi(ciphertext: &mut [u8]) -> Result<Vec<u8>> {
         )?;
     };
     if output.pbData.is_null() {
-        return Err(CryptoError::CryptUnprotectDataNull);
+        return Err(CryptError::CryptUnprotectDataNull);
     }
 
     let decrypted_data =

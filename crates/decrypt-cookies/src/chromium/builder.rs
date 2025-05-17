@@ -1,5 +1,6 @@
 use std::{fmt::Display, path::PathBuf};
 
+use chromium_crypt::Decrypter;
 use tokio::{fs, join};
 
 use super::{ChromiumBuilder, ChromiumGetter};
@@ -59,14 +60,13 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         let temp_paths = self.cache_data().await?;
 
         #[cfg(target_os = "linux")]
-        let crypto = crate::chromium::crypto::linux::Decrypter::build(B::SAFE_STORAGE).await?;
+        let crypto = Decrypter::build(B::SAFE_STORAGE).await?;
 
         #[cfg(target_os = "macos")]
-        let crypto =
-            crate::chromium::crypto::macos::Decrypter::build(B::SAFE_STORAGE, B::SAFE_NAME)?;
+        let crypto = Decrypter::build(B::SAFE_STORAGE, B::SAFE_NAME).await?;
 
         #[cfg(target_os = "windows")]
-        let crypto = { crate::chromium::crypto::win::Decrypter::build(temp_paths.key_temp).await? };
+        let crypto = { Decrypter::build(temp_paths.key_temp).await? };
 
         let (cookies_query, login_data_query) = (
             CookiesQuery::new(temp_paths.cookies_temp),

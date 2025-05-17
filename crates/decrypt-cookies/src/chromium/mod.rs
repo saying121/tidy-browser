@@ -1,10 +1,8 @@
 pub mod builder;
-pub mod crypto;
 pub(crate) mod items;
-#[cfg(target_os = "windows")]
-pub mod local_state;
 use std::{marker::PhantomData, path::PathBuf};
 
+use chromium_crypt::Decrypter;
 use chrono::prelude::Utc;
 use items::cookie::cookie_entities::cookies;
 pub use items::{
@@ -23,12 +21,6 @@ use rayon::prelude::*;
 use sea_orm::{sea_query::IntoCondition, ColumnTrait, DbErr};
 use tokio::task::{self, JoinError};
 
-#[cfg(target_os = "linux")]
-use crate::chromium::crypto::linux::Decrypter;
-#[cfg(target_os = "macos")]
-use crate::chromium::crypto::macos::Decrypter;
-#[cfg(target_os = "windows")]
-use crate::chromium::crypto::win::Decrypter;
 use crate::{
     browser::cookies::LeetCodeCookies,
     chromium::items::{
@@ -45,15 +37,8 @@ pub enum ChromiumError {
     Task(#[from] JoinError),
     #[error(transparent)]
     Db(#[from] DbErr),
-    #[cfg(target_os = "linux")]
     #[error(transparent)]
-    Decrypt(#[from] crate::chromium::crypto::linux::CryptoError),
-    #[cfg(target_os = "windows")]
-    #[error(transparent)]
-    Decrypt(#[from] crate::chromium::crypto::win::CryptoError),
-    #[cfg(target_os = "macos")]
-    #[error(transparent)]
-    Decrypt(#[from] crate::chromium::crypto::macos::CryptoError),
+    Decrypt(#[from] chromium_crypt::error::CryptError),
 }
 
 type Result<T> = std::result::Result<T, ChromiumError>;

@@ -184,7 +184,7 @@ macro_rules! chromium_base_linux {
 
         /// on Linux cache this
         #[cfg(target_os = "linux")]
-        pub(crate) fn need_safe_storage(lab: &str) -> bool {
+        pub fn need_safe_storage(lab: &str) -> bool {
             matches!(
                 lab,
                 $(| $browser::SAFE_STORAGE)*

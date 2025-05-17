@@ -312,6 +312,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
+name = "chromium-crypt"
+version = "0.1.0"
+dependencies = [
+ "aes",
+ "aes-gcm",
+ "base64",
+ "cbc",
+ "cfg-if",
+ "keyring",
+ "pbkdf2",
+ "secret-service",
+ "serde",
+ "serde_json",
+ "sha1",
+ "thiserror 2.0.12",
+ "tokio",
+ "tracing",
+ "windows",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -560,30 +581,21 @@ dependencies = [
 name = "decrypt-cookies"
 version = "0.7.0-alpha.0"
 dependencies = [
- "aes",
- "aes-gcm",
  "anyhow",
- "base64",
  "bytes",
- "cbc",
+ "chromium-crypt",
  "chrono",
  "const_format",
  "dirs",
- "keyring",
- "pbkdf2",
  "rayon",
  "reqwest",
  "rust-ini",
  "sea-orm",
- "secret-service",
  "serde",
- "serde_json",
- "sha1",
  "thiserror 2.0.12",
  "tokio",
  "tracing",
  "tracing-subscriber",
- "windows",
 ]
 
 [[package]]

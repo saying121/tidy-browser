@@ -5,20 +5,7 @@ use pbkdf2::pbkdf2_hmac;
 use secret_service::{EncryptionType, SecretService};
 use tokio::sync::OnceCell;
 
-use crate::browser::need_safe_storage;
-
-#[derive(Debug)]
-#[derive(thiserror::Error)]
-pub enum CryptoError {
-    #[error(transparent)]
-    GetPass(#[from] secret_service::Error),
-    #[error("Unpad error: {0}")]
-    Unpadding(block_padding::UnpadError),
-    #[error(transparent)]
-    StringUtf8(#[from] std::string::FromUtf8Error),
-}
-
-type Result<T> = std::result::Result<T, CryptoError>;
+use crate::error::{CryptError, Result};
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=32
 /// Key size required for 128 bit AES.
@@ -46,16 +33,6 @@ impl Decrypter {
 
 static ALL_PASSWD: OnceCell<HashMap<&'static str, &'static [u8]>> = OnceCell::const_new();
 
-async fn get_pass_once() -> &'static HashMap<&'static str, &'static [u8]> {
-    ALL_PASSWD
-        .get_or_init(|| async {
-            get_all_pass()
-                .await
-                .unwrap_or_default()
-        })
-        .await
-}
-
 // lab: Brave Safe Storage
 /// from `secret_service` get all password
 async fn get_all_pass() -> Result<HashMap<&'static str, &'static [u8]>> {
@@ -76,9 +53,10 @@ async fn get_all_pass() -> Result<HashMap<&'static str, &'static [u8]>> {
             continue;
         };
 
-        if !need_safe_storage(&label) {
-            continue;
-        }
+        // PERF: filter it
+        // if !need_safe_storage(&label) {
+        //     continue;
+        // }
 
         let Ok(s) = item.get_secret().await
         else {
@@ -94,13 +72,23 @@ async fn get_all_pass() -> Result<HashMap<&'static str, &'static [u8]>> {
 
 impl Decrypter {
     pub async fn build(safe_storage: &str) -> Result<Self> {
-        let pass_v11 = get_pass_once()
+        let pass_v11 = Self::get_pass()
             .await
             .get(safe_storage)
             .map_or_else(|| Self::PASSWORD_V10, |v| *v);
         Ok(Self { pass_v11 })
     }
-    // pub fn decrypt_yandex_password(&self, be_decrypte: &mut [u8]) -> Result<String> {
+
+    async fn get_pass() -> &'static HashMap<&'static str, &'static [u8]> {
+        ALL_PASSWD
+            .get_or_init(|| async {
+                get_all_pass()
+                    .await
+                    .unwrap_or_default()
+            })
+            .await
+    }
+    // pub fn decrypt_yandex_password(&self, ciphertext: &mut [u8]) -> Result<String> {
     //     use aes_gcm::{
     //         aead::{generic_array::GenericArray, Aead},
     //         Aes256Gcm, KeyInit,
@@ -112,15 +100,15 @@ impl Decrypter {
     // }
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=72
-    pub fn decrypt(&self, be_decrypte: &mut [u8]) -> Result<String> {
-        let (pass, prefix_len) = if be_decrypte.starts_with(Self::K_OBFUSCATION_PREFIX_V11) {
+    pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
+        let (pass, prefix_len) = if ciphertext.starts_with(Self::K_OBFUSCATION_PREFIX_V11) {
             (self.pass_v11, Self::K_OBFUSCATION_PREFIX_V11.len())
         }
-        else if be_decrypte.starts_with(Self::K_OBFUSCATION_PREFIX_V10) {
+        else if ciphertext.starts_with(Self::K_OBFUSCATION_PREFIX_V10) {
             (Self::PASSWORD_V10, Self::K_OBFUSCATION_PREFIX_V10.len())
         }
         else {
-            return Ok(String::from_utf8_lossy(be_decrypte).to_string());
+            return Ok(String::from_utf8_lossy(ciphertext).to_string());
         };
 
         let mut key = [0_u8; 16];
@@ -129,17 +117,15 @@ impl Decrypter {
         pbkdf2_hmac::<sha1::Sha1>(pass, Self::K_SALT, Self::K_ENCRYPTION_ITERATIONS, &mut key);
         let decrypter = Aes128CbcDec::new(&key.into(), &iv.into());
 
-        match decrypter.decrypt_padded_mut::<block_padding::Pkcs7>(&mut be_decrypte[prefix_len..]) {
-            Ok(res) => String::from_utf8(res.to_vec()).map_or_else(
-                // chromium 130.x, it starts with extern value
-                |_| {
+        decrypter
+            .decrypt_padded_mut::<block_padding::Pkcs7>(&mut ciphertext[prefix_len..])
+            .map(|res| {
+                String::from_utf8(res.to_vec()).unwrap_or_else(|_| {
                     tracing::info!("Decoding for chromium 130.x");
-                    Ok(String::from_utf8_lossy(&res[32..]).to_string())
-                },
-                Ok,
-            ),
-            Err(e) => Err(CryptoError::Unpadding(e)),
-        }
+                    String::from_utf8_lossy(&res[32..]).to_string()
+                })
+            })
+            .map_err(CryptError::Unpadding)
     }
 }
 
