@@ -9,6 +9,7 @@ license.workspace = true
 repository.workspace = true
 keywords.workspace = true
 categories.workspace = true
+exclude  = ["test-resource/"]
 
 [dependencies]
 oval = { workspace = true }
