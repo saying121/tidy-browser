@@ -14,17 +14,16 @@ use crate::cookie::{BinaryCookies, Cookie, Metadata, Page, SameSite};
 pub(crate) type Stream<'i> = Partial<&'i [u8]>;
 
 #[derive(Clone, Copy)]
-#[derive(Default)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct ExpectErr {
-    found: u32,
+pub enum ExpectErr {
+    U32(u32),
+    U64(u64),
+    Array([u8; 4]),
 }
 
 impl std::fmt::Debug for ExpectErr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ExpectErr")
-            .field("found", &format_args!("{:#b}", self.found))
-            .finish()
+        f.write_fmt(format_args!("{}", self))
     }
 }
 
@@ -32,7 +31,11 @@ impl Error for ExpectErr {}
 
 impl Display for ExpectErr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{:#04b}", self.found))
+        match self {
+            Self::U32(binary) => f.write_fmt(format_args!("{:#>06x}", binary)),
+            Self::U64(binary) => f.write_fmt(format_args!("{:#>010x}", binary)),
+            Self::Array(array) => f.write_fmt(format_args!("{:?}", array)),
+        }
     }
 }
 
@@ -60,7 +63,8 @@ pub struct CookieParser;
 
 impl CookieParser {
     pub fn parse(input: &mut Stream) -> ModalResult<BinaryCookies> {
-        if take(4_usize).parse_next(input)? != BinaryCookies::SIGNATURE {
+        let signature = take(4_usize).parse_next(input)?;
+        if signature != BinaryCookies::SIGNATURE {
             let mut context_error = ContextError::new();
             context_error.extend([
                 StrContext::Label("BinaryCookies signature broken"),
@@ -75,8 +79,10 @@ impl CookieParser {
         let pages = repeat(num_pages..num_pages + 1, Self::page).parse_next(input)?;
 
         let checksum = be_u32(input)?;
-        if be_u64(input)? != BinaryCookies::FOOTER {
-            let mut context_error = ContextError::new();
+        let footer = be_u64(input)?;
+        if footer != BinaryCookies::FOOTER {
+            let mut context_error =
+                ContextError::from_external_error(input, ExpectErr::U64(footer));
             context_error.extend([
                 StrContext::Label("BinaryCookies footer broken"),
                 StrContext::Expected(StrContextValue::Description(
@@ -86,9 +92,8 @@ impl CookieParser {
             return Err(ErrMode::Cut(context_error));
         }
 
-        let other = &input[..];
-
-        let metadata = plist::from_bytes::<Metadata>(other).ok();
+        let bytes = input.into_inner();
+        let metadata = plist::from_bytes::<Metadata>(bytes).ok();
 
         Ok(BinaryCookies {
             page_sizes,
@@ -99,13 +104,14 @@ impl CookieParser {
     }
 
     pub fn page(input: &mut Stream) -> ModalResult<Page> {
-        if Page::HEADER != be_u32(input)? {
+        let header = be_u32(input)?;
+        if Page::HEADER != header {
             let mut context_error =
-                ContextError::from_external_error(input, ExpectErr { found: Page::HEADER });
+                ContextError::from_external_error(input, ExpectErr::U32(header));
             context_error.extend([
                 StrContext::Label("Page header broken"),
                 StrContext::Expected(StrContextValue::Description(
-                    "Expected page start header: `0010`",
+                    "Expected page start header: `0x0010`",
                 )),
             ]);
             return Err(ErrMode::Cut(context_error));
@@ -115,11 +121,15 @@ impl CookieParser {
         let cookie_offsets: Vec<u32> =
             repeat(num_cookies..num_cookies + 1, le_u32).parse_next(input)?;
 
-        if be_u32(input)? != Page::FOOTER {
-            let mut context_error = ContextError::new();
+        let footer = be_u32(input)?;
+        if footer != Page::FOOTER {
+            let mut context_error =
+                ContextError::from_external_error(input, ExpectErr::U32(footer));
             context_error.extend([
                 StrContext::Label("Page page footer broken"),
-                StrContext::Expected(StrContextValue::Description("Expected page footer: `0000`")),
+                StrContext::Expected(StrContextValue::Description(
+                    "Expected page footer: `0x0000`",
+                )),
             ]);
             return Err(ErrMode::Cut(context_error));
         }
