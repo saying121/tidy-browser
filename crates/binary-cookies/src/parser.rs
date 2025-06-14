@@ -13,14 +13,16 @@ use crate::cookie::{BinaryCookies, Cookie, Metadata, Page, SameSite};
 
 pub(crate) type Stream<'i> = Partial<&'i [u8]>;
 
-trait I64ToSafariTime {
+trait F64ToSafariTime {
     fn to_utc(&self) -> Option<DateTime<Utc>>;
 }
-impl I64ToSafariTime for i64 {
+impl F64ToSafariTime for f64 {
+    #[expect(clippy::cast_sign_loss, reason = "Don't worry")]
     fn to_utc(&self) -> Option<DateTime<Utc>> {
-        let time = self + 978_307_200;
+        let seconds = self.trunc() as i64 + 978_307_200;
+        let nanos = ((self.fract()) * 1_000_000_000_f64) as u32;
 
-        match Utc.timestamp_opt(time, 0) {
+        match Utc.timestamp_opt(seconds, nanos) {
             LocalResult::Single(time) => Some(time),
             LocalResult::Ambiguous(..) | LocalResult::None => None,
         }
@@ -138,10 +140,7 @@ impl CookieParser {
         }
 
         let (raw_expires, raw_creation) = (le_f64, le_f64).parse_next(input)?;
-        let (expires, creation) = (
-            (raw_expires as i64).to_utc(),
-            (raw_creation as i64).to_utc(),
-        );
+        let (expires, creation) = ((raw_expires).to_utc(), (raw_creation).to_utc());
         let port = if has_port > 0 {
             let port = le_u16(input)?;
             Some(port)

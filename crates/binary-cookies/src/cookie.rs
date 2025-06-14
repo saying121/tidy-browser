@@ -1,5 +1,5 @@
 use bstr::{BString, ByteSlice as _};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeZone as _, Utc};
 use serde::{Deserialize, Serialize};
 
 /// raw file information, with pages
@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(PartialEq)]
 #[non_exhaustive]
 pub struct BinaryCookies {
-    // pub signature: [u8],
+    // pub signature: [u8: 4],
     // pub num_pages: u32,         // be
     pub page_sizes: Vec<u32>, // be
     pub pages: Vec<Page>,
@@ -68,6 +68,7 @@ impl BinaryCookies {
             .flat_map(Page::iter_cookies)
     }
 
+    /// FIXME: checksum impl not correct
     pub fn checksum(&self) -> u32 {
         self.pages
             .iter()
@@ -81,6 +82,7 @@ impl BinaryCookies {
             raw.extend_from_slice(&ele.size().to_be_bytes());
         }
 
+        // FIXME: checksum impl not correct
         let checksum = self
             .pages
             .iter()
@@ -156,6 +158,7 @@ impl Page {
 
     pub fn encode(&self) -> (Vec<u8>, u32) {
         let data = self._encode();
+        // FIXME: checksum impl not correct
         let checksum = data
             .iter()
             .step_by(4)
@@ -219,6 +222,14 @@ pub struct Cookie {
 impl Cookie {
     pub const END_HEADER: [u8; 4] = [0x00, 0x00, 0x00, 0x00];
 
+    pub(crate) fn time_to_f64(time: DateTime<Utc>) -> f64 {
+        let timestamp = time
+            - Utc
+                .with_ymd_and_hms(2001, 1, 1, 0, 0, 0)
+                .unwrap();
+        timestamp.num_seconds() as f64
+    }
+
     pub fn encode(&self) -> Vec<u8> {
         let mut raw = Vec::with_capacity(self.size() as usize);
         raw.extend_from_slice(&self.version.to_le_bytes());
@@ -235,8 +246,8 @@ impl Cookie {
         raw.extend_from_slice(&self.value_offset().to_le_bytes());
         raw.extend_from_slice(&self.comment_offset().to_le_bytes());
         raw.extend_from_slice(&Self::END_HEADER);
-        raw.extend_from_slice(&self.raw_expires.to_le_bytes());
-        raw.extend_from_slice(&self.raw_creation.to_le_bytes());
+        raw.extend_from_slice(&Self::time_to_f64(self.expires.unwrap_or_default()).to_le_bytes());
+        raw.extend_from_slice(&Self::time_to_f64(self.creation.unwrap_or_default()).to_le_bytes());
         if let Some(port) = self.port {
             raw.extend_from_slice(&port.to_le_bytes());
         }
