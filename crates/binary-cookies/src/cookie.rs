@@ -194,8 +194,8 @@ impl Page {
 #[expect(clippy::exhaustive_structs, reason = "allow")]
 pub struct Cookie {
     // pub cookie_size: u32, // LE Cookie size. Number of bytes associated to the cookie
-    pub version: u32,      // LE Unknown field possibly related to the cookie flags
-    pub flags: u32, // LE 0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly
+    pub version: u32, // LE Unknown field possibly related to the cookie flags
+    pub flags: u32,   // LE 0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly
     // pub has_port: u32,       // LE 0 or 1
     pub domain_offset: u32,  // LE Cookie domain offset in the cookie
     pub name_offset: u32,    // LE Cookie name offset in the cookie
@@ -231,8 +231,9 @@ impl Cookie {
     }
 
     pub fn encode(&self) -> Vec<u8> {
-        let mut raw = Vec::with_capacity(self.size() as usize);
-        raw.extend_from_slice(&self.size().to_le_bytes());
+        let size = self.size();
+        let mut raw = Vec::with_capacity(size as usize);
+        raw.extend_from_slice(&size.to_le_bytes());
         raw.extend_from_slice(&self.version.to_le_bytes());
         raw.extend_from_slice(&self.flags.to_le_bytes());
         raw.extend_from_slice(
@@ -305,6 +306,7 @@ impl Cookie {
     pub fn size(&self) -> u32 {
         4 * 10
             + 8 * 2
+            + self.port.map_or(0, |_| 2)
             + self
                 .comment
                 .as_ref()
