@@ -195,7 +195,7 @@ impl Page {
 pub struct Cookie {
     // pub cookie_size: u32, // LE Cookie size. Number of bytes associated to the cookie
     pub version: u32,      // LE Unknown field possibly related to the cookie flags
-    pub cookie_flags: u32, // LE 0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly
+    pub flags: u32, // LE 0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly
     // pub has_port: u32,       // LE 0 or 1
     pub domain_offset: u32,  // LE Cookie domain offset in the cookie
     pub name_offset: u32,    // LE Cookie name offset in the cookie
@@ -232,8 +232,9 @@ impl Cookie {
 
     pub fn encode(&self) -> Vec<u8> {
         let mut raw = Vec::with_capacity(self.size() as usize);
+        raw.extend_from_slice(&self.size().to_le_bytes());
         raw.extend_from_slice(&self.version.to_le_bytes());
-        raw.extend_from_slice(&self.cookie_flags.to_le_bytes());
+        raw.extend_from_slice(&self.flags.to_le_bytes());
         raw.extend_from_slice(
             &self
                 .port

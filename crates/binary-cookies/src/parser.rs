@@ -1,10 +1,10 @@
-use std::num::NonZeroUsize;
+use std::{error::Error, fmt::Display, num::NonZeroUsize};
 
 use chrono::{offset::LocalResult, DateTime, TimeZone as _, Utc};
 use winnow::{
     binary::{be_u32, be_u64, le_f64, le_u16, le_u32},
     combinator::repeat,
-    error::{ContextError, ErrMode, StrContext, StrContextValue},
+    error::{ContextError, ErrMode, FromExternalError, StrContext, StrContextValue},
     token::take,
     ModalResult, Parser, Partial,
 };
@@ -12,6 +12,29 @@ use winnow::{
 use crate::cookie::{BinaryCookies, Cookie, Metadata, Page, SameSite};
 
 pub(crate) type Stream<'i> = Partial<&'i [u8]>;
+
+#[derive(Clone, Copy)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub struct ExpectErr {
+    found: u32,
+}
+
+impl std::fmt::Debug for ExpectErr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ExpectErr")
+            .field("found", &format_args!("{:#b}", self.found))
+            .finish()
+    }
+}
+
+impl Error for ExpectErr {}
+
+impl Display for ExpectErr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{:#04b}", self.found))
+    }
+}
 
 trait F64ToSafariTime {
     fn to_utc(&self) -> Option<DateTime<Utc>>;
@@ -77,7 +100,8 @@ impl CookieParser {
 
     pub fn page(input: &mut Stream) -> ModalResult<Page> {
         if Page::HEADER != be_u32(input)? {
-            let mut context_error = ContextError::new();
+            let mut context_error =
+                ContextError::from_external_error(input, ExpectErr { found: Page::HEADER });
             context_error.extend([
                 StrContext::Label("Page header broken"),
                 StrContext::Expected(StrContextValue::Description(
@@ -109,7 +133,8 @@ impl CookieParser {
     pub fn cookie(input: &mut Stream) -> ModalResult<Cookie> {
         let cookie_size = le_u32(input)?;
 
-        if input.len() < cookie_size as usize && cookie_size > 0 {
+        let need_size = cookie_size - 4;
+        if input.len() < need_size as usize && need_size > 0 {
             return Err(ErrMode::Incomplete(winnow::error::Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(cookie_size as usize)
             })));
@@ -118,7 +143,7 @@ impl CookieParser {
         // NOTE: No accurate explanation of `version` and `has_port` was found
         let (
             version,
-            cookie_flags,
+            flags,
             has_port,
             domain_offset,
             name_offset,
@@ -163,18 +188,18 @@ impl CookieParser {
         let value = Self::get_string(input, (cookie_size - value_offset) as usize)?;
 
         #[expect(clippy::wildcard_in_or_patterns, reason = "this is more clear")]
-        let same_site = match cookie_flags & 0b111000 {
+        let same_site = match flags & 0b111000 {
             0b101000 => SameSite::Lax,
             0b111000 => SameSite::Strict,
             0b100000 | _ => SameSite::None,
         };
 
-        let is_secure = cookie_flags & 0x1 == 0x1;
-        let is_http_only = cookie_flags & 0x4 == 0x4;
+        let is_secure = flags & 0x1 == 0x1;
+        let is_http_only = flags & 0x4 == 0x4;
 
         Ok(Cookie {
             version,
-            cookie_flags,
+            flags,
             domain_offset,
             name_offset,
             path_offset,
