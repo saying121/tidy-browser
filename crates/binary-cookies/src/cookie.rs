@@ -259,7 +259,7 @@ impl Cookie {
         raw.extend_from_slice(&size.to_le_bytes());
         raw.extend_from_slice(&self.version.to_le_bytes());
         raw.extend_from_slice(&self.flags().to_le_bytes());
-        raw.extend_from_slice(&self.has_port().to_le_bytes());
+        raw.extend_from_slice(&(self.has_port() as u32).to_le_bytes());
         raw.extend_from_slice(&self.domain_offset().to_le_bytes());
         raw.extend_from_slice(&self.name_offset().to_le_bytes());
         raw.extend_from_slice(&self.path_offset().to_le_bytes());
@@ -282,18 +282,13 @@ impl Cookie {
         raw
     }
 
-    const fn has_port(&self) -> u32 {
-        if self.port.is_some() {
-            1
-        }
-        else {
-            0
-        }
+    pub const fn has_port(&self) -> bool {
+        self.port.is_some()
     }
 
     /// Dynamic calculation
     const fn prefix_offset(&self) -> u32 {
-        4 * 10 + 8 * 2 + if self.has_port() > 0 { 2 } else { 0 }
+        4 * 10 + 8 * 2 + if self.has_port() { 2 } else { 0 }
     }
     /// Dynamic calculation
     pub fn domain_offset(&self) -> u32 {
