@@ -65,7 +65,7 @@ impl F64ToSafariTime for f64 {
 pub struct CookieParser;
 
 impl CookieParser {
-    pub fn parse(input: &mut Stream) -> ModalResult<BinaryCookies> {
+    pub fn binary_cookies(input: &mut Stream) -> ModalResult<BinaryCookies> {
         let signature = take(4_usize).parse_next(input)?;
         if signature != BinaryCookies::SIGNATURE {
             let mut context_error = ContextError::new();

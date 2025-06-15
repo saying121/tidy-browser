@@ -21,7 +21,7 @@ fn test_safari_cookies() {
     let a = std::fs::read(SAFARI_COOKIES).unwrap();
 
     let mut input = Stream::new(&a);
-    let bc = CookieParser::parse(&mut input).unwrap();
+    let bc = CookieParser::binary_cookies(&mut input).unwrap();
 
     // FIXME: my impl not correct
     // assert_eq!(bc.checksum, bc.checksum());
@@ -153,7 +153,7 @@ fn test_page() {
 fn test_binary_cookie() {
     let a = std::fs::read(BINARY_COOKIE).unwrap();
     let mut input = Stream::new(&a);
-    let a = CookieParser::parse(&mut input).unwrap();
+    let a = CookieParser::binary_cookies(&mut input).unwrap();
     assert_eq!(
         a,
         BinaryCookies {
