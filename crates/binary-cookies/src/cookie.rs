@@ -2,6 +2,8 @@ use bstr::{BString, ByteSlice as _};
 use chrono::{DateTime, TimeZone as _, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::decode::CookieDecoder;
+
 /// raw file information, with pages
 #[derive(Clone)]
 #[derive(Debug)]
@@ -11,6 +13,7 @@ use serde::{Deserialize, Serialize};
 pub struct BinaryCookies {
     // pub signature: [u8: 4],
     // pub num_pages: u32,         // be
+    #[cfg(test)]
     pub page_sizes: Vec<u32>, // be
     pub pages: Vec<Page>,
     pub checksum: u32, // 8 byte
@@ -34,21 +37,22 @@ impl BinaryCookies {
 
     pub fn new(pages: Vec<Page>) -> Self {
         let mut self_ = Self {
+            #[cfg(test)]
             page_sizes: vec![],
             pages,
             checksum: 0,
             metadata: None,
         };
-        self_.page_sizes = self_.page_sizes();
+        #[cfg(test)]
+        {
+            self_.page_sizes = self_.page_sizes();
+        };
         self_.checksum = self_.checksum();
         self_
     }
-    /// # Perf
-    ///
-    /// The method will update all the page sizes, use [`Self::new`] first.
+
     pub fn push(&mut self, page: Page) {
         self.pages.push(page);
-        self.page_sizes = self.page_sizes();
     }
 
     pub fn page_sizes(&self) -> Vec<u32> {
@@ -110,6 +114,7 @@ impl BinaryCookies {
 pub struct Page {
     // pub pages_start: [u8; 4],
     // pub num_cookies: u32,          // le
+    #[cfg(test)]
     /// Offset in the page
     pub cookie_offsets: Vec<u32>, // le, N * `self.num_cookies`
     // pub page_end: [u8],            // Must be equal to []byte{0x00_00_00_00}
@@ -120,19 +125,8 @@ impl Page {
     pub const HEADER: u32 = 0x00000100;
     pub const FOOTER: u32 = 0x00000000;
 
-    pub fn new(cookies: Vec<Cookie>) -> Self {
-        let mut s = Self { cookie_offsets: vec![], cookies };
-        s.cookie_offsets = s.cookie_offsets();
-        s
-    }
-
-    /// # Perf
-    ///
-    /// The method will update all the cookie offsets, use [`Self::new`] first.
     pub fn push(&mut self, cookie: Cookie) {
         self.cookies.push(cookie);
-        // Must update all offsets
-        self.cookie_offsets = self.cookie_offsets();
     }
 
     /// Dynamic calculation
@@ -191,20 +185,31 @@ impl Page {
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq)]
+#[cfg_attr(not(test), derive(Eq))]
 #[expect(clippy::exhaustive_structs, reason = "allow")]
 pub struct Cookie {
     // pub cookie_size: u32, // LE Cookie size. Number of bytes associated to the cookie
     pub version: u32, // LE Unknown field possibly related to the cookie flags
-    pub flags: u32,   // LE 0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly
+
+    pub flags: u32, // LE 0x0:None , 0x1:Secure , 0x4:HttpOnly , 0x5:Secure+HttpOnly
     // pub has_port: u32,       // LE 0 or 1
-    pub domain_offset: u32,  // LE Cookie domain offset in the cookie
-    pub name_offset: u32,    // LE Cookie name offset in the cookie
-    pub path_offset: u32,    // LE Cookie path offset in the cookie
-    pub value_offset: u32,   // LE Cookie value offset in the cookie
+    #[cfg(test)]
+    pub domain_offset: u32, // LE Cookie domain offset in the cookie
+    #[cfg(test)]
+    pub name_offset: u32, // LE Cookie name offset in the cookie
+    #[cfg(test)]
+    pub path_offset: u32, // LE Cookie path offset in the cookie
+    #[cfg(test)]
+    pub value_offset: u32, // LE Cookie value offset in the cookie
+    #[cfg(test)]
     pub comment_offset: u32, // LE Cookie comment offset in the cookie
+
     // pub end_header: [u8; 4], /* 4    byte    Marks the end of a header. Must be equal to []byte{0x00000000} */
+    #[cfg(test)]
     pub raw_expires: f64, /* f64    Cookie expiration time in Mac epoch time. Add 978307200 to turn into Unix */
+    #[cfg(test)]
     pub raw_creation: f64, /* f64    Cookie creation time in Mac epoch time. Add 978307200 to turn into Unix */
+
     pub port: Option<u16>, // LE  Only present if the "Has port" field is 1
     pub comment: Option<BString>, /* Cookie comment string. N = `self.domain_offset` - `self.comment_offset` when `comment_offset` > 0 */
     pub domain: BString, // Cookie domain string. N = `self.name_offset` - `self.domain_offset`
@@ -220,7 +225,25 @@ pub struct Cookie {
 }
 
 impl Cookie {
-    pub const END_HEADER: [u8; 4] = [0x00, 0x00, 0x00, 0x00];
+    pub const fn flags(&self) -> u32 {
+        let mut flags = self.flags;
+
+        if self.is_secure {
+            flags |= CookieDecoder::IS_SECURE;
+        }
+
+        if self.is_http_only {
+            flags |= CookieDecoder::IS_HTTP_ONLY;
+        }
+
+        match self.same_site {
+            SameSite::None => {},
+            SameSite::Lax => flags |= CookieDecoder::LAX,
+            SameSite::Strict => flags |= CookieDecoder::STRICT,
+        }
+
+        flags
+    }
 
     pub(crate) fn time_to_f64(time: DateTime<Utc>) -> f64 {
         let timestamp = time
@@ -235,13 +258,8 @@ impl Cookie {
         let mut raw = Vec::with_capacity(size as usize);
         raw.extend_from_slice(&size.to_le_bytes());
         raw.extend_from_slice(&self.version.to_le_bytes());
-        raw.extend_from_slice(&self.flags.to_le_bytes());
-        raw.extend_from_slice(
-            &self
-                .port
-                .map_or(0, |_| 1_u32)
-                .to_le_bytes(),
-        );
+        raw.extend_from_slice(&self.flags().to_le_bytes());
+        raw.extend_from_slice(&self.has_port().to_le_bytes());
         raw.extend_from_slice(&self.domain_offset().to_le_bytes());
         raw.extend_from_slice(&self.name_offset().to_le_bytes());
         raw.extend_from_slice(&self.path_offset().to_le_bytes());
@@ -264,14 +282,18 @@ impl Cookie {
         raw
     }
 
-    fn encode_string(raw: &mut Vec<u8>, s: &bstr::BStr) {
-        raw.extend(s.bytes());
-        raw.push(0);
+    const fn has_port(&self) -> u32 {
+        if self.port.is_some() {
+            1
+        }
+        else {
+            0
+        }
     }
 
     /// Dynamic calculation
     const fn prefix_offset(&self) -> u32 {
-        4 * 10 + 8 * 2 + if self.port.is_some() { 2 } else { 0 }
+        4 * 10 + 8 * 2 + if self.has_port() > 0 { 2 } else { 0 }
     }
     /// Dynamic calculation
     pub fn domain_offset(&self) -> u32 {
@@ -316,6 +338,13 @@ impl Cookie {
             + (self.path.len() as u32 + 1)
             + (self.value.len() as u32 + 1)
     }
+
+    fn encode_string(raw: &mut Vec<u8>, s: &bstr::BStr) {
+        raw.extend(s.bytes());
+        raw.push(0);
+    }
+
+    pub const END_HEADER: [u8; 4] = [0x00, 0x00, 0x00, 0x00];
 }
 
 #[derive(Clone, Copy)]

@@ -1,3 +1,6 @@
 pub mod cookie;
-pub mod error;
 pub mod decode;
+pub mod error;
+
+#[cfg(test)]
+mod tests;

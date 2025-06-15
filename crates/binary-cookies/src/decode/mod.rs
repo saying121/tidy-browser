@@ -62,9 +62,36 @@ impl F64ToSafariTime for f64 {
 #[derive(Debug)]
 #[derive(Default)]
 #[expect(clippy::exhaustive_structs, reason = "allow")]
-pub struct CookieParser;
+pub struct CookieDecoder;
 
-impl CookieParser {
+#[rustfmt::skip]
+impl CookieDecoder {
+    pub const IS_SECURE: u32 = 0x1;
+    pub const IS_HTTP_ONLY: u32 = 0x4;
+
+    pub const NONE:   u32 = 0b100000;
+    pub const LAX:    u32 = 0b101000;
+    pub const STRICT: u32 = 0b111000;
+}
+
+impl CookieDecoder {
+    pub(crate) const fn same_site(flags: u32) -> SameSite {
+        #[expect(clippy::wildcard_in_or_patterns, reason = "this is more clear")]
+        match flags & 0b111000 {
+            Self::LAX => SameSite::Lax,
+            Self::STRICT => SameSite::Strict,
+            Self::NONE | _ => SameSite::None,
+        }
+    }
+
+    pub(crate) const fn is_secure(flags: u32) -> bool {
+        flags & Self::IS_SECURE == Self::IS_SECURE
+    }
+
+    pub(crate) const fn is_http_only(flags: u32) -> bool {
+        flags & Self::IS_HTTP_ONLY == Self::IS_HTTP_ONLY
+    }
+
     pub fn binary_cookies(input: &mut Stream) -> ModalResult<BinaryCookies> {
         let signature = take(4_usize).parse_next(input)?;
         if signature != BinaryCookies::SIGNATURE {
@@ -78,7 +105,7 @@ impl CookieParser {
             return Err(ErrMode::Cut(context_error));
         }
         let num_pages = be_u32(input)? as usize;
-        let page_sizes: Vec<u32> = repeat(num_pages..num_pages + 1, be_u32).parse_next(input)?;
+        let _page_sizes: Vec<u32> = repeat(num_pages..num_pages + 1, be_u32).parse_next(input)?;
         let pages = repeat(num_pages..num_pages + 1, Self::page).parse_next(input)?;
 
         let checksum = be_u32(input)?;
@@ -100,7 +127,8 @@ impl CookieParser {
         let metadata = plist::from_bytes::<Metadata>(bytes).ok();
 
         Ok(BinaryCookies {
-            page_sizes,
+            #[cfg(test)]
+            page_sizes: _page_sizes,
             pages,
             checksum,
             metadata,
@@ -122,7 +150,7 @@ impl CookieParser {
         }
 
         let num_cookies = le_u32(input)? as usize;
-        let cookie_offsets: Vec<u32> =
+        let _cookie_offsets: Vec<u32> =
             repeat(num_cookies..num_cookies + 1, le_u32).parse_next(input)?;
 
         let footer = be_u32(input)?;
@@ -141,7 +169,11 @@ impl CookieParser {
         let cookies: Vec<Cookie> =
             repeat(num_cookies..num_cookies + 1, Self::cookie).parse_next(input)?;
 
-        Ok(Page { cookie_offsets, cookies })
+        Ok(Page {
+            #[cfg(test)]
+            cookie_offsets: _cookie_offsets,
+            cookies,
+        })
     }
 
     pub fn cookie(input: &mut Stream) -> ModalResult<Cookie> {
@@ -201,25 +233,27 @@ impl CookieParser {
         let path = Self::get_string(input, (value_offset - path_offset) as usize)?;
         let value = Self::get_string(input, (cookie_size - value_offset) as usize)?;
 
-        #[expect(clippy::wildcard_in_or_patterns, reason = "this is more clear")]
-        let same_site = match flags & 0b111000 {
-            0b101000 => SameSite::Lax,
-            0b111000 => SameSite::Strict,
-            0b100000 | _ => SameSite::None,
-        };
+        let same_site = Self::same_site(flags);
 
-        let is_secure = flags & 0x1 == 0x1;
-        let is_http_only = flags & 0x4 == 0x4;
+        let is_secure = Self::is_secure(flags);
+        let is_http_only = Self::is_http_only(flags);
 
         Ok(Cookie {
             version,
             flags,
+            #[cfg(test)]
             domain_offset,
+            #[cfg(test)]
             name_offset,
+            #[cfg(test)]
             path_offset,
+            #[cfg(test)]
             value_offset,
+            #[cfg(test)]
             comment_offset,
+            #[cfg(test)]
             raw_expires,
+            #[cfg(test)]
             raw_creation,
             port,
             comment,
