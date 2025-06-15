@@ -21,5 +21,11 @@ bstr = { workspace = true }
 plist = { workspace = true }
 serde = { workspace = true }
 
+[dev-dependencies]
+rand = { workspace = true }
+test-with = { workspace = true }
+const_format = { workspace = true }
+pretty_assertions = { workspace = true }
+
 [lints]
 workspace = true

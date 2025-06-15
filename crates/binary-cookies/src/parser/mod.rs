@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use std::{error::Error, fmt::Display, num::NonZeroUsize};
 
 use chrono::{offset::LocalResult, DateTime, TimeZone as _, Utc};
@@ -92,6 +95,7 @@ impl CookieParser {
             return Err(ErrMode::Cut(context_error));
         }
 
+        // TODO: get the remaining size
         let bytes = input.into_inner();
         let metadata = plist::from_bytes::<Metadata>(bytes).ok();
 
