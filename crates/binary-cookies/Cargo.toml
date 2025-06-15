@@ -24,9 +24,8 @@ plist = { workspace = true }
 serde = { workspace = true }
 
 [dev-dependencies]
+dirs = { workspace = true }
 rand = { workspace = true }
-test-with = { workspace = true }
-const_format = { workspace = true }
 pretty_assertions = { workspace = true }
 
 [lints]

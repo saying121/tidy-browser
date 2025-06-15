@@ -24,7 +24,6 @@ panic = "abort"
 [workspace.dependencies]
 pretty_assertions = "1"
 rand = "0.9"
-test-with = "0.15"
 plist = "1"
 bstr = "1"
 oval = "2"

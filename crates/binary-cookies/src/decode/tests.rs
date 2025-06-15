@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use bstr::BString;
-use const_format::formatcp;
 use pretty_assertions::assert_eq;
 
 use super::*;
@@ -9,16 +8,14 @@ use super::*;
 const COOKIE: &str = "./test-resource/BinaryCookies.cookie";
 const PAGE: &str = "./test-resource/BinaryCookies.page";
 const BINARY_COOKIE: &str = "./test-resource/BinaryCookies.binarycookies";
-const SAFARI_COOKIES: &str = formatcp!(
-    "{}/{}",
-    env!("HOME"),
-    "Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies"
-);
 
 #[ignore = "Need real env"]
 #[test]
 fn test_safari_cookies() {
-    let a = std::fs::read(SAFARI_COOKIES).unwrap();
+    let mut path = dirs::home_dir().unwrap();
+    path.push("Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies");
+
+    let a = std::fs::read(path).unwrap();
 
     let mut input = Stream::new(&a);
     let bc = CookieDecoder::binary_cookies(&mut input).unwrap();
