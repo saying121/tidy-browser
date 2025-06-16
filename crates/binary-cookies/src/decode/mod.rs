@@ -21,7 +21,6 @@ pub(crate) type Stream<'i> = Partial<&'i [u8]>;
 pub enum ExpectErr {
     U32(u32),
     U64(u64),
-    Array([u8; 4]),
 }
 
 impl std::fmt::Debug for ExpectErr {
@@ -37,7 +36,6 @@ impl Display for ExpectErr {
         match self {
             Self::U32(binary) => f.write_fmt(format_args!("{:#>06x}", binary)),
             Self::U64(binary) => f.write_fmt(format_args!("{:#>010x}", binary)),
-            Self::Array(array) => f.write_fmt(format_args!("{:?}", array)),
         }
     }
 }
