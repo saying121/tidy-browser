@@ -66,21 +66,21 @@ pub struct CookieDecoder;
 
 #[rustfmt::skip]
 impl CookieDecoder {
-    pub const IS_SECURE: u32 = 0x1;
-    pub const IS_HTTP_ONLY: u32 = 0x4;
-
-    pub const NONE:   u32 = 0b100000;
-    pub const LAX:    u32 = 0b101000;
-    pub const STRICT: u32 = 0b111000;
+    pub const IS_SECURE:     u32 = 0b000001;
+    pub const IS_HTTP_ONLY:  u32 = 0b000100;
+    pub const SAME_SITE_BIT: u32 = 0b111000;
+    pub const SS_STRICT:     u32 = 0b111000;
+    pub const SS_LAX:        u32 = 0b101000;
+    pub const SS_NONE:       u32 = 0b100000;
 }
 
 impl CookieDecoder {
     pub(crate) const fn same_site(flags: u32) -> SameSite {
         #[expect(clippy::wildcard_in_or_patterns, reason = "this is more clear")]
-        match flags & 0b111000 {
-            Self::LAX => SameSite::Lax,
-            Self::STRICT => SameSite::Strict,
-            Self::NONE | _ => SameSite::None,
+        match flags & Self::SAME_SITE_BIT {
+            Self::SS_STRICT => SameSite::Strict,
+            Self::SS_LAX => SameSite::Lax,
+            Self::SS_NONE | _ => SameSite::None,
         }
     }
 

@@ -238,8 +238,8 @@ impl Cookie {
 
         match self.same_site {
             SameSite::None => {},
-            SameSite::Lax => flags |= CookieDecoder::LAX,
-            SameSite::Strict => flags |= CookieDecoder::STRICT,
+            SameSite::Lax => flags |= CookieDecoder::SS_LAX,
+            SameSite::Strict => flags |= CookieDecoder::SS_STRICT,
         }
 
         flags
