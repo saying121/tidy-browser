@@ -101,13 +101,13 @@ impl CookieDecoder {
     }
 
     pub fn binary_cookies(input: &mut StreamIn) -> ModalResult<BinaryCookies> {
-        let signature = take(4_usize).parse_next(input)?;
-        if signature != BinaryCookies::SIGNATURE {
+        let magic = take(4_usize).parse_next(input)?;
+        if magic != BinaryCookies::MAGIC {
             let mut ctx_err = ContextError::new();
             ctx_err.extend([
-                StrContext::Label("BinaryCookies signature broken"),
+                StrContext::Label("BinaryCookies magic broken"),
                 StrContext::Expected(StrContextValue::Description(
-                    r#"Expected signature: `b"cook"`"#,
+                    r#"Expected magic: `b"cook"`"#,
                 )),
             ]);
             return Err(ErrMode::Cut(ctx_err));
@@ -123,7 +123,7 @@ impl CookieDecoder {
             ctx_err.extend([
                 StrContext::Label("BinaryCookies footer broken"),
                 StrContext::Expected(StrContextValue::Description(
-                    r#"Expected signature: `0x071720050000004b_u64`"#,
+                    r#"Expected: `0x071720050000004b_u64`"#,
                 )),
             ]);
             return Err(ErrMode::Cut(ctx_err));

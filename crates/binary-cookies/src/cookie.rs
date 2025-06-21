@@ -23,7 +23,7 @@ use crate::{
 #[derive(PartialEq)]
 #[non_exhaustive]
 pub struct BinaryCookies {
-    // pub signature: [u8: 4],
+    // pub magic: [u8: 4],
     // pub num_pages: u32,         // be
     #[cfg(test)]
     pub page_sizes: Vec<u32>, // be
@@ -41,13 +41,13 @@ impl BinaryCookies {
                 NonZeroUsize::new_unchecked(8 - input.len())
             })));
         }
-        let signature = take(4_usize).parse_next(input)?;
-        if signature != Self::SIGNATURE {
+        let magic = take(4_usize).parse_next(input)?;
+        if magic != Self::MAGIC {
             let mut context_error = ContextError::new();
             context_error.extend([
-                StrContext::Label("BinaryCookies signature broken"),
+                StrContext::Label("BinaryCookies magic broken"),
                 StrContext::Expected(StrContextValue::Description(
-                    r#"Expected signature: `b"cook"`"#,
+                    r#"Expected magic: `b"cook"`"#,
                 )),
             ]);
             return Err(ErrMode::Cut(context_error));
@@ -85,7 +85,7 @@ impl BinaryCookies {
             ctx_err.extend([
                 StrContext::Label("BinaryCookies footer broken"),
                 StrContext::Expected(StrContextValue::Description(
-                    r#"Expected signature: `0x071720050000004b_u64`"#,
+                    r#"Expected : `0x071720050000004b_u64`"#,
                 )),
             ]);
             return Err(ErrMode::Cut(ctx_err));
@@ -148,7 +148,7 @@ impl Metadata {
 }
 
 impl BinaryCookies {
-    pub const SIGNATURE: &'static [u8] = b"cook"; // 0 offset, 4 size
+    pub const MAGIC: &'static [u8] = b"cook"; // 0 offset, 4 size
     pub const FOOTER: u64 = 0x071720050000004B;
 
     pub fn new(pages: Vec<Page>) -> Self {
@@ -196,7 +196,7 @@ impl BinaryCookies {
     }
     pub fn encode(&self) -> Vec<u8> {
         let mut raw = Vec::new();
-        raw.extend_from_slice(Self::SIGNATURE);
+        raw.extend_from_slice(Self::MAGIC);
         raw.extend_from_slice(&(self.pages.len() as u32).to_be_bytes());
         for ele in self.pages() {
             raw.extend_from_slice(&ele.size().to_be_bytes());

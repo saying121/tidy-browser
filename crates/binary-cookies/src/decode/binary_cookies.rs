@@ -32,7 +32,7 @@ type ProcessResult =
     Result<DecodeResult<BinaryCookieDecoder, (Checksum, Option<Metadata>, PagesDecoder)>>;
 
 impl BinaryCookieDecoder {
-    /// 4(`signature`) + 4(`num_pages`) + 4 * `num_pages`
+    /// 4(`magic`) + 4(`num_pages`) + 4 * `num_pages`
     /// assume `num_pages` = 6 round up to a power of 2
     const BUF_SIZE: usize = 4 + 4 + 4 * 6;
 
