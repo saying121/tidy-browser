@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests;
 
+pub mod binary_cookies;
+
 use std::{error::Error, fmt::Display, num::NonZeroUsize};
 
 use chrono::{offset::LocalResult, DateTime, TimeZone as _, Utc};
@@ -14,7 +16,15 @@ use winnow::{
 
 use crate::cookie::{BinaryCookies, Cookie, Metadata, Page, SameSite};
 
-pub(crate) type Stream<'i> = Partial<&'i [u8]>;
+pub(crate) type StreamIn<'i> = Partial<&'i [u8]>;
+
+#[derive(Clone, Copy)]
+#[derive(Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub enum DecodeResult<C, R> {
+    Continue(C),
+    Done(R),
+}
 
 #[derive(Clone, Copy)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
@@ -90,17 +100,17 @@ impl CookieDecoder {
         flags & Self::IS_HTTP_ONLY == Self::IS_HTTP_ONLY
     }
 
-    pub fn binary_cookies(input: &mut Stream) -> ModalResult<BinaryCookies> {
+    pub fn binary_cookies(input: &mut StreamIn) -> ModalResult<BinaryCookies> {
         let signature = take(4_usize).parse_next(input)?;
         if signature != BinaryCookies::SIGNATURE {
-            let mut context_error = ContextError::new();
-            context_error.extend([
+            let mut ctx_err = ContextError::new();
+            ctx_err.extend([
                 StrContext::Label("BinaryCookies signature broken"),
                 StrContext::Expected(StrContextValue::Description(
                     r#"Expected signature: `b"cook"`"#,
                 )),
             ]);
-            return Err(ErrMode::Cut(context_error));
+            return Err(ErrMode::Cut(ctx_err));
         }
         let num_pages = be_u32(input)? as usize;
         let _page_sizes: Vec<u32> = repeat(num_pages..num_pages + 1, be_u32).parse_next(input)?;
@@ -109,20 +119,18 @@ impl CookieDecoder {
         let checksum = be_u32(input)?;
         let footer = be_u64(input)?;
         if footer != BinaryCookies::FOOTER {
-            let mut context_error =
-                ContextError::from_external_error(input, ExpectErr::U64(footer));
-            context_error.extend([
+            let mut ctx_err = ContextError::from_external_error(input, ExpectErr::U64(footer));
+            ctx_err.extend([
                 StrContext::Label("BinaryCookies footer broken"),
                 StrContext::Expected(StrContextValue::Description(
                     r#"Expected signature: `0x071720050000004b_u64`"#,
                 )),
             ]);
-            return Err(ErrMode::Cut(context_error));
+            return Err(ErrMode::Cut(ctx_err));
         }
 
-        // TODO: get the remaining size
-        let bytes = input.into_inner();
-        let metadata = plist::from_bytes::<Metadata>(bytes).ok();
+        // See apple opensource CFBinaryPList.c
+        let metadata = Metadata::decode(input).ok();
 
         Ok(BinaryCookies {
             #[cfg(test)]
@@ -133,7 +141,7 @@ impl CookieDecoder {
         })
     }
 
-    pub fn page(input: &mut Stream) -> ModalResult<Page> {
+    pub fn page(input: &mut StreamIn) -> ModalResult<Page> {
         let header = be_u32(input)?;
         if Page::HEADER != header {
             let mut context_error =
@@ -174,13 +182,13 @@ impl CookieDecoder {
         })
     }
 
-    pub fn cookie(input: &mut Stream) -> ModalResult<Cookie> {
+    pub fn cookie(input: &mut StreamIn) -> ModalResult<Cookie> {
         let cookie_size = le_u32(input)?;
 
-        let need_size = cookie_size - 4;
-        if input.len() < need_size as usize && need_size > 0 {
+        let need_size = cookie_size as usize - 4;
+        if input.len() < need_size {
             return Err(ErrMode::Incomplete(winnow::error::Needed::Size(unsafe {
-                NonZeroUsize::new_unchecked(cookie_size as usize)
+                NonZeroUsize::new_unchecked(need_size - input.len())
             })));
         }
 
@@ -268,7 +276,7 @@ impl CookieDecoder {
     }
 
     #[inline(always)]
-    fn get_string(input: &mut Stream, len: usize) -> ModalResult<bstr::BString> {
+    fn get_string(input: &mut StreamIn, len: usize) -> ModalResult<bstr::BString> {
         let str = take(len)
             .map(|c: &[u8]| bstr::BString::new(c[..len - 1].to_vec())) // c-string, end with 0
             .parse_next(input)?;

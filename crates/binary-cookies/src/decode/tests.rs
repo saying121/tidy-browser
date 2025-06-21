@@ -17,7 +17,7 @@ fn test_safari_cookies() {
 
     let a = std::fs::read(path).unwrap();
 
-    let mut input = Stream::new(&a);
+    let mut input = StreamIn::new(&a);
     let bc = CookieDecoder::binary_cookies(&mut input).unwrap();
 
     // FIXME: my impl not correct
@@ -60,7 +60,7 @@ fn test_safari_cookies() {
 #[test]
 fn test_cookie() {
     let a = std::fs::read(COOKIE).unwrap();
-    let mut input = Stream::new(&a);
+    let mut input = StreamIn::new(&a);
     let a = CookieDecoder::cookie(&mut input).unwrap();
     let var = Cookie {
         version: 0,
@@ -90,7 +90,7 @@ fn test_cookie() {
 #[test]
 fn test_page() {
     let a = std::fs::read(PAGE).unwrap();
-    let mut input = Stream::new(&a);
+    let mut input = StreamIn::new(&a);
     let a = CookieDecoder::page(&mut input).unwrap();
     let page = Page {
         cookie_offsets: vec![20, 107],
@@ -147,7 +147,7 @@ fn test_page() {
 #[test]
 fn test_binary_cookie() {
     let a = std::fs::read(BINARY_COOKIE).unwrap();
-    let mut input = Stream::new(&a);
+    let mut input = StreamIn::new(&a);
     let a = CookieDecoder::binary_cookies(&mut input).unwrap();
     let val = BinaryCookies {
         page_sizes: vec![196, 196],
@@ -254,7 +254,6 @@ fn test_binary_cookie() {
         checksum: 5672,
         metadata: Some(Metadata { nshttp_cookie_accept_policy: 2 }),
     };
+    assert!(input.is_empty());
     assert_eq!(a, val);
-    let metadata = plist::from_bytes::<Metadata>(input.into_inner()).unwrap();
-    assert_eq!(metadata, Metadata { nshttp_cookie_accept_policy: 2 });
 }

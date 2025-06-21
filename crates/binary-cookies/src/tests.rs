@@ -5,7 +5,7 @@ use rand::{random, random_range, Rng, SeedableRng};
 
 use crate::{
     cookie::{BinaryCookies, Cookie, Metadata, Page},
-    decode::{CookieDecoder, Stream},
+    decode::{CookieDecoder, StreamIn},
 };
 
 #[test]
@@ -22,7 +22,7 @@ fn encode_cookie() {
     assert_eq!(cookie.flags, cookie.flags());
     let v = cookie.encode();
 
-    let mut var = Stream::new(&v);
+    let mut var = StreamIn::new(&v);
     let a = CookieDecoder::cookie(&mut var).unwrap();
     assert_eq!(cookie, a);
 }
@@ -32,7 +32,7 @@ fn encode_page() {
     let page = Page::random();
     let v = page.encode().0;
 
-    let mut var = Stream::new(&v);
+    let mut var = StreamIn::new(&v);
     let a = CookieDecoder::page(&mut var).unwrap();
     assert_eq!(a, page);
 }
@@ -42,7 +42,7 @@ fn encode_binary_cookies() {
     let cookie = BinaryCookies::random();
     let v = cookie.encode();
 
-    let mut var = Stream::new(&v);
+    let mut var = StreamIn::new(&v);
     let a = CookieDecoder::binary_cookies(&mut var).unwrap();
     assert_eq!(a, cookie);
 }

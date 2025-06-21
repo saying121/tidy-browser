@@ -1,8 +1,20 @@
+use std::num::NonZeroUsize;
+
 use bstr::{BString, ByteSlice as _};
 use chrono::{DateTime, TimeZone as _, Utc};
 use serde::{Deserialize, Serialize};
+use winnow::{
+    binary::{be_i8, be_u32, be_u64, be_u8},
+    combinator::repeat,
+    error::{ContextError, ErrMode, FromExternalError, StrContext, StrContextValue},
+    token::take,
+    ModalResult, Parser,
+};
 
-use crate::decode::CookieDecoder;
+use crate::{
+    decode::{binary_cookies::Offsets, CookieDecoder, ExpectErr, StreamIn},
+    error::BplistErr,
+};
 
 /// raw file information, with pages
 #[derive(Clone)]
@@ -16,19 +28,123 @@ pub struct BinaryCookies {
     #[cfg(test)]
     pub page_sizes: Vec<u32>, // be
     pub pages: Vec<Page>,
-    pub checksum: u32, // 8 byte
+    pub checksum: Checksum, // 4 byte
     pub metadata: Option<Metadata>,
+}
+
+pub type Checksum = u32;
+
+impl BinaryCookies {
+    pub fn parser_head(input: &mut StreamIn) -> ModalResult<Offsets> {
+        if input.len() < 8 {
+            return Err(ErrMode::Incomplete(winnow::error::Needed::Size(unsafe {
+                NonZeroUsize::new_unchecked(8 - input.len())
+            })));
+        }
+        let signature = take(4_usize).parse_next(input)?;
+        if signature != Self::SIGNATURE {
+            let mut context_error = ContextError::new();
+            context_error.extend([
+                StrContext::Label("BinaryCookies signature broken"),
+                StrContext::Expected(StrContextValue::Description(
+                    r#"Expected signature: `b"cook"`"#,
+                )),
+            ]);
+            return Err(ErrMode::Cut(context_error));
+        }
+        let num_pages = be_u32(input)? as usize;
+        let page_size = num_pages * 4;
+
+        if input.len() < page_size {
+            let size = unsafe { NonZeroUsize::new_unchecked(page_size - input.len()) };
+            return Err(ErrMode::Incomplete(winnow::error::Needed::Size(size)));
+        }
+
+        let page_sizes: Vec<u32> = repeat(num_pages..num_pages + 1, be_u32).parse_next(input)?;
+
+        let tail_offset = 4
+            + 4
+            + num_pages * 4
+            + page_sizes
+                .iter()
+                .map(|&v| v as usize)
+                .sum::<usize>();
+        Ok(Offsets { page_sizes, tail_offset })
+    }
+
+    pub fn parser_tail(input: &mut StreamIn) -> ModalResult<(Checksum, Option<Metadata>)> {
+        if input.len() < 4 + 8 {
+            return Err(ErrMode::Incomplete(winnow::error::Needed::Size(unsafe {
+                NonZeroUsize::new_unchecked(4 + 8 - input.len())
+            })));
+        }
+        let checksum = be_u32(input)?;
+        let footer = be_u64(input)?;
+        if footer != Self::FOOTER {
+            let mut ctx_err = ContextError::from_external_error(input, ExpectErr::U64(footer));
+            ctx_err.extend([
+                StrContext::Label("BinaryCookies footer broken"),
+                StrContext::Expected(StrContextValue::Description(
+                    r#"Expected signature: `0x071720050000004b_u64`"#,
+                )),
+            ]);
+            return Err(ErrMode::Cut(ctx_err));
+        }
+
+        let metadata = Metadata::decode(input).ok();
+        Ok((checksum, metadata))
+    }
 }
 
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
+#[derive(PartialOrd, Ord)]
 #[derive(Serialize, Deserialize)]
 #[expect(clippy::exhaustive_structs, reason = "allow")]
 pub struct Metadata {
     #[serde(rename = "NSHTTPCookieAcceptPolicy")]
-    pub nshttp_cookie_accept_policy: i32,
+    pub nshttp_cookie_accept_policy: i8,
+}
+
+impl Metadata {
+    // See apple opensource CFBinaryPList.c
+    // This is a very specialized decoder that needs to be updated with the BinaryCookies format
+    pub(crate) fn decode(input: &mut StreamIn) -> Result<Self, ErrMode<ContextError>> {
+        if input.len() < 75 {
+            return Err(ErrMode::Incomplete(winnow::error::Needed::Size(unsafe {
+                NonZeroUsize::new_unchecked(75 - input.len())
+            })));
+        }
+        let bplist = take(8_usize).parse_next(input)?;
+        if bplist != b"bplist00" {
+            let ctx_err = ContextError::from_external_error(input, BplistErr::Magic);
+            return Err(ErrMode::Cut(ctx_err));
+        }
+        let dict = be_u8(input)?;
+        if dict != 0xD1 {
+            let ctx_err = ContextError::from_external_error(input, BplistErr::NotDict);
+            return Err(ErrMode::Cut(ctx_err));
+        }
+        let _length = take(5_usize).parse_next(input)?;
+        let key = take(24_usize).parse_next(input)?;
+        if b"NSHTTPCookieAcceptPolicy" != key {
+            let ctx_err = ContextError::from_external_error(input, BplistErr::BadKey);
+            return Err(ErrMode::Cut(ctx_err));
+        }
+        let int_flags = be_u8(input)?;
+        if int_flags != 0x10 {
+            let ctx_err = ContextError::from_external_error(input, BplistErr::OneByteInt);
+            return Err(ErrMode::Cut(ctx_err));
+        }
+        let int_val = be_i8(input)?;
+        take(32 + 3_usize).parse_next(input)?;
+        let metadata = Self {
+            nshttp_cookie_accept_policy: int_val,
+        };
+        Ok(metadata)
+    }
 }
 
 impl BinaryCookies {
