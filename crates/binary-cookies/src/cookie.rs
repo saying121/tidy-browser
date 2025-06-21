@@ -35,7 +35,7 @@ pub struct BinaryCookies {
 pub type Checksum = u32;
 
 impl BinaryCookies {
-    pub fn parser_head(input: &mut StreamIn) -> ModalResult<Offsets> {
+    pub fn parse_head(input: &mut StreamIn) -> ModalResult<Offsets> {
         if input.len() < 8 {
             return Err(ErrMode::Incomplete(winnow::error::Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(8 - input.len())
@@ -72,7 +72,7 @@ impl BinaryCookies {
         Ok(Offsets { page_sizes, tail_offset })
     }
 
-    pub fn parser_tail(input: &mut StreamIn) -> ModalResult<(Checksum, Option<Metadata>)> {
+    pub fn parse_tail(input: &mut StreamIn) -> ModalResult<(Checksum, Option<Metadata>)> {
         if input.len() < 4 + 8 {
             return Err(ErrMode::Incomplete(winnow::error::Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(4 + 8 - input.len())

@@ -25,7 +25,7 @@ pub struct BinaryCookieDecoder {
 #[derive(Default)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct PagesDecoder {
-    offsets: Offsets,
+    offsets: Vec<u32>,
 }
 
 type ProcessResult =
@@ -52,10 +52,9 @@ impl BinaryCookieDecoder {
 
     pub fn process(mut self) -> ProcessResult {
         let mut input: StreamIn = StreamIn::new(self.buffer.data());
-        // let start = input.checkpoint();
         match self.state {
             State::Head => {
-                let e = match BinaryCookies::parser_head.parse_next(&mut input) {
+                let e = match BinaryCookies::parse_head.parse_next(&mut input) {
                     Ok(offsets) => {
                         self.state = State::Tail { offsets };
                         self.buffer.reset();
@@ -84,7 +83,7 @@ impl BinaryCookieDecoder {
                 }
             },
             State::Tail { .. } => {
-                let e = match BinaryCookies::parser_tail.parse_next(&mut input) {
+                let e = match BinaryCookies::parse_tail.parse_next(&mut input) {
                     Ok((checksum, meta)) => {
                         let State::Tail { offsets } = self.state
                         else {
@@ -93,7 +92,7 @@ impl BinaryCookieDecoder {
                         return Ok(DecodeResult::Done((
                             checksum,
                             meta,
-                            PagesDecoder { offsets },
+                            PagesDecoder { offsets: offsets.page_sizes },
                         )));
                     },
                     Err(e) => e,
