@@ -3,6 +3,7 @@ mod tests;
 
 pub mod binary_cookies;
 pub mod pages;
+pub mod cookies;
 
 use std::{error::Error, fmt::Display, num::NonZeroUsize};
 
@@ -62,7 +63,7 @@ impl Display for ExpectErr {
     }
 }
 
-trait F64ToSafariTime {
+pub(crate) trait F64ToSafariTime {
     fn to_utc(&self) -> Option<DateTime<Utc>>;
 }
 impl F64ToSafariTime for f64 {

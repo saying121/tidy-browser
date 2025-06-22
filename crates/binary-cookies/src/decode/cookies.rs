@@ -4,24 +4,24 @@ use winnow::{
     Parser,
 };
 
-use super::{cookies::CookiesOffset, DecodeResult, OffsetSize};
+use super::{DecodeResult, OffsetSize};
 use crate::{
-    cookie::Page,
+    cookie::Cookie,
     decode::StreamIn,
     error::{ParseError, Result},
 };
 
+#[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct PagesOffset {
+pub struct CookiesOffset {
     pub(crate) offsets: Vec<OffsetSize>,
 }
 
-impl PagesOffset {
-    pub(crate) fn new(page_sizes: Vec<u32>) -> Self {
-        let head_len = 4 * 2 + page_sizes.len() as u64 * 4;
-        let mut offset = head_len;
-        let offsets = page_sizes
+impl CookiesOffset {
+    pub(crate) fn new(page_offset: u64, cookies_size: Vec<u32>) -> Self {
+        let mut offset = page_offset + 4 + 4 + 4 * cookies_size.len() as u64 + 4;
+        let offsets = cookies_size
             .into_iter()
             .map(|size| {
                 let prev = offset;
@@ -35,30 +35,29 @@ impl PagesOffset {
 
 #[derive(Clone)]
 #[derive(Debug)]
-pub struct PageDecoder {
-    offset: u64,
+pub struct CookieDecoder {
+    offsets: OffsetSize,
     buffer: Buffer,
 }
 
-impl PageDecoder {
-    /// 4(`header`) + 4(`num_cookies`) + 4 * `num_cookies`
-    /// assume `num_cookies` = 3 round up to a power of 2
-    const BUF_SIZE: usize = 4 + 4 + 4 * 2;
+impl CookieDecoder {
+    /// Just cookie size
+    const BUF_SIZE: usize = 4;
 
-    pub fn new(offset: u64) -> Self {
+    pub fn new(offsets: OffsetSize) -> Self {
         let buffer = Buffer::with_capacity(Self::BUF_SIZE);
-        Self { offset, buffer }
+        Self { offsets, buffer }
     }
 
-    /// return read offset
-    pub fn wants_read(&self) -> usize {
-        self.offset as usize + self.buffer.available_data()
+    pub fn wants_read(&self) -> u64 {
+        self.offsets.offset + self.buffer.available_data() as u64
     }
 
-    pub fn process(mut self) -> Result<DecodeResult<Self, CookiesOffset>> {
+    pub fn process(mut self) -> Result<DecodeResult<Self, Cookie>> {
         let mut input: StreamIn = StreamIn::new(self.buffer.data());
-        let e = match Page::parse_head.parse_next(&mut input) {
-            Ok(o) => return Ok(DecodeResult::Done(CookiesOffset::new(self.offset, o))),
+
+        let e = match Cookie::parse.parse_next(&mut input) {
+            Ok(o) => return Ok(DecodeResult::Done(o)),
             Err(e) => e,
         };
 

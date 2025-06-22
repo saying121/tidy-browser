@@ -4,7 +4,7 @@ use winnow::{
     Parser,
 };
 
-use super::DecodeResult;
+use super::{pages::PagesOffset, DecodeResult};
 use crate::{
     cookie::{BinaryCookies, Checksum, Metadata},
     decode::StreamIn,
@@ -20,21 +20,13 @@ pub struct BinaryCookieDecoder {
     buffer: Buffer,
 }
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct PagesDecoder {
-    offsets: Vec<u32>,
-}
-
 type ProcessResult =
-    Result<DecodeResult<BinaryCookieDecoder, (Checksum, Option<Metadata>, PagesDecoder)>>;
+    Result<DecodeResult<BinaryCookieDecoder, (Checksum, Option<Metadata>, PagesOffset)>>;
 
 impl BinaryCookieDecoder {
     /// 4(`magic`) + 4(`num_pages`) + 4 * `num_pages`
-    /// assume `num_pages` = 6 round up to a power of 2
-    const BUF_SIZE: usize = 4 + 4 + 4 * 6;
+    /// assume `num_pages` = 2 round up to a power of 2
+    const BUF_SIZE: usize = 4 + 4 + 4 * 2;
 
     pub fn new() -> Self {
         Self {
@@ -43,10 +35,10 @@ impl BinaryCookieDecoder {
         }
     }
 
-    pub fn wants_read(&self) -> usize {
+    pub fn wants_read(&self) -> u64 {
         match &self.state {
-            State::Head => self.buffer.available_data(),
-            State::Tail { offsets } => self.buffer.available_data() + offsets.tail_offset,
+            State::Head => self.buffer.available_data() as u64,
+            State::Tail { offsets } => self.buffer.available_data() as u64 + offsets.tail_offset,
         }
     }
 
@@ -92,7 +84,7 @@ impl BinaryCookieDecoder {
                         return Ok(DecodeResult::Done((
                             checksum,
                             meta,
-                            PagesDecoder { offsets: offsets.page_sizes },
+                            PagesOffset::new(offsets.page_sizes),
                         )));
                     },
                     Err(e) => e,
@@ -141,7 +133,7 @@ enum State {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct Offsets {
     pub(crate) page_sizes: Vec<u32>, // be
-    pub(crate) tail_offset: usize,
+    pub(crate) tail_offset: u64,
 }
 
 #[cfg(test)]
@@ -157,7 +149,7 @@ mod tests {
         let res = loop {
             let offset = decoder.wants_read();
             dbg!(offset);
-            f.read_exact_at(decoder.buffer.space(), offset as u64)
+            f.read_exact_at(decoder.buffer.space(), offset)
                 .unwrap();
             let count = decoder.buffer.space().len();
             decoder.buffer.fill(count);
