@@ -4,9 +4,9 @@ use bstr::{BString, ByteSlice as _};
 use chrono::{DateTime, TimeZone as _, Utc};
 use serde::{Deserialize, Serialize};
 use winnow::{
-    binary::{be_i8, be_u32, be_u64, be_u8},
+    binary::{be_i8, be_u32, be_u64, be_u8, le_u32},
     combinator::repeat,
-    error::{ContextError, ErrMode, FromExternalError, StrContext, StrContextValue},
+    error::{ContextError, ErrMode, FromExternalError, Needed, StrContext, StrContextValue},
     token::take,
     ModalResult, Parser,
 };
@@ -37,7 +37,7 @@ pub type Checksum = u32;
 impl BinaryCookies {
     pub fn parse_head(input: &mut StreamIn) -> ModalResult<Offsets> {
         if input.len() < 8 {
-            return Err(ErrMode::Incomplete(winnow::error::Needed::Size(unsafe {
+            return Err(ErrMode::Incomplete(Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(8 - input.len())
             })));
         }
@@ -46,18 +46,16 @@ impl BinaryCookies {
             let mut context_error = ContextError::new();
             context_error.extend([
                 StrContext::Label("BinaryCookies magic broken"),
-                StrContext::Expected(StrContextValue::Description(
-                    r#"Expected magic: `b"cook"`"#,
-                )),
+                StrContext::Expected(StrContextValue::Description(r#"Expected magic: `b"cook"`"#)),
             ]);
             return Err(ErrMode::Cut(context_error));
         }
         let num_pages = be_u32(input)? as usize;
-        let page_size = num_pages * 4;
+        let pages_size = num_pages * 4;
 
-        if input.len() < page_size {
-            let size = unsafe { NonZeroUsize::new_unchecked(page_size - input.len()) };
-            return Err(ErrMode::Incomplete(winnow::error::Needed::Size(size)));
+        if input.len() < pages_size {
+            let size = unsafe { NonZeroUsize::new_unchecked(pages_size - input.len()) };
+            return Err(ErrMode::Incomplete(Needed::Size(size)));
         }
 
         let page_sizes: Vec<u32> = repeat(num_pages..num_pages + 1, be_u32).parse_next(input)?;
@@ -74,7 +72,7 @@ impl BinaryCookies {
 
     pub fn parse_tail(input: &mut StreamIn) -> ModalResult<(Checksum, Option<Metadata>)> {
         if input.len() < 4 + 8 {
-            return Err(ErrMode::Incomplete(winnow::error::Needed::Size(unsafe {
+            return Err(ErrMode::Incomplete(Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(4 + 8 - input.len())
             })));
         }
@@ -113,7 +111,7 @@ impl Metadata {
     // This is a very specialized decoder that needs to be updated with the BinaryCookies format
     pub(crate) fn decode(input: &mut StreamIn) -> Result<Self, ErrMode<ContextError>> {
         if input.len() < 75 {
-            return Err(ErrMode::Incomplete(winnow::error::Needed::Size(unsafe {
+            return Err(ErrMode::Incomplete(Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(75 - input.len())
             })));
         }
@@ -235,6 +233,54 @@ pub struct Page {
     pub cookie_offsets: Vec<u32>, // le, N * `self.num_cookies`
     // pub page_end: [u8],            // Must be equal to []byte{0x00_00_00_00}
     pub cookies: Vec<Cookie>,
+}
+
+impl Page {
+    pub fn parse_head(input: &mut StreamIn) -> ModalResult<Vec<u32>> {
+        if input.len() < 8 {
+            return Err(ErrMode::Incomplete(Needed::Size(unsafe {
+                NonZeroUsize::new_unchecked(8 - input.len())
+            })));
+        }
+        let header = be_u32(input)?;
+        if Self::HEADER != header {
+            let mut context_error =
+                ContextError::from_external_error(input, ExpectErr::U32(header));
+            context_error.extend([
+                StrContext::Label("Page header broken"),
+                StrContext::Expected(StrContextValue::Description(
+                    "Expected page start header: `0x0010`",
+                )),
+            ]);
+            return Err(ErrMode::Cut(context_error));
+        }
+
+        let num_cookies = le_u32(input)? as usize;
+        // cookies size and footer
+        let need_size = num_cookies * 4 + 4;
+        if input.len() < need_size {
+            return Err(ErrMode::Incomplete(Needed::Size(unsafe {
+                NonZeroUsize::new_unchecked(need_size - input.len())
+            })));
+        }
+        let cookie_offsets: Vec<u32> =
+            repeat(num_cookies..num_cookies + 1, le_u32).parse_next(input)?;
+
+        let footer = be_u32(input)?;
+        if footer != Self::FOOTER {
+            let mut context_error =
+                ContextError::from_external_error(input, ExpectErr::U32(footer));
+            context_error.extend([
+                StrContext::Label("Page page footer broken"),
+                StrContext::Expected(StrContextValue::Description(
+                    "Expected page footer: `0x0000`",
+                )),
+            ]);
+            return Err(ErrMode::Cut(context_error));
+        }
+
+        Ok(cookie_offsets)
+    }
 }
 
 impl Page {

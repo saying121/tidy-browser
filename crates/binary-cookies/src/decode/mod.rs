@@ -2,6 +2,7 @@
 mod tests;
 
 pub mod binary_cookies;
+pub mod pages;
 
 use std::{error::Error, fmt::Display, num::NonZeroUsize};
 
@@ -24,6 +25,17 @@ pub(crate) type StreamIn<'i> = Partial<&'i [u8]>;
 pub enum DecodeResult<C, R> {
     Continue(C),
     Done(R),
+}
+
+
+#[derive(Clone, Copy)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub struct OffsetSize {
+    /// Offset from file start
+    offset: u64,
+    size: u32,
 }
 
 #[derive(Clone, Copy)]
