@@ -22,6 +22,7 @@ panic = "abort"
 
 
 [workspace.dependencies]
+positioned-io = "0.3.3"
 pretty_assertions = "1"
 rand = "0.9"
 plist = "1"

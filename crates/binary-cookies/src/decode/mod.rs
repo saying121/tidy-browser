@@ -2,8 +2,9 @@
 mod tests;
 
 pub mod binary_cookies;
-pub mod pages;
 pub mod cookies;
+pub mod pages;
+pub mod meta;
 
 use std::{error::Error, fmt::Display, num::NonZeroUsize};
 
@@ -28,14 +29,15 @@ pub enum DecodeResult<C, R> {
     Done(R),
 }
 
-
+/// A item offset in binarycookies and it's size.
 #[derive(Clone, Copy)]
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct OffsetSize {
-    /// Offset from file start
+    /// The item relative binarycookies start offset.
     offset: u64,
+    /// The item size.
     size: u32,
 }
 
@@ -119,9 +121,7 @@ impl CookieDecoder {
             let mut ctx_err = ContextError::new();
             ctx_err.extend([
                 StrContext::Label("BinaryCookies magic broken"),
-                StrContext::Expected(StrContextValue::Description(
-                    r#"Expected magic: `b"cook"`"#,
-                )),
+                StrContext::Expected(StrContextValue::Description(r#"Expected magic: `b"cook"`"#)),
             ]);
             return Err(ErrMode::Cut(ctx_err));
         }

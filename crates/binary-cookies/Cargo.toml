@@ -14,6 +14,7 @@ readme = "./README.md"
 exclude  = ["test-resource/"]
 
 [dependencies]
+positioned-io = { workspace = true }
 oval = { workspace = true }
 winnow = { workspace = true }
 chrono = { workspace = true }
@@ -27,6 +28,7 @@ serde = { workspace = true }
 dirs = { workspace = true }
 rand = { workspace = true }
 pretty_assertions = { workspace = true }
+rayon = { version = "1" }
 
 [lints]
 workspace = true

@@ -1,6 +1,5 @@
-use winnow::error::{ContextError, ErrMode};
+use winnow::error::ContextError;
 
-#[derive(Clone)]
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum ParseError {
@@ -10,6 +9,8 @@ pub enum ParseError {
     Time(chrono::offset::LocalResult<chrono::DateTime<chrono::Utc>>),
     #[error(transparent)]
     Bplist(#[from] BplistErr),
+    #[error(transparent)]
+    IO(#[from] std::io::Error),
 }
 
 #[derive(Clone, Copy)]
