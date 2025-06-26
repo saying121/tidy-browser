@@ -3,10 +3,10 @@ mod tests;
 
 pub mod binary_cookies;
 pub mod cookies;
-pub mod pages;
 pub mod meta;
+pub mod pages;
 
-use std::{error::Error, fmt::Display, num::NonZeroUsize};
+use std::num::NonZeroUsize;
 
 use chrono::{offset::LocalResult, DateTime, TimeZone as _, Utc};
 use winnow::{
@@ -17,7 +17,10 @@ use winnow::{
     ModalResult, Parser, Partial,
 };
 
-use crate::cookie::{BinaryCookies, Cookie, Metadata, Page, SameSite};
+use crate::{
+    cookie::{BinaryCookies, Cookie, Metadata, Page, SameSite},
+    error::ExpectErr,
+};
 
 pub(crate) type StreamIn<'i> = Partial<&'i [u8]>;
 
@@ -39,30 +42,6 @@ pub struct OffsetSize {
     offset: u64,
     /// The item size.
     size: u32,
-}
-
-#[derive(Clone, Copy)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub enum ExpectErr {
-    U32(u32),
-    U64(u64),
-}
-
-impl std::fmt::Debug for ExpectErr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{}", self))
-    }
-}
-
-impl Error for ExpectErr {}
-
-impl Display for ExpectErr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::U32(binary) => f.write_fmt(format_args!("{:#>06x}", binary)),
-            Self::U64(binary) => f.write_fmt(format_args!("{:#>010x}", binary)),
-        }
-    }
 }
 
 pub(crate) trait F64ToSafariTime {

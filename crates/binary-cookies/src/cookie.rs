@@ -12,8 +12,8 @@ use winnow::{
 };
 
 use crate::{
-    decode::{binary_cookies::Offsets, CookieDecoder, ExpectErr, F64ToSafariTime as _, StreamIn},
-    error::BplistErr,
+    decode::{binary_cookies::Offsets, F64ToSafariTime as _, StreamIn},
+    error::{BplistErr, ExpectErr},
 };
 
 /// raw file information, with pages
@@ -43,7 +43,9 @@ impl BinaryCookies {
         }
         let magic = take(4_usize).parse_next(input)?;
         if magic != Self::MAGIC {
-            let mut context_error = ContextError::new();
+            #[expect(clippy::unwrap_used, reason = "magic len is 4")]
+            let arr: [u8; 4] = magic.try_into().unwrap();
+            let mut context_error = ContextError::from_external_error(input, ExpectErr::Magic(arr));
             context_error.extend([
                 StrContext::Label("BinaryCookies magic broken"),
                 StrContext::Expected(StrContextValue::Description(r#"Expected magic: `b"cook"`"#)),
@@ -83,7 +85,7 @@ impl BinaryCookies {
             ctx_err.extend([
                 StrContext::Label("BinaryCookies footer broken"),
                 StrContext::Expected(StrContextValue::Description(
-                    r#"Expected : `0x071720050000004b_u64`"#,
+                    r#"Expected big endian: `0x071720050000004b_u64`"#,
                 )),
             ]);
             return Err(ErrMode::Cut(ctx_err));
@@ -438,8 +440,12 @@ impl Cookie {
         )
             .parse_next(input)?;
 
-        if take(4_usize).parse_next(input)? != Self::END_HEADER {
-            let mut context_error = ContextError::new();
+        let end_header = take(4_usize).parse_next(input)?;
+        if end_header != Self::END_HEADER {
+            #[expect(clippy::unwrap_used, reason = "end_header len is 4")]
+            let arr: [u8; 4] = end_header.try_into().unwrap();
+            let mut context_error =
+                ContextError::from_external_error(input, ExpectErr::EndHeader(arr));
             context_error.extend([
                 StrContext::Label("Cookies end header broken"),
                 StrContext::Expected(StrContextValue::Description("Expected end header: `0000`")),
@@ -520,17 +526,17 @@ impl Cookie {
         let mut flags = self.flags;
 
         if self.is_secure {
-            flags |= CookieDecoder::IS_SECURE;
+            flags |= Self::IS_SECURE;
         }
 
         if self.is_http_only {
-            flags |= CookieDecoder::IS_HTTP_ONLY;
+            flags |= Self::IS_HTTP_ONLY;
         }
 
         match self.same_site {
             SameSite::None => {},
-            SameSite::Lax => flags |= CookieDecoder::SS_LAX,
-            SameSite::Strict => flags |= CookieDecoder::SS_STRICT,
+            SameSite::Lax => flags |= Self::SS_LAX,
+            SameSite::Strict => flags |= Self::SS_STRICT,
         }
 
         flags

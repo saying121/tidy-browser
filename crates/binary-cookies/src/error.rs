@@ -1,3 +1,5 @@
+use std::{error::Error, fmt::Display};
+
 use winnow::error::ContextError;
 
 #[derive(Debug)]
@@ -25,6 +27,40 @@ pub enum BplistErr {
     BadKey,
     #[error(r#"The int not one byte, need update decoder"#)]
     OneByteInt,
+}
+
+#[derive(Clone, Copy)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub enum ExpectErr {
+    U32(u32),
+    U64(u64),
+    Magic([u8; 4]),
+    EndHeader([u8; 4]),
+}
+
+impl std::fmt::Debug for ExpectErr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}", self))
+    }
+}
+
+impl Error for ExpectErr {}
+
+impl Display for ExpectErr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::U32(binary) => f.write_fmt(format_args!("{:#>06x}", binary)),
+            Self::U64(binary) => f.write_fmt(format_args!("{:#010x}", binary)),
+            Self::Magic(e) => {
+                let s: String = e
+                    .iter()
+                    .map(|&v| v as char)
+                    .collect();
+                f.write_fmt(format_args!(r#"b"{s}""#))
+            },
+            Self::EndHeader(e) => f.write_fmt(format_args!("{e:?}")),
+        }
+    }
 }
 
 pub type Result<T> = std::result::Result<T, ParseError>;
