@@ -1,5 +1,3 @@
-use std::io::Read;
-
 use oval::Buffer;
 use winnow::{
     error::{ErrMode, Needed},
@@ -9,7 +7,6 @@ use winnow::{
 use super::{DecodeResult, OffsetSize};
 use crate::{
     cookie::Cookie,
-    cursor::CookieCursor,
     decode::StreamIn,
     error::{ParseError, Result},
 };
@@ -22,10 +19,11 @@ pub struct CookiesOffset {
 }
 
 impl CookiesOffset {
+    // NOTE: The offset_sizes order is reverse
     pub(crate) fn new(page_offset: u64, page_size: u32, cookies_offset: &[u32]) -> Self {
         let mut prev_cookie_end = page_size;
 
-        let offset_sizes = cookies_offset
+        let offset_sizes: Vec<OffsetSize> = cookies_offset
             .iter()
             .rev()
             .map(|&offset_in_page| {
@@ -37,18 +35,21 @@ impl CookiesOffset {
                 res
             })
             .collect();
-        Self { offset_sizes }
-    }
 
-    pub fn offset_sizes(&self) -> &[OffsetSize] {
-        &self.offset_sizes
+        Self { offset_sizes }
     }
 }
 
 #[derive(Clone)]
 #[derive(Debug)]
 pub struct CookieFsm {
-    buffer: Buffer,
+    pub(crate) buffer: Buffer,
+}
+
+impl Default for CookieFsm {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CookieFsm {
@@ -68,7 +69,7 @@ impl CookieFsm {
     pub fn process(mut self) -> Result<DecodeResult<Self, Cookie>> {
         let mut input: StreamIn = StreamIn::new(self.buffer.data());
 
-        let e = match Cookie::parse.parse_next(&mut input) {
+        let e = match Cookie::decode.parse_next(&mut input) {
             Ok(o) => return Ok(DecodeResult::Done(o)),
             Err(e) => e,
         };
@@ -91,77 +92,6 @@ impl CookieFsm {
                 }
                 Ok(DecodeResult::Continue(self))
             },
-        }
-    }
-}
-
-impl Default for CookieFsm {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct CookieHandle<'a, F: CookieCursor> {
-    file: &'a F,
-    offset_size: CookiesOffset,
-}
-
-impl<'a, F: CookieCursor> CookieHandle<'a, F> {
-    pub const fn new(file: &'a F, offset_size: CookiesOffset) -> Self {
-        Self { file, offset_size }
-    }
-
-    pub fn decoders(&self) -> impl Iterator<Item = CookieDecoder<<F as CookieCursor>::Cursor<'_>>> {
-        self.offset_size
-            .offset_sizes
-            .iter()
-            .map(|&OffsetSize { offset, size }| CookieDecoder {
-                rd: self.file.cursor_at(offset),
-                size,
-            })
-    }
-
-    pub fn into_decoders(
-        self,
-    ) -> impl Iterator<Item = CookieDecoder<<F as CookieCursor>::Cursor<'a>>> {
-        self.offset_size
-            .offset_sizes
-            .into_iter()
-            .map(|OffsetSize { offset, size }| CookieDecoder {
-                rd: self.file.cursor_at(offset),
-                size,
-            })
-    }
-}
-
-#[derive(Clone, Copy)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct CookieDecoder<R: Read> {
-    rd: R,
-    /// The cookie size
-    size: u32,
-}
-
-impl<R: Read> CookieDecoder<R> {
-    pub fn decode(&mut self) -> Result<Cookie> {
-        let mut fsm = CookieFsm::with_capacity(self.size as usize);
-        loop {
-            self.rd
-                .read_exact(fsm.buffer.space())?;
-            let count = fsm.buffer.available_space();
-            fsm.buffer.fill(count);
-            match fsm.process()? {
-                DecodeResult::Continue(fsm_) => {
-                    fsm = fsm_;
-                    continue;
-                },
-                DecodeResult::Done(r) => return Ok(r),
-            }
         }
     }
 }

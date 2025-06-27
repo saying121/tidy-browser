@@ -25,17 +25,16 @@ use crate::{
 pub struct BinaryCookies {
     // pub magic: [u8: 4],
     // pub num_pages: u32,         // be
-    #[cfg(test)]
-    pub page_sizes: Vec<u32>, // be
+    // pub page_sizes: Vec<u32>, // be
     pub pages: Vec<Page>,
-    pub checksum: Checksum, // 4 byte
+    // pub checksum: Checksum, // 4 byte
     pub metadata: Option<Metadata>,
 }
 
 pub type Checksum = u32;
 
 impl BinaryCookies {
-    pub fn parse_head(input: &mut StreamIn) -> ModalResult<Offsets> {
+    pub fn decode_head(input: &mut StreamIn) -> ModalResult<Offsets> {
         if input.len() < 8 {
             return Err(ErrMode::Incomplete(Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(8 - input.len())
@@ -72,7 +71,7 @@ impl BinaryCookies {
         Ok(Offsets { page_sizes, tail_offset })
     }
 
-    pub fn parse_tail(input: &mut StreamIn) -> ModalResult<(Checksum, Option<Metadata>)> {
+    pub fn decode_tail(input: &mut StreamIn) -> ModalResult<(Checksum, Option<Metadata>)> {
         if input.len() < 4 + 8 {
             return Err(ErrMode::Incomplete(Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(4 + 8 - input.len())
@@ -151,20 +150,8 @@ impl BinaryCookies {
     pub const MAGIC: &'static [u8] = b"cook"; // 0 offset, 4 size
     pub const FOOTER: u64 = 0x071720050000004B;
 
-    pub fn new(pages: Vec<Page>) -> Self {
-        let mut self_ = Self {
-            #[cfg(test)]
-            page_sizes: vec![],
-            pages,
-            checksum: 0,
-            metadata: None,
-        };
-        #[cfg(test)]
-        {
-            self_.page_sizes = self_.page_sizes();
-        };
-        self_.checksum = self_.checksum();
-        self_
+    pub const fn new(pages: Vec<Page>) -> Self {
+        Self { pages, metadata: None }
     }
 
     pub fn push(&mut self, page: Page) {
@@ -230,15 +217,13 @@ impl BinaryCookies {
 pub struct Page {
     // pub pages_start: [u8; 4],
     // pub num_cookies: u32,          // le
-    #[cfg(test)]
-    /// Offset in the page
-    pub cookie_offsets: Vec<u32>, // le, N * `self.num_cookies`
+    // pub cookie_offsets_in_page: Vec<u32>, // le, N * `self.num_cookies`
     // pub page_end: [u8],            // Must be equal to []byte{0x00_00_00_00}
     pub cookies: Vec<Cookie>,
 }
 
 impl Page {
-    pub fn parse_head(input: &mut StreamIn) -> ModalResult<Vec<u32>> {
+    pub fn decode_head(input: &mut StreamIn) -> ModalResult<Vec<u32>> {
         if input.len() < 8 {
             return Err(ErrMode::Incomplete(Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(8 - input.len())
@@ -293,7 +278,7 @@ impl Page {
         self.cookies.push(cookie);
     }
 
-    /// Dynamic calculation
+    /// Dynamic calculation offset in the page
     pub fn cookie_offsets(&self) -> Vec<u32> {
         let mut offset = 4 + 4 + 4 * self.cookies.len() as u32 + 4;
         let mut offsets = Vec::with_capacity(self.cookies.len());
@@ -415,7 +400,7 @@ impl Cookie {
         flags & Self::IS_HTTP_ONLY == Self::IS_HTTP_ONLY
     }
 
-    pub fn parse(input: &mut StreamIn) -> ModalResult<Self> {
+    pub fn decode(input: &mut StreamIn) -> ModalResult<Self> {
         let cookie_size = le_u32(input)?;
 
         let need_size = cookie_size as usize - 4;

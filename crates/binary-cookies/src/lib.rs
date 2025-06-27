@@ -1,10 +1,7 @@
 pub mod cookie;
-pub mod cursor;
 pub mod decode;
 pub mod error;
-
-#[cfg(test)]
-mod tests;
+pub mod sync;
 
 pub use bstr;
 pub use chrono;
