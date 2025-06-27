@@ -43,3 +43,32 @@ impl F64ToSafariTime for f64 {
         }
     }
 }
+
+#[macro_export]
+macro_rules! mode_err {
+    ($self:ident, $e:ident, $buffer:expr) => {
+        use winnow::error::ErrMode;
+        use winnow::error::Needed;
+        use $crate::error::ParseError;
+        use $crate::decode::DecodeResult;
+
+        match $e {
+            ErrMode::Backtrack(e) | ErrMode::Cut(e) => Err(ParseError::WinnowCtx(e)),
+            ErrMode::Incomplete(Needed::Unknown) => {
+                // The branch is unreachable?
+                let new_cap = $buffer.capacity() * 2;
+                $buffer.grow(new_cap);
+                Ok(DecodeResult::Continue($self))
+            },
+            ErrMode::Incomplete(Needed::Size(size)) => {
+                let need_size = size.get();
+                $buffer
+                    .grow($buffer.available_data() + need_size);
+                if $buffer.available_space() < need_size {
+                    $buffer.shift();
+                }
+                Ok(DecodeResult::Continue($self))
+            },
+        }
+    };
+}

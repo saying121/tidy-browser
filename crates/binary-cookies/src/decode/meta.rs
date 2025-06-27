@@ -1,13 +1,11 @@
 use oval::Buffer;
-use winnow::{
-    error::{ErrMode, Needed},
-    Parser as _,
-};
+use winnow::Parser;
 
 use super::{DecodeResult, StreamIn};
 use crate::{
     cookie::{BinaryCookies, Checksum, Metadata},
-    error::{ParseError, Result},
+    error::Result,
+    mode_err,
 };
 
 /// The meta relative file start offset
@@ -42,23 +40,6 @@ impl MetaFsm {
             },
             Err(e) => e,
         };
-        match e {
-            ErrMode::Backtrack(e) | ErrMode::Cut(e) => Err(ParseError::WinnowCtx(e)),
-            ErrMode::Incomplete(Needed::Unknown) => {
-                // The branch is unreachable?
-                let new_cap = self.buffer.capacity() * 2;
-                self.buffer.grow(new_cap);
-                Ok(DecodeResult::Continue(self))
-            },
-            ErrMode::Incomplete(Needed::Size(size)) => {
-                let need_size = size.get();
-                self.buffer
-                    .grow(self.buffer.available_data() + need_size);
-                if self.buffer.available_space() < need_size {
-                    self.buffer.shift();
-                }
-                Ok(DecodeResult::Continue(self))
-            },
-        }
+        mode_err! {self, e, self.buffer}
     }
 }

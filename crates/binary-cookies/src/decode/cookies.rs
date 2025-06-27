@@ -1,15 +1,8 @@
 use oval::Buffer;
-use winnow::{
-    error::{ErrMode, Needed},
-    Parser,
-};
+use winnow::Parser;
 
 use super::{DecodeResult, OffsetSize};
-use crate::{
-    cookie::Cookie,
-    decode::StreamIn,
-    error::{ParseError, Result},
-};
+use crate::{cookie::Cookie, decode::StreamIn, error::Result, mode_err};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -74,24 +67,6 @@ impl CookieFsm {
             Err(e) => e,
         };
 
-        match e {
-            ErrMode::Backtrack(e) | ErrMode::Cut(e) => Err(ParseError::WinnowCtx(e)),
-            ErrMode::Incomplete(Needed::Unknown) => {
-                // The branch is unreachable?
-                let new_cap = self.buffer.capacity() * 2;
-                self.buffer.grow(new_cap);
-                Ok(DecodeResult::Continue(self))
-            },
-            ErrMode::Incomplete(Needed::Size(size)) => {
-                let need_size = size.get();
-                self.buffer
-                    .grow(self.buffer.available_data() + need_size);
-
-                if self.buffer.available_space() < need_size {
-                    self.buffer.shift();
-                }
-                Ok(DecodeResult::Continue(self))
-            },
-        }
+        mode_err! {self, e, self.buffer}
     }
 }
