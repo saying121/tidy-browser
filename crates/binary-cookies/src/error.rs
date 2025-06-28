@@ -17,6 +17,12 @@ pub enum ParseError {
     ParsingCompleted,
 }
 
+impl ParseError {
+    pub const fn is_completed(&self) -> bool {
+        matches!(self, Self::ParsingCompleted)
+    }
+}
+
 #[derive(Clone, Copy)]
 #[derive(Debug)]
 #[derive(thiserror::Error)]

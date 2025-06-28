@@ -7,7 +7,7 @@ use winnow::{
 };
 
 use super::{DecodeResult, OffsetSize};
-use crate::{cookie::Cookie, decode::StreamIn, error::Result, mode_err};
+use crate::{cookie::Cookie, decode::StreamIn, error::Result};
 
 #[derive(Clone)]
 #[derive(Debug)]

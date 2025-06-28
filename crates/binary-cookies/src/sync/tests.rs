@@ -1,4 +1,8 @@
-use std::{fs::File, os::unix::prelude::MetadataExt, str::FromStr};
+#[cfg(unix)]
+use std::os::unix::prelude::MetadataExt;
+#[cfg(not(unix))]
+use std::os::windows::prelude::MetadataExt;
+use std::{fs::File, str::FromStr};
 
 use bstr::BString;
 use pretty_assertions::assert_eq;
@@ -7,13 +11,49 @@ use crate::{
     cookie::{BinaryCookies, Cookie, Metadata, Page, SameSite},
     decode::{pages::PagesOffset, F64ToSafariTime as _, OffsetSize},
     sync::{
-        bc::DecodeBinaryCookie, cookie::CookieDecoder, cursor::CookieCursor, page::PageDecoder,
+        bc::DecodeBinaryCookie,
+        cookie::CookieDecoder,
+        cursor::CookieCursor,
+        page::PageDecoder,
+        stream::{StreamDecoder, Values},
     },
 };
 
 const COOKIE: &str = "./test-resource/BinaryCookies.cookie";
 const PAGE: &str = "./test-resource/BinaryCookies.page";
 const BINARY_COOKIE: &str = "./test-resource/BinaryCookies.binarycookies";
+
+#[test]
+fn test_binary_cookie_stream() {
+    let f = File::open(BINARY_COOKIE).unwrap();
+    let mut sd = StreamDecoder::new(f);
+
+    loop {
+        let a = sd.decode().unwrap();
+        match a {
+            Values::Bc { meta_offset, pages_offset } => {
+                assert_eq!(meta_offset, 408);
+                assert_eq!(
+                    pages_offset,
+                    PagesOffset {
+                        offset_sizes: vec![
+                            OffsetSize { offset: 16, size: 196 },
+                            OffsetSize { offset: 212, size: 196 },
+                        ],
+                    }
+                );
+            },
+            Values::Page(_) | Values::Cookie(_) => {},
+            Values::Meta { checksum, meta } => {
+                assert_eq!(
+                    (checksum, meta),
+                    (5672, Some(Metadata { nshttp_cookie_accept_policy: 2 }))
+                );
+                break;
+            },
+        }
+    }
+}
 
 #[test]
 fn test_binary_cookie() {
@@ -183,7 +223,18 @@ fn test_page() {
         file: &file,
         rd: file.cursor_at(0),
         offset: 0,
-        size: file.metadata().unwrap().size() as u32,
+        size: {
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            {
+                file.metadata().unwrap().size()
+            }
+            #[cfg(target_os = "windows")]
+            {
+                file.metadata()
+                    .unwrap()
+                    .file_size()
+            }
+        } as u32,
     };
     let a = pd.decode().unwrap();
     let cookies: Vec<_> = a

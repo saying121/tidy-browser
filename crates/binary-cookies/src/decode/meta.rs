@@ -5,7 +5,6 @@ use super::{DecodeResult, StreamIn};
 use crate::{
     cookie::{BinaryCookies, Checksum, Metadata},
     error::Result,
-    mode_err,
 };
 
 /// The meta relative file start offset

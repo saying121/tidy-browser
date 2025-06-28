@@ -5,7 +5,7 @@ use winnow::{
 };
 
 use super::{meta::MetaOffset, pages::PagesOffset, DecodeResult};
-use crate::{cookie::BinaryCookies, decode::StreamIn, error::Result, mode_err};
+use crate::{cookie::BinaryCookies, decode::StreamIn, error::Result};
 
 #[derive(Clone)]
 #[derive(Debug)]
