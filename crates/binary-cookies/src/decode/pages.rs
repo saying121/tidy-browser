@@ -1,5 +1,8 @@
 use oval::Buffer;
-use winnow::Parser;
+use winnow::{
+    stream::{Offset, Stream},
+    Parser,
+};
 
 use super::{DecodeResult, OffsetSize};
 use crate::{cookie::Page, decode::StreamIn, error::Result, mode_err};
@@ -55,8 +58,14 @@ impl PageFsm {
 
     pub fn process(mut self) -> Result<DecodeResult<Self, Vec<u32>>> {
         let mut input: StreamIn = StreamIn::new(self.buffer.data());
+        let start = input.checkpoint();
+
         let e = match Page::decode_head.parse_next(&mut input) {
-            Ok(o) => return Ok(DecodeResult::Done(o)),
+            Ok(o) => {
+                let consumed = input.offset_from(&start);
+                self.buffer.consume(consumed);
+                return Ok(DecodeResult::Done(o));
+            },
             Err(e) => e,
         };
 

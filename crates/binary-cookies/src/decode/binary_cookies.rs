@@ -1,5 +1,8 @@
 use oval::Buffer;
-use winnow::Parser;
+use winnow::{
+    stream::{Offset, Stream},
+    Parser,
+};
 
 use super::{meta::MetaOffset, pages::PagesOffset, DecodeResult};
 use crate::{cookie::BinaryCookies, decode::StreamIn, error::Result, mode_err};
@@ -40,8 +43,12 @@ impl BinaryCookieFsm {
 
     pub fn process(mut self) -> Result<DecodeResult<Self, (MetaOffset, PagesOffset)>> {
         let mut input: StreamIn = StreamIn::new(self.buffer.data());
+        let start = input.checkpoint();
+
         let e = match BinaryCookies::decode_head.parse_next(&mut input) {
             Ok(offsets) => {
+                let consumed = input.offset_from(&start);
+                self.buffer.consume(consumed);
                 return Ok(DecodeResult::Done((
                     offsets.tail_offset,
                     PagesOffset::new(offsets.page_sizes),

@@ -1,5 +1,8 @@
 use oval::Buffer;
-use winnow::Parser;
+use winnow::{
+    stream::{Offset, Stream},
+    Parser,
+};
 
 use super::{DecodeResult, StreamIn};
 use crate::{
@@ -34,8 +37,12 @@ impl MetaFsm {
 
     pub fn process(mut self) -> Result<DecodeResult<Self, (Checksum, Option<Metadata>)>> {
         let mut input: StreamIn = StreamIn::new(self.buffer.data());
+        let start = input.checkpoint();
+
         let e = match BinaryCookies::decode_tail.parse_next(&mut input) {
             Ok((checksum, meta)) => {
+                let consumed = input.offset_from(&start);
+                self.buffer.consume(consumed);
                 return Ok(DecodeResult::Done((checksum, meta)));
             },
             Err(e) => e,
