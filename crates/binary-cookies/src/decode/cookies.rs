@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use oval::Buffer;
 use winnow::{
     stream::{Offset, Stream},
@@ -6,6 +8,20 @@ use winnow::{
 
 use super::{DecodeResult, OffsetSize};
 use crate::{cookie::Cookie, decode::StreamIn, error::Result, mode_err};
+
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub struct CookiesOffsetInPage(pub(crate) Vec<u32>);
+
+impl Deref for CookiesOffsetInPage {
+    type Target = [u32];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -62,7 +78,7 @@ impl CookieFsm {
         Self { buffer }
     }
 
-    pub fn process(mut self) -> Result<DecodeResult<Self, Cookie>> {
+    pub fn process(mut self) -> Result<DecodeResult<Self, (Cookie, Buffer)>> {
         let mut input: StreamIn = StreamIn::new(self.buffer.data());
         let start = input.checkpoint();
 
@@ -70,7 +86,7 @@ impl CookieFsm {
             Ok(o) => {
                 let consumed = input.offset_from(&start);
                 self.buffer.consume(consumed);
-                return Ok(DecodeResult::Done(o));
+                return Ok(DecodeResult::Done((o, self.buffer)));
             },
             Err(e) => e,
         };

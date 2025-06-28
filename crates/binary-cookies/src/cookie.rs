@@ -12,7 +12,9 @@ use winnow::{
 };
 
 use crate::{
-    decode::{binary_cookies::Offsets, F64ToSafariTime as _, StreamIn},
+    decode::{
+        binary_cookies::Offsets, cookies::CookiesOffsetInPage, F64ToSafariTime as _, StreamIn,
+    },
     error::{BplistErr, ExpectErr},
 };
 
@@ -223,7 +225,8 @@ pub struct Page {
 }
 
 impl Page {
-    pub fn decode_head(input: &mut StreamIn) -> ModalResult<Vec<u32>> {
+    /// Return cookie offsets
+    pub fn decode_head(input: &mut StreamIn) -> ModalResult<CookiesOffsetInPage> {
         if input.len() < 8 {
             return Err(ErrMode::Incomplete(Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(8 - input.len())
@@ -266,7 +269,7 @@ impl Page {
             return Err(ErrMode::Cut(context_error));
         }
 
-        Ok(cookie_offsets)
+        Ok(CookiesOffsetInPage(cookie_offsets))
     }
 }
 

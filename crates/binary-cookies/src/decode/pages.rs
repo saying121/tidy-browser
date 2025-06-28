@@ -4,7 +4,7 @@ use winnow::{
     Parser,
 };
 
-use super::{DecodeResult, OffsetSize};
+use super::{cookies::CookiesOffsetInPage, DecodeResult, OffsetSize};
 use crate::{cookie::Page, decode::StreamIn, error::Result, mode_err};
 
 #[derive(Clone)]
@@ -56,7 +56,7 @@ impl PageFsm {
         Self { buffer }
     }
 
-    pub fn process(mut self) -> Result<DecodeResult<Self, Vec<u32>>> {
+    pub fn process(mut self) -> Result<DecodeResult<Self, (CookiesOffsetInPage, Buffer)>> {
         let mut input: StreamIn = StreamIn::new(self.buffer.data());
         let start = input.checkpoint();
 
@@ -64,7 +64,7 @@ impl PageFsm {
             Ok(o) => {
                 let consumed = input.offset_from(&start);
                 self.buffer.consume(consumed);
-                return Ok(DecodeResult::Done(o));
+                return Ok(DecodeResult::Done((o, self.buffer)));
             },
             Err(e) => e,
         };
