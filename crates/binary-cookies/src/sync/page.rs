@@ -70,7 +70,7 @@ impl<'a, R: Read, F: CookieCursor> PageDecoder<'a, R, F> {
                     fsm = fsm_;
                     continue;
                 },
-                DecodeResult::Done(cookie_offset_in_page) => {
+                DecodeResult::Done((cookie_offset_in_page, _)) => {
                     let cookies_offset =
                         CookiesOffset::new(self.offset, self.size, &cookie_offset_in_page);
                     return Ok(CookieHandle::new(self.file, cookies_offset));

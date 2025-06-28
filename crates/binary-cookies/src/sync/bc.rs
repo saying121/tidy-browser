@@ -33,7 +33,7 @@ where
                     fsm = fsm_;
                     continue;
                 },
-                DecodeResult::Done((meta_offset, pages_offset)) => {
+                DecodeResult::Done((meta_offset, pages_offset, _)) => {
                     return Ok(BinaryCookiesHandle {
                         file: self,
                         meta_offset,

@@ -13,6 +13,8 @@ pub enum ParseError {
     Bplist(#[from] BplistErr),
     #[error(transparent)]
     IO(#[from] std::io::Error),
+    #[error("End of binarycookies, can't decode any more data")]
+    ParsingCompleted,
 }
 
 #[derive(Clone, Copy)]

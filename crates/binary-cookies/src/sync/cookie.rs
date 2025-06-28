@@ -71,7 +71,7 @@ impl<R: Read> CookieDecoder<R> {
                     fsm = fsm_;
                     continue;
                 },
-                DecodeResult::Done(r) => return Ok(r),
+                DecodeResult::Done((r, _)) => return Ok(r),
             }
         }
     }

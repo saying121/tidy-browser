@@ -41,7 +41,7 @@ impl BinaryCookieFsm {
         }
     }
 
-    pub fn process(mut self) -> Result<DecodeResult<Self, (MetaOffset, PagesOffset)>> {
+    pub fn process(mut self) -> Result<DecodeResult<Self, (MetaOffset, PagesOffset, Buffer)>> {
         let mut input: StreamIn = StreamIn::new(self.buffer.data());
         let start = input.checkpoint();
 
@@ -52,6 +52,7 @@ impl BinaryCookieFsm {
                 return Ok(DecodeResult::Done((
                     offsets.tail_offset,
                     PagesOffset::new(offsets.page_sizes),
+                    self.buffer,
                 )));
             },
             Err(e) => e,
