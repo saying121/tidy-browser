@@ -1,6 +1,7 @@
-use std::{io::Read, mem};
+use std::mem;
 
 use oval::Buffer;
+use tokio::io::{AsyncRead, AsyncReadExt};
 
 use crate::{
     decode::{
@@ -16,12 +17,12 @@ use crate::{
 
 #[derive(Clone)]
 #[derive(Debug)]
-pub struct StreamDecoder<R: Read> {
+pub struct StreamDecoder<R: AsyncRead> {
     state: State,
     rd: R,
 }
 
-impl<R: Read> StreamDecoder<R> {
+impl<R: AsyncRead + Unpin + Send> StreamDecoder<R> {
     const BUF_SIZE: usize = 64;
 
     pub fn new(rd: R) -> Self {
@@ -35,10 +36,13 @@ impl<R: Read> StreamDecoder<R> {
         }
     }
 
-    pub fn decode(&mut self) -> Result<Values> {
+    pub async fn decode(&mut self) -> Result<Values> {
         match mem::take(&mut self.state) {
             State::Bc { mut fsm } => loop {
-                let readed = self.rd.read(fsm.buffer.space())?;
+                let readed = self
+                    .rd
+                    .read(fsm.buffer.space())
+                    .await?;
                 fsm.buffer.fill(readed);
 
                 match fsm.process()? {
@@ -56,7 +60,10 @@ impl<R: Read> StreamDecoder<R> {
                 }
             },
             State::Page { mut fsm, remaining_page } => loop {
-                let readed = self.rd.read(fsm.buffer.space())?;
+                let readed = self
+                    .rd
+                    .read(fsm.buffer.space())
+                    .await?;
                 fsm.buffer.fill(readed);
                 match fsm.process()? {
                     DecodeResult::Continue(fsm_) => {
@@ -78,7 +85,10 @@ impl<R: Read> StreamDecoder<R> {
                 remaining_page,
                 mut fsm,
             } => loop {
-                let readed = self.rd.read(fsm.buffer.space())?;
+                let readed = self
+                    .rd
+                    .read(fsm.buffer.space())
+                    .await?;
                 fsm.buffer.fill(readed);
 
                 match fsm.process()? {
@@ -109,7 +119,10 @@ impl<R: Read> StreamDecoder<R> {
                 }
             },
             State::Meta { mut fsm } => loop {
-                let readed = self.rd.read(fsm.buffer.space())?;
+                let readed = self
+                    .rd
+                    .read(fsm.buffer.space())
+                    .await?;
                 fsm.buffer.fill(readed);
 
                 match fsm.process()? {

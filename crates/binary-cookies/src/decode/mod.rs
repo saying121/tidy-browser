@@ -30,6 +30,7 @@ pub mod binary_cookies;
 pub mod cookies;
 pub mod meta;
 pub mod pages;
+pub mod stream;
 
 use chrono::{offset::LocalResult, DateTime, TimeZone as _, Utc};
 use winnow::Partial;

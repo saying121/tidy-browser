@@ -1,19 +1,20 @@
-use std::fs::File;
-
-use binary_cookies::{cookie::Metadata, decode::stream::Values, sync::stream::StreamDecoder};
+use binary_cookies::{cookie::Metadata, decode::stream::Values, r#async::stream::StreamDecoder};
+use tokio::fs::File;
 
 const BINARY_COOKIE: &str = "./test-resource/BinaryCookies.binarycookies";
 
-#[test]
-fn test_binary_cookie_stream() {
-    let f = File::open(BINARY_COOKIE).unwrap();
+#[tokio::test]
+async fn test_binary_cookie_stream() {
+    let f = File::open(BINARY_COOKIE)
+        .await
+        .unwrap();
     let mut sd = StreamDecoder::new(f);
 
     let mut page_cookies = vec![];
 
     let mut cookies = vec![];
     loop {
-        let a = sd.decode().unwrap();
+        let a = sd.decode().await.unwrap();
         match a {
             Values::Bc { meta_offset, .. } => {
                 assert_eq!(meta_offset, 408);

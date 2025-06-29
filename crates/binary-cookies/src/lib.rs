@@ -1,3 +1,4 @@
+pub mod r#async;
 pub mod cookie;
 pub mod decode;
 pub mod error;

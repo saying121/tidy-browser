@@ -23,12 +23,13 @@ annotate-snippets = { workspace = true }
 bstr = { workspace = true }
 plist = { workspace = true }
 serde = { workspace = true }
+tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"] }
 
 [dev-dependencies]
 dirs = { workspace = true }
 rand = { workspace = true }
 pretty_assertions = { workspace = true }
-rayon = { version = "1" }
+rayon = { workspace = true }
 
 [lints]
 workspace = true

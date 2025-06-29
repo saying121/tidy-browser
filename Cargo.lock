@@ -297,6 +297,7 @@ dependencies = [
  "rayon",
  "serde",
  "thiserror 2.0.12",
+ "tokio",
  "winnow",
 ]
 
