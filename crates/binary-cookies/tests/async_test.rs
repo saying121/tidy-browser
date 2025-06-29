@@ -1,4 +1,4 @@
-use binary_cookies::{cookie::Metadata, decode::stream::Values, r#async::stream::StreamDecoder};
+use binary_cookies::{cookie::Metadata, decode::stream::Values, tokio::stream::StreamDecoder};
 use tokio::fs::File;
 
 const BINARY_COOKIE: &str = "./test-resource/BinaryCookies.binarycookies";
