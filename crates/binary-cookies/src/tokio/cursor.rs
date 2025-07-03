@@ -48,8 +48,11 @@ impl CookieCursor for Arc<RandomAccessFile> {
         AsyncCursor {
             file: Self::clone(self),
             file_offset: offset,
-            buf_offset: 0,
-            state: State::Idle(Some(Buf { buf: vec![0; 256], valid_len: 0 })),
+            state: State::Idle(Some(Buf {
+                buf: vec![0; 512],
+                valid_len: 0,
+                buf_offset: 0,
+            })),
         }
     }
 }
@@ -58,7 +61,6 @@ impl CookieCursor for Arc<RandomAccessFile> {
 pub struct AsyncCursor {
     file: Arc<RandomAccessFile>,
     file_offset: u64,
-    buf_offset: usize,
     state: State,
 }
 
@@ -69,6 +71,7 @@ pub struct AsyncCursor {
 struct Buf {
     buf: Vec<u8>,
     valid_len: usize,
+    buf_offset: usize,
 }
 
 #[derive(Debug)]
@@ -85,17 +88,18 @@ impl AsyncRead for AsyncCursor {
     ) -> std::task::Poll<std::io::Result<()>> {
         loop {
             match &mut self.state {
-                State::Idle(buffer) => {
-                    #[expect(clippy::unwrap_used, reason = "that's ok")]
-                    let mut buffer = buffer.take().unwrap();
+                State::Idle(buf_cell) => {
+                    #[expect(clippy::unwrap_used, reason = "It must be `Some`")]
+                    let mut buffer = buf_cell.take().unwrap();
 
-                    if self.buf_offset < buffer.valid_len {
+                    if buffer.buf_offset < buffer.valid_len {
                         let read_len = buf
                             .remaining()
-                            .min(buffer.valid_len - self.buf_offset);
-                        buf.put_slice(&buffer.buf[self.buf_offset..][..read_len]);
-                        self.buf_offset += read_len;
+                            .min(buffer.valid_len - buffer.buf_offset);
+                        buf.put_slice(&buffer.buf[buffer.buf_offset..][..read_len]);
+                        buffer.buf_offset += read_len;
 
+                        *buf_cell = Some(buffer);
                         return Poll::Ready(Ok(()));
                     }
 
@@ -105,6 +109,7 @@ impl AsyncRead for AsyncCursor {
                     let jh = tokio::task::spawn_blocking(move || -> Result<_, std::io::Error> {
                         let readed = f.read_at(file_offset, &mut buffer.buf)?;
                         buffer.valid_len = readed;
+                        buffer.buf_offset = 0;
                         Ok(buffer)
                     });
                     self.state = State::Busy(jh);
@@ -113,11 +118,9 @@ impl AsyncRead for AsyncCursor {
                     Ok(buffer) => {
                         self.file_offset += buffer.valid_len as u64;
                         self.state = State::Idle(Some(buffer));
-                        return Poll::Ready(Ok(()));
+                        continue;
                     },
-                    Err(e) => {
-                        return Poll::Ready(Err(e));
-                    },
+                    Err(e) => return Poll::Ready(Err(e)),
                 },
             }
         }
