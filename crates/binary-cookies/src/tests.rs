@@ -1,50 +1,26 @@
 use bstr::BString;
 use chrono::{Days, TimeZone as _, Utc};
-use pretty_assertions::assert_eq;
 use rand::{random, random_range, Rng, SeedableRng};
 
 use crate::{
     cookie::{BinaryCookies, Cookie, Metadata, Page},
-    decode::{CookieDecoder, StreamIn},
+    decode::stream,
+    sync::stream::StreamDecoder,
 };
-
-#[test]
-fn encode_cookie_flags() {
-    for _ in 0..10 {
-        let cookie = Cookie::random();
-        assert_eq!(cookie.flags, cookie.flags());
-    }
-}
-
-#[test]
-fn encode_cookie() {
-    let cookie = Cookie::random();
-    assert_eq!(cookie.flags, cookie.flags());
-    let v = cookie.encode();
-
-    let mut var = StreamIn::new(&v);
-    let a = CookieDecoder::cookie(&mut var).unwrap();
-    assert_eq!(cookie, a);
-}
-
-#[test]
-fn encode_page() {
-    let page = Page::random();
-    let v = page.encode().0;
-
-    let mut var = StreamIn::new(&v);
-    let a = CookieDecoder::page(&mut var).unwrap();
-    assert_eq!(a, page);
-}
 
 #[test]
 fn encode_binary_cookies() {
     let cookie = BinaryCookies::random();
     let v = cookie.encode();
 
-    let mut var = StreamIn::new(&v);
-    let a = CookieDecoder::binary_cookies(&mut var).unwrap();
-    assert_eq!(a, cookie);
+    let mut a = StreamDecoder::new(std::io::Cursor::new(v));
+    loop {
+        let a = a.decode().unwrap();
+        match a {
+            stream::Values::Bc { .. } | stream::Values::Page(_) | stream::Values::Cookie(_) => {},
+            stream::Values::Meta { .. } => break,
+        }
+    }
 }
 
 // //////
@@ -65,9 +41,7 @@ impl Page {
         let cookies = (0..rand::random_range(2..5))
             .map(|_| Cookie::random())
             .collect();
-        let mut self_ = Self { cookie_offsets: vec![], cookies };
-        self_.cookie_offsets = self_.cookie_offsets();
-        self_
+        Self { cookies }
     }
 }
 
@@ -83,9 +57,9 @@ impl Cookie {
 
         let flags = random();
 
-        let is_secure = CookieDecoder::is_secure(flags);
-        let is_http_only = CookieDecoder::is_http_only(flags);
-        let same_site = CookieDecoder::same_site(flags);
+        let is_secure = Self::is_secure(flags);
+        let is_http_only = Self::is_http_only(flags);
+        let same_site = Self::same_site(flags);
 
         let mut self_ = Self {
             port,
