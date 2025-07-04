@@ -2,9 +2,8 @@ use std::num::NonZeroUsize;
 
 use bstr::{BString, ByteSlice as _};
 use chrono::{DateTime, TimeZone as _, Utc};
-use serde::{Deserialize, Serialize};
 use winnow::{
-    binary::{be_i8, be_u32, be_u64, be_u8, le_f64, le_u16, le_u32},
+    binary::{be_u32, be_u64, be_u8, le_f64, le_u16, le_u32},
     combinator::repeat,
     error::{ContextError, ErrMode, FromExternalError, Needed, StrContext, StrContextValue},
     token::take,
@@ -97,57 +96,6 @@ impl BinaryCookies {
     }
 }
 
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq)]
-#[derive(PartialOrd, Ord)]
-#[derive(Serialize, Deserialize)]
-#[expect(clippy::exhaustive_structs, reason = "allow")]
-pub struct Metadata {
-    #[serde(rename = "NSHTTPCookieAcceptPolicy")]
-    pub nshttp_cookie_accept_policy: i8,
-}
-
-impl Metadata {
-    // See apple opensource CFBinaryPList.c
-    // This is a very specialized decoder that needs to be updated with the BinaryCookies format
-    pub(crate) fn decode(input: &mut StreamIn) -> Result<Self, ErrMode<ContextError>> {
-        if input.len() < 75 {
-            return Err(ErrMode::Incomplete(Needed::Size(unsafe {
-                NonZeroUsize::new_unchecked(75 - input.len())
-            })));
-        }
-        let bplist = take(8_usize).parse_next(input)?;
-        if bplist != b"bplist00" {
-            let ctx_err = ContextError::from_external_error(input, BplistErr::Magic);
-            return Err(ErrMode::Cut(ctx_err));
-        }
-        let dict = be_u8(input)?;
-        if dict != 0xD1 {
-            let ctx_err = ContextError::from_external_error(input, BplistErr::NotDict);
-            return Err(ErrMode::Cut(ctx_err));
-        }
-        let _length = take(5_usize).parse_next(input)?;
-        let key = take(24_usize).parse_next(input)?;
-        if b"NSHTTPCookieAcceptPolicy" != key {
-            let ctx_err = ContextError::from_external_error(input, BplistErr::BadKey);
-            return Err(ErrMode::Cut(ctx_err));
-        }
-        let int_flags = be_u8(input)?;
-        if int_flags != 0x10 {
-            let ctx_err = ContextError::from_external_error(input, BplistErr::OneByteInt);
-            return Err(ErrMode::Cut(ctx_err));
-        }
-        let int_val = be_i8(input)?;
-        take(32 + 3_usize).parse_next(input)?;
-        let metadata = Self {
-            nshttp_cookie_accept_policy: int_val,
-        };
-        Ok(metadata)
-    }
-}
-
 impl BinaryCookies {
     pub const MAGIC: &'static [u8] = b"cook"; // 0 offset, 4 size
     pub const FOOTER: u64 = 0x071720050000004B;
@@ -204,10 +152,71 @@ impl BinaryCookies {
         raw.extend_from_slice(&checksum.to_be_bytes());
         raw.extend_from_slice(&Self::FOOTER.to_be_bytes());
         if let Some(meta) = &self.metadata {
-            // optional data ignore error
-            plist::to_writer_binary(&mut raw, meta).ok();
+            raw.extend_from_slice(&meta.encode());
         }
         raw
+    }
+}
+
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq)]
+#[derive(PartialOrd, Ord)]
+#[cfg_attr(test, derive(serde::Serialize, serde::Deserialize))]
+#[expect(clippy::exhaustive_structs, reason = "allow")]
+pub struct Metadata {
+    #[cfg_attr(test, serde(rename = "NSHTTPCookieAcceptPolicy"))]
+    pub nshttp_cookie_accept_policy: u8,
+}
+
+impl Metadata {
+    #[rustfmt::skip]
+    // This is a very specialized decoder that needs to be updated with the BinaryCookies format
+    pub const fn encode(&self) -> [u8; 75] {
+        [
+            98, 112, 108, 105, 115, 116, 48, 48, 209, 1, 2, 95, 16, 24, 78, 83, 72, 84, 84, 80, 67,
+            111, 111, 107, 105, 101, 65, 99, 99, 101, 112, 116, 80, 111, 108, 105, 99, 121, 16,
+            self.nshttp_cookie_accept_policy,
+            8, 11, 38, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 3,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40,
+        ]
+    }
+    // See apple opensource CFBinaryPList.c
+    // This is a very specialized decoder that needs to be updated with the BinaryCookies format
+    pub(crate) fn decode(input: &mut StreamIn) -> Result<Self, ErrMode<ContextError>> {
+        if input.len() < 75 {
+            return Err(ErrMode::Incomplete(Needed::Size(unsafe {
+                NonZeroUsize::new_unchecked(75 - input.len())
+            })));
+        }
+        let bplist = take(8_usize).parse_next(input)?;
+        if bplist != b"bplist00" {
+            let ctx_err = ContextError::from_external_error(input, BplistErr::Magic);
+            return Err(ErrMode::Cut(ctx_err));
+        }
+        let dict = be_u8(input)?;
+        if dict != 0xD1 {
+            let ctx_err = ContextError::from_external_error(input, BplistErr::NotDict);
+            return Err(ErrMode::Cut(ctx_err));
+        }
+        let _length = take(5_usize).parse_next(input)?;
+        let key = take(24_usize).parse_next(input)?;
+        if b"NSHTTPCookieAcceptPolicy" != key {
+            let ctx_err = ContextError::from_external_error(input, BplistErr::BadKey);
+            return Err(ErrMode::Cut(ctx_err));
+        }
+        let int_flags = be_u8(input)?;
+        if int_flags != 0x10 {
+            let ctx_err = ContextError::from_external_error(input, BplistErr::OneByteInt);
+            return Err(ErrMode::Cut(ctx_err));
+        }
+        let int_val = be_u8(input)?;
+        take(32 + 3_usize).parse_next(input)?;
+        let metadata = Self {
+            nshttp_cookie_accept_policy: int_val,
+        };
+        Ok(metadata)
     }
 }
 
@@ -664,4 +673,12 @@ impl std::fmt::Display for SameSite {
         }
         .fmt(f)
     }
+}
+
+#[test]
+fn test_encode_metadata() {
+    let meta = Metadata { nshttp_cookie_accept_policy: 1 };
+    let mut res = vec![];
+    plist::to_writer_binary(&mut res, &meta).unwrap();
+    assert_eq!(&meta.encode(), res.as_slice());
 }

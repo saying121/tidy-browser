@@ -21,11 +21,11 @@ chrono = { workspace = true }
 thiserror = { workspace = true }
 annotate-snippets = { workspace = true }
 bstr = { workspace = true }
-plist = { workspace = true }
-serde = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"] }
 
 [dev-dependencies]
+plist = { workspace = true }
+serde = { workspace = true }
 dirs = { workspace = true }
 rand = { workspace = true }
 pretty_assertions = { workspace = true }
