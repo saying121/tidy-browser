@@ -24,11 +24,7 @@ use crate::{
 #[derive(PartialEq)]
 #[non_exhaustive]
 pub struct BinaryCookies {
-    // pub magic: [u8: 4],
-    // pub num_pages: u32,         // be
-    // pub page_sizes: Vec<u32>, // be
     pub pages: Vec<Page>,
-    // pub checksum: Checksum, // 4 byte
     pub metadata: Option<Metadata>,
 }
 
@@ -226,10 +222,6 @@ impl Metadata {
 #[derive(PartialEq)]
 #[non_exhaustive]
 pub struct Page {
-    // pub pages_start: [u8; 4],
-    // pub num_cookies: u32,          // le
-    // pub cookie_offsets_in_page: Vec<u32>, // le, N * `self.num_cookies`
-    // pub page_end: [u8],            // Must be equal to []byte{0x00_00_00_00}
     pub cookies: Vec<Cookie>,
 }
 
@@ -384,6 +376,7 @@ pub struct Cookie {
     pub is_secure: bool,
     pub is_http_only: bool,
 }
+
 #[rustfmt::skip]
 impl Cookie {
     pub const IS_SECURE:     u32 = 0b000001;
@@ -422,7 +415,7 @@ impl Cookie {
             })));
         }
 
-        // NOTE: No accurate explanation of `version` and `has_port` was found
+        // NOTE: No accurate explanation of `version` was found
         let (
             version,
             flags,
