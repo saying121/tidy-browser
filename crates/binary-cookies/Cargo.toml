@@ -1,0 +1,36 @@
+[package]
+name = "binary-cookies"
+version = "0.1.0"
+description = "BinaryCookies decode and encode"
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "./README.md"
+exclude  = ["test-resource/"]
+
+[dependencies]
+positioned-io = { workspace = true }
+oval = { workspace = true }
+winnow = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+# TODO: better error display?
+# annotate-snippets = { workspace = true }
+bstr = { workspace = true }
+tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"] }
+
+[dev-dependencies]
+plist = { workspace = true }
+serde = { workspace = true }
+dirs = { workspace = true }
+rand = { workspace = true }
+pretty_assertions = { workspace = true }
+rayon = { workspace = true }
+
+[lints]
+workspace = true

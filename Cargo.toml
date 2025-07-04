@@ -22,6 +22,15 @@ panic = "abort"
 
 
 [workspace.dependencies]
+positioned-io = { version = "0.3.3", default-features = false }
+pretty_assertions = "1"
+rand = "0.9"
+plist = "1"
+bstr = "1"
+oval = "2"
+winnow = "0.7.11"
+annotate-snippets = "0.11"
+
 TinyUFO = "0.5"
 cfg-if = "1"
 tokio = { version = "^1", features = ["macros"] }
@@ -85,7 +94,6 @@ needless_bitwise_bool = "warn"
 needless_continue = "warn"
 needless_pass_by_value = "warn"
 range_minus_one = "warn"
-range_plus_one = "warn"
 semicolon_if_nothing_returned = "warn"
 verbose_bit_mask = "warn"
 unneeded_field_pattern = "warn"
