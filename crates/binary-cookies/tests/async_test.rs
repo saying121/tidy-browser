@@ -3,7 +3,7 @@ use std::sync::Arc;
 use binary_cookies::{
     cookie::Metadata,
     decode::stream::Values,
-    tokio::{bc::DecodeBinaryCookie, stream::StreamDecoder},
+    tokio::{DecodeBinaryCookie, StreamDecoder},
 };
 use positioned_io::RandomAccessFile;
 use tokio::fs::File;

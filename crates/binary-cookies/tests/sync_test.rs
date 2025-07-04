@@ -1,6 +1,6 @@
 use std::fs::File;
 
-use binary_cookies::{cookie::Metadata, decode::stream::Values, sync::stream::StreamDecoder};
+use binary_cookies::{cookie::Metadata, decode::stream::Values, sync::StreamDecoder};
 
 const BINARY_COOKIE: &str = "./test-resource/BinaryCookies.binarycookies";
 

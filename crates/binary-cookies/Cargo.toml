@@ -19,7 +19,8 @@ oval = { workspace = true }
 winnow = { workspace = true }
 chrono = { workspace = true }
 thiserror = { workspace = true }
-annotate-snippets = { workspace = true }
+# TODO: better error display?
+# annotate-snippets = { workspace = true }
 bstr = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"] }
 

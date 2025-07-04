@@ -1,9 +1,16 @@
-pub mod bc;
-pub mod cookie;
-pub mod cursor;
-pub mod meta;
-pub mod page;
-pub mod stream;
+pub(crate) mod bc;
+pub(crate) mod cookie;
+pub(crate) mod cursor;
+pub(crate) mod meta;
+pub(crate) mod page;
+pub(crate) mod stream;
+
+pub use bc::*;
+pub use cookie::*;
+pub use cursor::*;
+pub use meta::*;
+pub use page::*;
+pub use stream::*;
 
 #[cfg(test)]
 mod tests;
