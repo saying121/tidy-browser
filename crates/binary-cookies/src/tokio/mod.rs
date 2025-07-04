@@ -10,4 +10,5 @@ pub use cookie::*;
 pub use cursor::*;
 pub use meta::*;
 pub use page::*;
+pub use positioned_io::RandomAccessFile;
 pub use stream::*;
