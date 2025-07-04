@@ -36,7 +36,7 @@ pub struct BinaryCookies {
 pub type Checksum = u32;
 
 impl BinaryCookies {
-    pub fn decode_head(input: &mut StreamIn) -> ModalResult<Offsets> {
+    pub(crate) fn decode_head(input: &mut StreamIn) -> ModalResult<Offsets> {
         if input.len() < 8 {
             return Err(ErrMode::Incomplete(Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(8 - input.len())
@@ -73,7 +73,7 @@ impl BinaryCookies {
         Ok(Offsets { page_sizes, tail_offset })
     }
 
-    pub fn decode_tail(input: &mut StreamIn) -> ModalResult<(Checksum, Option<Metadata>)> {
+    pub(crate) fn decode_tail(input: &mut StreamIn) -> ModalResult<(Checksum, Option<Metadata>)> {
         if input.len() < 4 + 8 {
             return Err(ErrMode::Incomplete(Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(4 + 8 - input.len())
@@ -226,7 +226,7 @@ pub struct Page {
 
 impl Page {
     /// Return cookie offsets
-    pub fn decode_head(input: &mut StreamIn) -> ModalResult<CookiesOffsetInPage> {
+    pub(crate) fn decode_head(input: &mut StreamIn) -> ModalResult<CookiesOffsetInPage> {
         if input.len() < 8 {
             return Err(ErrMode::Incomplete(Needed::Size(unsafe {
                 NonZeroUsize::new_unchecked(8 - input.len())
@@ -403,7 +403,7 @@ impl Cookie {
         flags & Self::IS_HTTP_ONLY == Self::IS_HTTP_ONLY
     }
 
-    pub fn decode(input: &mut StreamIn) -> ModalResult<Self> {
+    pub(crate) fn decode(input: &mut StreamIn) -> ModalResult<Self> {
         let cookie_size = le_u32(input)?;
 
         let need_size = cookie_size as usize - 4;
