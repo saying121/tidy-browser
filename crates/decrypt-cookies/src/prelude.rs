@@ -1,9 +1,7 @@
 pub use sea_orm::prelude::ColumnTrait;
 
-#[cfg(target_os = "macos")]
-pub use crate::safari::{SafariBuilder, SafariGetter};
-#[cfg(feature = "binary_cookies")]
-pub use crate::utils::binary_cookies::SafariCookie;
+#[cfg(feature = "Safari")]
+pub use crate::safari::{items::cookie::SafariCookie, SafariBuilder, SafariGetter};
 pub use crate::{
     browser::{cookies::LeetCodeCookies, *},
     chromium::{

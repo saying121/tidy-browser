@@ -1,18 +1,18 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
-use chrono::prelude::Utc;
-use tokio::{fs, task::spawn_blocking};
+use binary_cookies::{cookie::Cookie, tokio::DecodeBinaryCookie};
+use chrono::{prelude::Utc, DateTime};
 
 use crate::{
     browser::cookies::{CookiesInfo, LeetCodeCookies},
-    utils::binary_cookies::{BinaryCookies, SafariCookie},
+    prelude::cookies::SameSite,
 };
 
 #[derive(Debug)]
 #[derive(thiserror::Error)]
 pub enum CookiesGetterError {
     #[error(transparent)]
-    Parse(#[from] crate::utils::binary_cookies::ParseError),
+    Parse(#[from] binary_cookies::error::ParseError),
     #[error("{source}, path: {path}")]
     Io {
         path: PathBuf,
@@ -25,19 +25,88 @@ pub enum CookiesGetterError {
 
 type Result<T> = std::result::Result<T, CookiesGetterError>;
 
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(PartialEq, Eq)]
+#[expect(
+    clippy::exhaustive_structs,
+    reason = "Breaking change with Binarycookies format"
+)]
+pub struct SafariCookie {
+    pub version: u32,
+
+    pub flags: u32,
+    pub port: Option<u16>,
+    pub comment: Option<String>,
+    pub domain: String,
+    pub name: String,
+    pub path: String,
+    pub value: String,
+
+    pub expires: Option<DateTime<Utc>>,
+    pub creation: Option<DateTime<Utc>>,
+    pub same_site: SameSite,
+    pub is_secure: bool,
+    pub is_http_only: bool,
+}
+
+impl From<Cookie> for SafariCookie {
+    fn from(value: Cookie) -> Self {
+        Self {
+            version: value.version,
+            flags: value.flags,
+            port: value.port,
+            comment: value
+                .comment
+                .map(|v| v.to_string()),
+            domain: value.domain.to_string(),
+            name: value.name.to_string(),
+            path: value.path.to_string(),
+            value: value.value.to_string(),
+            expires: value.expires,
+            creation: value.creation,
+            same_site: value.same_site.into(),
+            is_secure: value.is_secure,
+            is_http_only: value.is_http_only,
+        }
+    }
+}
+
+impl CookiesInfo for SafariCookie {
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn path(&self) -> &str {
+        &self.path
+    }
+    fn domain(&self) -> &str {
+        &self.domain
+    }
+    fn value(&self) -> &str {
+        &self.value
+    }
+    fn expiry(&self) -> Option<String> {
+        self.expires
+            .map(|expiry| expiry.to_rfc2822())
+    }
+    fn is_secure(&self) -> bool {
+        self.is_secure
+    }
+    fn is_http_only(&self) -> bool {
+        self.is_http_only
+    }
+    fn same_site(&self) -> SameSite {
+        self.same_site
+    }
+}
+
 #[non_exhaustive]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct CookiesGetter {
-    pub binary_cookies: BinaryCookies,
-}
-
-impl CookiesGetter {
-    pub fn into_inner(self) -> BinaryCookies {
-        self.binary_cookies
-    }
+    cookies: Vec<SafariCookie>,
 }
 
 impl CookiesGetter {
@@ -63,24 +132,31 @@ impl CookiesGetter {
                 cookie_path.push(Self::COOKIES_OLD);
             }
         }
-        let content = fs::read(&cookie_path)
-            .await
-            .map_err(|e| CookiesGetterError::Io { path: cookie_path, source: e })?;
-        let binary_cookies = spawn_blocking(move || BinaryCookies::parse(&content)).await??;
 
-        Ok(Self { binary_cookies })
+        let file = binary_cookies::tokio::RandomAccessFile::open(&cookie_path)
+            .map_err(|e| CookiesGetterError::Io { path: cookie_path, source: e })?;
+        let file = Arc::new(file);
+
+        let bch = file.decode().await?;
+        let (pages_handle, _meta_decoder) = bch.into_handles();
+        let mut cookies = vec![];
+        for mut pd in pages_handle.decoders() {
+            let ch = pd.decode().await?;
+            for mut c in ch.decoders() {
+                let cookie = c.decode().await?;
+                cookies.push(cookie.into());
+            }
+        }
+
+        Ok(Self { cookies })
     }
 
     pub fn get_session_csrf(&self, host: &str) -> LeetCodeCookies {
         let mut lc_cookies = LeetCodeCookies::default();
-        for ck in self
-            .binary_cookies
-            .iter_cookies()
-            .filter(|v| {
-                v.domain().contains(host)
-                    && (v.name().eq("csrftoken") || v.name().eq("LEETCODE_SESSION"))
-            })
-        {
+        for ck in self.cookies.iter().filter(|v| {
+            v.domain().contains(host)
+                && (v.name().eq("csrftoken") || v.name().eq("LEETCODE_SESSION"))
+        }) {
             if ck.name() == "csrftoken" {
                 if let Some(expires) = ck.expires {
                     if Utc::now() > expires {
@@ -104,15 +180,10 @@ impl CookiesGetter {
         }
         lc_cookies
     }
-    pub const fn binary_cookies(&self) -> &BinaryCookies {
-        &self.binary_cookies
-    }
     pub fn all_cookies(&self) -> Vec<&SafariCookie> {
-        self.binary_cookies
-            .iter_cookies()
-            .collect()
+        self.cookies.iter().collect()
     }
     pub fn iter_cookies(&self) -> impl Iterator<Item = &SafariCookie> {
-        self.binary_cookies.iter_cookies()
+        self.cookies.iter()
     }
 }

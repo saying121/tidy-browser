@@ -3,13 +3,10 @@ pub mod prelude;
 pub mod browser;
 pub mod chromium;
 pub mod firefox;
-#[cfg(target_os = "macos")]
+#[cfg(feature = "Safari")]
 pub mod safari;
 
 pub(crate) mod utils;
-
-#[cfg(feature = "binary_cookies")]
-pub use utils::binary_cookies;
 
 // TODO: add browser name in error
 #[derive(Debug)]

@@ -649,7 +649,7 @@ name = "decrypt-cookies"
 version = "0.7.0-alpha.0"
 dependencies = [
  "anyhow",
- "bytes",
+ "binary-cookies",
  "chromium-crypt",
  "chrono",
  "const_format",

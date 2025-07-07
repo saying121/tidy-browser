@@ -3,10 +3,8 @@ pub mod items;
 use std::path::PathBuf;
 
 pub use self::items::cookie::CookiesGetter;
-use crate::{
-    browser::cookies::LeetCodeCookies,
-    utils::binary_cookies::{BinaryCookies, SafariCookie},
-};
+use self::items::cookie::SafariCookie;
+use crate::browser::cookies::LeetCodeCookies;
 
 type Result<T> = std::result::Result<T, crate::safari::items::cookie::CookiesGetterError>;
 
@@ -57,10 +55,6 @@ impl SafariGetter {
     pub fn get_session_csrf(&self, host: &str) -> LeetCodeCookies {
         self.cookie_getter
             .get_session_csrf(host)
-    }
-
-    pub const fn binary_cookies(&self) -> &BinaryCookies {
-        self.cookie_getter.binary_cookies()
     }
 
     pub const fn browser() -> &'static str {

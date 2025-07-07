@@ -86,6 +86,17 @@ impl From<i32> for SameSite {
     }
 }
 
+#[cfg(feature = "Safari")]
+impl From<binary_cookies::cookie::SameSite> for SameSite {
+    fn from(value: binary_cookies::cookie::SameSite) -> Self {
+        match value {
+            binary_cookies::cookie::SameSite::None => Self::None,
+            binary_cookies::cookie::SameSite::Lax => Self::Lax,
+            binary_cookies::cookie::SameSite::Strict => Self::Strict,
+        }
+    }
+}
+
 impl From<Option<i32>> for SameSite {
     fn from(value: Option<i32>) -> Self {
         value.unwrap_or_default().into()
