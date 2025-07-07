@@ -34,13 +34,7 @@ dirs = { workspace = true }
 reqwest = { workspace = true, default-features = false, features = ["cookies"], optional = true }
 
 chromium-crypt = { workspace = true }
-
-[target.'cfg(not(any(target_os = "macos", target_os = "ios")))'.dependencies]
-bytes = { workspace = true, optional = true }
-
-[target.'cfg(target_os = "macos")'.dependencies]
-bytes = { workspace = true }
-
+binary-cookies = { workspace = true, optional = true }
 
 [target.'cfg(not(windows))'.dependencies]
 const_format = { workspace = true }
@@ -54,7 +48,7 @@ reqwest = { workspace = true, features = ["cookies"] }
 [features]
 default = ["reqwest"]
 reqwest = ["dep:reqwest"]
-binary_cookies = ["dep:bytes"] # `binary_cookies` does not depend on Macos
+Safari = ["dep:binary-cookies"] # `binary_cookies` does not depend on Macos
 
 [lints]
 workspace = true

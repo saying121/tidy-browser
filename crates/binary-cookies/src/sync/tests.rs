@@ -340,7 +340,7 @@ fn test_safari_cookies() {
         pages.push(page);
     }
 
-    let _bc = BinaryCookies::new(pages);
+    let _bc = BinaryCookies { pages, metadata: None };
 
     // FIXME: my checksum impl not correct
     // assert_eq!(checksum, bc.checksum());
