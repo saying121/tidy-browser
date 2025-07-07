@@ -16,8 +16,8 @@ async fn main() -> Result<()> {
     let mut var = vec![];
     for mut pd in pages_handle.decoders() {
         let ch = pd.decode().await?;
-        for c in ch.decoders() {
-            var.push(c);
+        for mut c in ch.decoders() {
+            var.push(c.decode().await?);
         }
     }
     dbg!(var);

@@ -22,7 +22,11 @@ use crate::{
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq)]
-#[non_exhaustive]
+#[cfg_attr(not(test), derive(Eq))]
+#[expect(
+    clippy::exhaustive_structs,
+    reason = "Breaking change with Binarycookies format"
+)]
 pub struct BinaryCookies {
     pub pages: Vec<Page>,
     pub metadata: Option<Metadata>,
@@ -96,10 +100,6 @@ impl BinaryCookies {
     pub const MAGIC: &'static [u8] = b"cook"; // 0 offset, 4 size
     pub const FOOTER: u64 = 0x071720050000004B;
 
-    pub const fn new(pages: Vec<Page>) -> Self {
-        Self { pages, metadata: None }
-    }
-
     pub fn push(&mut self, page: Page) {
         self.pages.push(page);
     }
@@ -111,13 +111,13 @@ impl BinaryCookies {
             .collect()
     }
 
-    pub fn pages(&self) -> impl Iterator<Item = &Page> {
+    pub fn iter_pages(&self) -> impl Iterator<Item = &Page> {
         self.pages.iter()
     }
 
     /// iter all pages cookies
     pub fn iter_cookies(&self) -> impl Iterator<Item = &Cookie> {
-        self.pages()
+        self.iter_pages()
             .flat_map(Page::iter_cookies)
     }
 
@@ -128,10 +128,9 @@ impl BinaryCookies {
             .fold(0_u32, |i, v| v.encode().1.wrapping_add(i))
     }
     pub fn encode(&self) -> Vec<u8> {
-        let mut raw = Vec::new();
-        raw.extend_from_slice(Self::MAGIC);
+        let mut raw = Self::MAGIC.to_vec();
         raw.extend_from_slice(&(self.pages.len() as u32).to_be_bytes());
-        for ele in self.pages() {
+        for ele in self.iter_pages() {
             raw.extend_from_slice(&ele.size().to_be_bytes());
         }
 
@@ -160,7 +159,10 @@ impl BinaryCookies {
 #[derive(PartialEq, Eq)]
 #[derive(PartialOrd, Ord)]
 #[cfg_attr(test, derive(serde::Serialize, serde::Deserialize))]
-#[expect(clippy::exhaustive_structs, reason = "allow")]
+#[expect(
+    clippy::exhaustive_structs,
+    reason = "Breaking change with Binarycookies format"
+)]
 pub struct Metadata {
     #[cfg_attr(test, serde(rename = "NSHTTPCookieAcceptPolicy"))]
     pub nshttp_cookie_accept_policy: u8,
@@ -220,7 +222,11 @@ impl Metadata {
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq)]
-#[non_exhaustive]
+#[cfg_attr(not(test), derive(Eq))]
+#[expect(
+    clippy::exhaustive_structs,
+    reason = "Breaking change with Binarycookies format"
+)]
 pub struct Page {
     pub cookies: Vec<Cookie>,
 }
@@ -339,7 +345,10 @@ impl Page {
 #[derive(Debug)]
 #[derive(PartialEq)]
 #[cfg_attr(not(test), derive(Eq))]
-#[expect(clippy::exhaustive_structs, reason = "allow")]
+#[expect(
+    clippy::exhaustive_structs,
+    reason = "Breaking change with Binarycookies format"
+)]
 pub struct Cookie {
     // pub cookie_size: u32, // LE Cookie size. Number of bytes associated to the cookie
     pub version: u32, // LE Unknown field possibly related to the cookie flags

@@ -30,9 +30,10 @@ impl BinaryCookies {
         let pages = (0..rand::random_range(2..5))
             .map(|_| Page::random())
             .collect();
-        let mut s = Self::new(pages);
-        s.metadata = Some(Metadata { nshttp_cookie_accept_policy: 2 });
-        s
+        Self {
+            pages,
+            metadata: Some(Metadata { nshttp_cookie_accept_policy: 2 }),
+        }
     }
 }
 
