@@ -8,10 +8,10 @@ homepage.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-keywords.workspace = true
-categories.workspace = true
+keywords = ["cookies", "binarycookies", "BinaryCookies", "binary-cookies"]
+categories = ["asynchronous", "authentication", "encoding"]
 readme = "./README.md"
-exclude  = ["test-resource/"]
+exclude  = ["test-resource/", "examples/"]
 
 [dependencies]
 positioned-io = { workspace = true }
