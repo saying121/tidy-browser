@@ -14,7 +14,7 @@ categories.workspace = true
 exclude = ["tests/", "examples", "./CHANGELOG.md"]
 
 [dependencies]
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["rt", "fs"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 cfg-if = { workspace = true }
