@@ -31,6 +31,7 @@ pub struct CookiesOffset {
 }
 
 impl CookiesOffset {
+    #[cfg(any(feature = "sync", feature = "tokio"))]
     // NOTE: The offset_sizes order is reverse
     pub(crate) fn new(page_offset: u64, page_size: u32, cookies_offset: &[u32]) -> Self {
         let mut prev_cookie_end = page_size;

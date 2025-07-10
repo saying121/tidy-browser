@@ -22,9 +22,10 @@ thiserror = { workspace = true }
 # TODO: better error display?
 # annotate-snippets = { workspace = true }
 bstr = { workspace = true }
-tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"] }
+tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"], optional = true }
 
 [dev-dependencies]
+tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"] }
 plist = { workspace = true }
 serde = { workspace = true }
 dirs = { workspace = true }
@@ -34,3 +35,7 @@ rayon = { workspace = true }
 
 [lints]
 workspace = true
+
+[features]
+tokio = ["dep:tokio"]
+sync = []
