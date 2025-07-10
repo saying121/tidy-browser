@@ -40,5 +40,4 @@ jobs:
           version: 'v0.10.0'
 
       - name: Run Test
-        run: |
-          cargo nextest run
+        run: cargo x test

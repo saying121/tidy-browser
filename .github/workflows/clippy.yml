@@ -24,10 +24,15 @@ jobs:
         with:
           toolchain: 1.82
 
+      - name: Install cargo-hack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
+
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
         with:
-          version: 'v0.10.0'
+          version: "v0.10.0"
 
-      - name: Run Clippy Deny Warning
-        run: cargo clippy --tests --locked -- -D warnings
+      - name: Check code
+        run: cargo x check

@@ -21,5 +21,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMIT_MSG: |
             fmt: with nightly rustfmt
-        run: |
-          cargo +nightly fmt --check --all
+        run: cargo x fmt -- --check
