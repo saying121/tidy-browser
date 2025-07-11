@@ -60,7 +60,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         let temp_paths = self.cache_data().await?;
 
         #[cfg(target_os = "linux")]
-        let crypto = Decrypter::build(B::SAFE_STORAGE).await?;
+        let crypto = Decrypter::build(B::SAFE_STORAGE, crate::browser::need_safe_storage).await?;
 
         #[cfg(target_os = "macos")]
         let crypto = Decrypter::build(B::SAFE_STORAGE, B::SAFE_NAME).await?;

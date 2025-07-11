@@ -36,21 +36,28 @@ static CACHE_PASSWD: LazyLock<TinyUfo<&str, &'static [u8]>> =
 
 impl Decrypter {
     /// `safe_storage` example: Brave Safe Storage
-    pub async fn build(safe_storage: &str) -> Result<Self> {
-        let pass_v11 = Self::get_pass(safe_storage)
+    pub async fn build<F, N>(safe_storage: &str, need: N) -> Result<Self>
+    where
+        N: Into<Option<F>> + Send,
+        F: Fn(&str) -> bool + Send,
+    {
+        let pass_v11 = Self::get_pass(safe_storage, need)
             .await
             .unwrap_or(Self::PASSWORD_V10);
         Ok(Self { pass_v11 })
     }
 
-    async fn get_pass(safe_storage: &str) -> Result<&'static [u8]> {
+    async fn get_pass<F, N>(safe_storage: &str, need: N) -> Result<&'static [u8]>
+    where
+        N: Into<Option<F>> + Send,
+        F: Fn(&str) -> bool + Send,
+    {
         if let Some(v) = CACHE_PASSWD.get(&safe_storage) {
             return Ok(v);
         }
 
         // initialize secret service (dbus connection and encryption session)
         let ss = SecretService::connect(EncryptionType::Dh).await?;
-        // get default collection
         let collection = ss.get_default_collection().await?;
 
         if collection.is_locked().await? {
@@ -58,20 +65,37 @@ impl Decrypter {
         }
         let coll = collection.get_all_items().await?;
 
+        let predicate: Option<F> = need.into();
+
         for item in coll {
             let Ok(label) = item.get_label().await
             else {
                 continue;
             };
-            if label == safe_storage {
+            // TODO: use 1.88 let_chains
+            if let Some(cache_it) = &predicate {
+                if cache_it(&label) || label == safe_storage {
+                    let Ok(s) = item.get_secret().await
+                    else {
+                        continue;
+                    };
+
+                    let s = s.leak();
+                    CACHE_PASSWD.put(&label, s, 1);
+                }
+            }
+            else if label == safe_storage {
                 let Ok(s) = item.get_secret().await
                 else {
                     continue;
                 };
                 let s = s.leak();
                 CACHE_PASSWD.put(&label, s, 1);
-                return Ok(s);
             }
+        }
+
+        if let Some(v) = CACHE_PASSWD.get(&safe_storage) {
+            return Ok(v);
         }
 
         Ok(Self::PASSWORD_V10)
