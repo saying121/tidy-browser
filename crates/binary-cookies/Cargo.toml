@@ -1,41 +1,43 @@
 [package]
 name = "binary-cookies"
 version = "0.1.0"
-description = "BinaryCookies decode and encode"
-edition.workspace = true
 authors.workspace = true
-homepage.workspace = true
+edition.workspace = true
 rust-version.workspace = true
-license.workspace = true
-repository.workspace = true
-keywords = ["cookies", "binarycookies", "BinaryCookies", "binary-cookies"]
-categories = ["asynchronous", "authentication", "encoding"]
+description = "BinaryCookies decode and encode"
 readme = "./README.md"
-exclude  = ["test-resource/", "examples/"]
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords = ["BinaryCookies", "binary-cookies", "binarycookies", "cookies"]
+categories = ["asynchronous", "authentication", "encoding"]
+exclude = ["examples/", "test-resource/"]
 
 [dependencies]
-positioned-io = { workspace = true }
-oval = { workspace = true }
-winnow = { workspace = true }
-chrono = { workspace = true }
-thiserror = { workspace = true }
 # TODO: better error display?
 # annotate-snippets = { workspace = true }
 bstr = { workspace = true }
+chrono = { workspace = true }
+oval = { workspace = true }
+positioned-io = { workspace = true }
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"], optional = true }
+winnow = { workspace = true }
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"] }
-plist = { workspace = true }
-serde = { workspace = true }
 dirs = { workspace = true }
-rand = { workspace = true }
+plist = { workspace = true }
 pretty_assertions = { workspace = true }
+rand = { workspace = true }
 rayon = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"] }
+
+[features]
+serde = ["bstr/serde", "chrono/serde", "dep:serde"]
+sync = []
+tokio = ["dep:tokio"]
 
 [lints]
 workspace = true
-
-[features]
-tokio = ["dep:tokio"]
-sync = []
