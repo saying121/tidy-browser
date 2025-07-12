@@ -13,10 +13,9 @@ rust-version = { workspace = true }
 
 exclude = ["tests/", "examples", "./CHANGELOG.md"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 tokio = { workspace = true }
+anyhow = { workspace = true }
 thiserror = { workspace = true }
 rayon = { workspace = true }
 chrono = { workspace = true }
@@ -38,6 +37,9 @@ binary-cookies = { workspace = true, features = ["tokio"], optional = true }
 
 [target.'cfg(not(windows))'.dependencies]
 const_format = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+rawcopy-rs-next = { workspace = true }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true }

@@ -6,6 +6,34 @@ pub fn need_sep(path: &Path) -> bool {
         .is_some_and(|&c| char::from(c) != std::path::MAIN_SEPARATOR)
 }
 
+#[cfg(target_os = "windows")]
+pub fn shadow_copy(from: &Path, to: &Path) -> crate::Result<()> {
+    // shadow copy `to` must is dir
+
+    use crate::BuilderError;
+    if !to.is_dir() && to.exists() {
+        if let Err(e) = std::fs::remove_file(to) {
+            return Err(BuilderError::Io { source: e, path: to.to_owned() });
+        }
+    }
+
+    let to = if to.is_dir() {
+        to
+    }
+    else {
+        to.parent()
+            .expect("Get shadow copy dir failed")
+    };
+    rawcopy_rs_next::rawcopy(
+        from.to_str()
+            .expect("`from` path to str failed"),
+        to.to_str()
+            .expect("`to` path to str failed"),
+    )?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use std::{path::PathBuf, str::FromStr};
