@@ -2,7 +2,7 @@ pub mod builder;
 pub(crate) mod items;
 use std::{marker::PhantomData, path::PathBuf};
 
-use chromium_crypt::Decrypter;
+use chromium_crypto::Decrypter;
 use chrono::prelude::Utc;
 use items::cookie::cookie_entities::cookies;
 pub use items::{
@@ -38,7 +38,7 @@ pub enum ChromiumError {
     #[error(transparent)]
     Db(#[from] DbErr),
     #[error(transparent)]
-    Decrypt(#[from] chromium_crypt::error::CryptError),
+    Decrypt(#[from] chromium_crypto::error::CryptError),
 }
 
 type Result<T> = std::result::Result<T, ChromiumError>;
