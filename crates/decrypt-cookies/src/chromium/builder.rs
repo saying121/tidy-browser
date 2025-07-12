@@ -7,10 +7,8 @@ use super::{ChromiumBuilder, ChromiumGetter};
 use crate::{
     browser::ChromiumPath,
     chromium::items::{cookie::cookie_dao::CookiesQuery, passwd::login_data_dao::LoginDataQuery},
-    BuilderError,
+    BuilderError, Result,
 };
-
-pub type Result<T> = std::result::Result<T, BuilderError>;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -119,11 +117,21 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
             path: k_temp_p.to_owned(),
         })?;
 
+        #[cfg(target_os = "windows")]
+        let cookies_cp = {
+            let cookies = cookies.clone();
+            let cookies_temp = cookies.clone();
+            tokio::task::spawn_blocking(move || crate::utils::shadow_copy(&cookies, &cookies_temp))
+        };
+        #[cfg(not(target_os = "windows"))]
         let cookies_cp = fs::copy(&cookies, &cookies_temp);
         let login_cp = fs::copy(&login_data, &login_data_temp);
         let key_cp = fs::copy(&key, &key_temp);
 
         let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
+        #[cfg(target_os = "windows")]
+        ck??;
+        #[cfg(not(target_os = "windows"))]
         ck.map_err(|e| BuilderError::Io { source: e, path: cookies })?;
         lg.map_err(|e| BuilderError::Io { source: e, path: login_data })?;
         k.map_err(|e| BuilderError::Io { source: e, path: key })?;

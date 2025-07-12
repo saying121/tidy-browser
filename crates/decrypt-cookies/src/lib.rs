@@ -29,4 +29,10 @@ pub enum BuilderError {
         source: std::io::Error,
         path: std::path::PathBuf,
     },
+    #[error(transparent)]
+    Rawcopy(#[from] anyhow::Error),
+    #[error(transparent)]
+    TokioJoin(#[from] tokio::task::JoinError),
 }
+
+pub type Result<T> = std::result::Result<T, BuilderError>;
