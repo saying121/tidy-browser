@@ -32,7 +32,7 @@ dirs = { workspace = true }
 
 reqwest = { workspace = true, default-features = false, features = ["cookies"], optional = true }
 
-chromium-crypt = { workspace = true }
+chromium-crypto = { workspace = true }
 binary-cookies = { workspace = true, features = ["tokio"], optional = true }
 
 [target.'cfg(not(windows))'.dependencies]

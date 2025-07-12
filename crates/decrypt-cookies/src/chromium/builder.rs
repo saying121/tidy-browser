@@ -1,6 +1,6 @@
 use std::{fmt::Display, path::PathBuf};
 
-use chromium_crypt::Decrypter;
+use chromium_crypto::Decrypter;
 use tokio::{fs, join};
 
 use super::{ChromiumBuilder, ChromiumGetter};

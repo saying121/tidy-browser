@@ -21,7 +21,7 @@ pub enum BuilderError {
     #[error("Install {0} missing `Default` properties")]
     InstallPath(String),
     #[error(transparent)]
-    Decrypter(#[from] chromium_crypt::error::CryptError),
+    Decrypter(#[from] chromium_crypto::error::CryptError),
     #[error(transparent)]
     Db(#[from] sea_orm::DbErr),
     #[error("Io: {source}, path: {path}")]

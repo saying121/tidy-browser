@@ -74,7 +74,7 @@ duct = "1"
 clap = "^4"
 
 decrypt-cookies = { path = "./crates/decrypt-cookies", version = "0.7.0-alpha.0" }
-chromium-crypt = { path = "./crates/chromium-crypt", version = "0.1.0-alpha.0" }
+chromium-crypto = { path = "./crates/chromium-crypto", version = "0.1.0-alpha.0" }
 binary-cookies = { path = "./crates/binary-cookies", version = "0.1" }
 
 [workspace.lints.rust]

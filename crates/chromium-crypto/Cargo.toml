@@ -1,10 +1,10 @@
 [package]
-name = "chromium-crypt"
+name = "chromium-crypto"
 version = "0.1.0-alpha.0"
 edition.workspace = true
 authors.workspace = true
 description = "Chromium crypt"
-homepage = "https://github.com/saying121/tidy-browser/tree/master/crates/chromium-crypt"
+homepage = "https://github.com/saying121/tidy-browser/tree/master/crates/chromium-crypto"
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
