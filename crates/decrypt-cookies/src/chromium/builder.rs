@@ -120,7 +120,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         #[cfg(target_os = "windows")]
         let cookies_cp = {
             let cookies = cookies.clone();
-            let cookies_temp = cookies.clone();
+            let cookies_temp = cookies_temp.clone();
             tokio::task::spawn_blocking(move || crate::utils::shadow_copy(&cookies, &cookies_temp))
         };
         #[cfg(not(target_os = "windows"))]
