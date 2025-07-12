@@ -7,6 +7,7 @@
 	"rust-analyzer.rustfmt.extraArgs": ["+nightly"],
 	"rust-analyzer.cargo.features": [
 		"decrypt-cookies/Safari",
+		"binary-cookies/serde",
 		"binary-cookies/tokio",
 		"binary-cookies/sync"
 	]

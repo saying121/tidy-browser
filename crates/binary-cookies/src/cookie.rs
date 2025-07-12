@@ -23,6 +23,7 @@ use crate::{
 #[derive(Default)]
 #[derive(PartialEq)]
 #[cfg_attr(not(test), derive(Eq))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[expect(
     clippy::exhaustive_structs,
     reason = "Breaking change with Binarycookies format"
@@ -158,7 +159,10 @@ impl BinaryCookies {
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
 #[derive(PartialOrd, Ord)]
-#[cfg_attr(test, derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    any(test, feature = "serde"),
+    derive(serde::Serialize, serde::Deserialize)
+)]
 #[expect(
     clippy::exhaustive_structs,
     reason = "Breaking change with Binarycookies format"
@@ -223,6 +227,7 @@ impl Metadata {
 #[derive(Default)]
 #[derive(PartialEq)]
 #[cfg_attr(not(test), derive(Eq))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[expect(
     clippy::exhaustive_structs,
     reason = "Breaking change with Binarycookies format"
@@ -345,6 +350,7 @@ impl Page {
 #[derive(Debug)]
 #[derive(PartialEq)]
 #[cfg_attr(not(test), derive(Eq))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[expect(
     clippy::exhaustive_structs,
     reason = "Breaking change with Binarycookies format"
@@ -642,6 +648,7 @@ impl Cookie {
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SameSite {
     #[default]
     None,
