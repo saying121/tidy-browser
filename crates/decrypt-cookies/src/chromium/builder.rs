@@ -64,7 +64,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         let crypto = Decrypter::build(B::SAFE_STORAGE, B::SAFE_NAME).await?;
 
         #[cfg(target_os = "windows")]
-        let crypto = { Decrypter::build(temp_paths.key_temp).await? };
+        let crypto = Decrypter::build_v20(temp_paths.key_temp).await?;
 
         let (cookies_query, login_data_query) = (
             CookiesQuery::new(temp_paths.cookies_temp),

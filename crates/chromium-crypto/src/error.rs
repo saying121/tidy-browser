@@ -41,12 +41,16 @@ pub enum CryptError {
     Base64(#[from] base64::DecodeError),
     #[error(transparent)]
     Task(#[from] tokio::task::JoinError),
-    #[error("{e}")]
-    AesGcm { e: aes_gcm::Error },
+    #[error("{0}")]
+    AesGcm(aes_gcm::Error),
     #[error(transparent)]
     CryptUnprotectData(#[from] windows::core::Error),
     #[error("CryptUnprotectData returned a null pointer")]
     CryptUnprotectDataNull,
+    #[error("{0}")]
+    ChaCha(chacha20poly1305::Error),
+    #[error("{0}")]
+    Context(winnow::error::ContextError),
 }
 
 pub type Result<T> = std::result::Result<T, CryptError>;
