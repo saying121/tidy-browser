@@ -2,11 +2,8 @@ pub mod local_state;
 
 use std::{ffi::c_void, path::Path, ptr, slice};
 
-use aes_gcm::{
-    aead::{generic_array::GenericArray, Aead},
-    Aes256Gcm, Key, KeyInit,
-};
-use base64::{engine::general_purpose, Engine};
+use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit};
+use base64::{prelude::BASE64_STANDARD, Engine};
 use chacha20poly1305::ChaCha20Poly1305;
 use local_state::LocalState;
 use tokio::{fs, task::spawn_blocking};
@@ -47,45 +44,16 @@ impl Decrypter {
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=45
     /// Key prefix for a key encrypted with DPAPI.
     const K_DPAPIKEY_PREFIX: &'static [u8] = b"DPAPI";
+
+    const K_APP_BOUND_DATA_PREFIX: &'static [u8] = b"v20";
+    const K_CRYPT_APP_BOUND_KEY_PREFIX: &'static [u8] = b"APPB";
 }
 
 impl Decrypter {
-    pub async fn build_v20<A: AsRef<Path> + Send + Sync>(key_path: A) -> Result<Self> {
-        let pass = Self::get_pass_v20(key_path).await?;
-        Ok(Self { pass })
-    }
-
-    async fn get_pass_v20<A: AsRef<Path> + Send + Sync>(key_path: A) -> Result<Vec<u8>> {
-        let string_str = fs::read_to_string(&key_path)
-            .await
-            .map_err(|e| CryptError::IO {
-                path: key_path.as_ref().to_owned(),
-                source: e,
-            })?;
-        let local_state: LocalState = serde_json::from_str(&string_str)?;
-        let encrypted_key = general_purpose::STANDARD.decode(
-            local_state
-                .os_crypt
-                .app_bound_encrypted_key
-                .expect("todo handle"),
-        )?;
-
-        debug_assert!(encrypted_key.starts_with(Self::K_DPAPIKEY_PREFIX));
-
-        let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
-
-        let key = spawn_blocking(move || decrypt_with_dpapi(&mut key)).await??;
-
-        Ok(key)
-    }
-
-    /// the method will use default `LocalState` path,
-    /// custom that path use `DecrypterBuilder`
     pub async fn build<A: AsRef<Path> + Send + Sync>(key_path: A) -> Result<Self> {
         let pass = Self::get_pass(key_path).await?;
         Ok(Self { pass })
     }
-    // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=108
     async fn get_pass<A: AsRef<Path> + Send + Sync>(key_path: A) -> Result<Vec<u8>> {
         let string_str = fs::read_to_string(&key_path)
             .await
@@ -93,18 +61,40 @@ impl Decrypter {
                 path: key_path.as_ref().to_owned(),
                 source: e,
             })?;
-        let local_state: LocalState = serde_json::from_str(&string_str)?;
-        let encrypted_key = general_purpose::STANDARD.decode(local_state.os_crypt.encrypted_key)?;
-        let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
 
-        let key = spawn_blocking(move || decrypt_with_dpapi(&mut key)).await??;
+        let key = spawn_blocking(move || {
+            let local_state: LocalState = serde_json::from_str(&string_str)?;
+            let Some(encrypted_key) = local_state
+                .os_crypt
+                .app_bound_encrypted_key
+            else {
+                let encrypted_key = BASE64_STANDARD.decode(local_state.os_crypt.encrypted_key)?;
+                let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
+                return decrypt_with_dpapi(&mut key);
+            };
+            let mut encrypted_key = BASE64_STANDARD.decode(encrypted_key)?;
+
+            debug_assert!(encrypted_key.starts_with(Self::K_CRYPT_APP_BOUND_KEY_PREFIX));
+
+            let key = &mut encrypted_key[Self::K_CRYPT_APP_BOUND_KEY_PREFIX.len()..];
+            let mut key = {
+                // TODO: impersonate lsass.exe with RAII
+                decrypt_with_dpapi(key)?
+            };
+            let key_blob = decrypt_with_dpapi(&mut key)?;
+            let key_data = parse_key_blob(&mut &*key_blob).map_err(CryptError::Context)?;
+            derive_v20_master_key(&key_data)
+        })
+        .await??;
 
         Ok(key)
     }
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=213
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
-        let pass = if ciphertext.starts_with(Self::K_ENCRYPTION_VERSION_PREFIX) {
+        let pass = if ciphertext.starts_with(Self::K_ENCRYPTION_VERSION_PREFIX)
+            || ciphertext.starts_with(Self::K_APP_BOUND_DATA_PREFIX)
+        {
             self.pass.as_slice()
         }
         else {
@@ -116,7 +106,7 @@ impl Decrypter {
         let nonce = &ciphertext[prefix_len..nonce_len + prefix_len];
         let raw_ciphertext = &ciphertext[nonce_len + prefix_len..];
 
-        let cipher = Aes256Gcm::new(GenericArray::from_slice(pass));
+        let cipher = Aes256Gcm::new(pass.into());
 
         cipher
             .decrypt(nonce.into(), raw_ciphertext)
@@ -217,20 +207,19 @@ fn decrypt_with_cng(keydpapi: &[u8]) -> Result<Vec<u8>> {
 }
 
 fn derive_v20_master_key(key_data: &KeyData) -> Result<Vec<u8>> {
-    match key_data {
+    match *key_data {
         KeyData::One { iv, ciphertext, .. } => {
             let aes_key = b"\xB3\x1C\x6E\x24\x1A\xC8\x46\x72\x8D\xA9\xC1\xFA\xC4\x93\x66\x51\xCF\xFB\x94\x4D\x14\x3A\xB8\x16\x27\x6B\xCC\x6D\xA0\x28\x47\x87";
-            let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(aes_key));
-            let nonce = GenericArray::from_slice(iv);
+            let cipher = Aes256Gcm::new(aes_key.into());
             cipher
-                .decrypt(nonce, *ciphertext)
+                .decrypt(iv.into(), ciphertext)
                 .map_err(CryptError::AesGcm)
         },
         KeyData::Two { iv, ciphertext, .. } => {
             let chacha_key = b"\xE9\x8F\x37\xD7\xF4\xE1\xFA\x43\x3D\x19\x30\x4D\xC2\x25\x80\x42\x09\x0E\x2D\x1D\x7E\xEA\x76\x70\xD4\x1F\x73\x8D\x08\x72\x96\x60";
-            let cipher = ChaCha20Poly1305::new(Key::<ChaCha20Poly1305>::from_slice(chacha_key));
+            let cipher = ChaCha20Poly1305::new(chacha_key.into());
             cipher
-                .decrypt(GenericArray::from_slice(iv), *ciphertext)
+                .decrypt(iv.into(), ciphertext)
                 .map_err(CryptError::ChaCha)
         },
         KeyData::Three {
@@ -242,9 +231,9 @@ fn derive_v20_master_key(key_data: &KeyData) -> Result<Vec<u8>> {
                 .iter_mut()
                 .zip(xor_key)
                 .for_each(|(a, b)| *a ^= b);
-            let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&plain_aes_key));
+            let cipher = Aes256Gcm::new(plain_aes_key.as_slice().into());
             cipher
-                .decrypt(GenericArray::from_slice(iv), *ciphertext)
+                .decrypt(iv.into(), ciphertext)
                 .map_err(CryptError::AesGcm)
         },
     }
