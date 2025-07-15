@@ -2,5 +2,5 @@
 xtask = "run -p xtask --"
 x = "run -p xtask --"
 
-[target.'cfg(windows)']
+[target.x86_64-pc-windows-gnu]
 runner = "wsudo"
