@@ -53,12 +53,12 @@ pub enum CryptError {
     Context(winnow::error::ContextError),
     #[error(r#"app_bound_encrypted_key not start with "APPB""#)]
     APPB,
-    #[error("Invalid utf-8: corrupt contents")]
-    WindowsStr,
+    #[error("Get process path failed")]
+    ProcessPath,
     #[error("Invalid status from RtlAdjustPrivilege")]
-    WindowsPrivilege,
+    Privilege,
     #[error("No such Process lsass.exe or winlogon.exe")]
-    WindowsNotFoundProcess,
+    NotFoundProcess,
 }
 
 pub type Result<T> = std::result::Result<T, CryptError>;

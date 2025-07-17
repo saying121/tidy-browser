@@ -25,12 +25,12 @@ use windows::{
 use crate::error::{CryptError, Result};
 
 pub struct ImpersonateGuard {
-    handle: HANDLE,
+    sys_token_handle: HANDLE,
 }
 
 impl Drop for ImpersonateGuard {
     fn drop(&mut self) {
-        _ = self.stop();
+        _ = Self::stop();
     }
 }
 
@@ -45,7 +45,7 @@ extern "system" {
 }
 
 impl ImpersonateGuard {
-    pub fn start(pid: Option<u32>) -> Result<(Self, u32)> {
+    pub fn start(pid: Option<u32>, sys_handle: Option<HANDLE>) -> Result<(Self, u32)> {
         Self::enable_privilege()?;
         let pid = if let Some(pid) = pid {
             pid
@@ -54,22 +54,40 @@ impl ImpersonateGuard {
             pid
         }
         else {
-            return Err(CryptError::WindowsNotFoundProcess);
+            return Err(CryptError::NotFoundProcess);
         };
-        let system_handle = Self::get_process_handle(pid)?;
-        let dup_token = Self::get_system_token(system_handle)?;
+        let sys_token = if let Some(handle) = sys_handle {
+            handle
+        }
+        else {
+            let system_handle = Self::get_process_handle(pid)?;
+            let sys_token = Self::get_system_token(system_handle)?;
+            unsafe {
+                CloseHandle(system_handle)?;
+            };
+
+            sys_token
+        };
         unsafe {
-            CloseHandle(system_handle)?;
-            ImpersonateLoggedOnUser(dup_token)?;
+            ImpersonateLoggedOnUser(sys_token)?;
         };
-        Ok((Self { handle: dup_token }, pid))
+        Ok((Self { sys_token_handle: sys_token }, pid))
     }
 
-    pub fn stop(&mut self) -> Result<()> {
+    pub fn stop() -> Result<()> {
         unsafe {
-            CloseHandle(self.handle)?;
             RevertToSelf()?;
         };
+        Ok(())
+    }
+
+    pub fn stop_sys_handle(self) -> Result<HANDLE> {
+        unsafe { RevertToSelf() }?;
+        Ok(self.sys_token_handle)
+    }
+
+    pub fn close_sys_handle(&self) -> Result<()> {
+        unsafe { CloseHandle(self.sys_token_handle) }?;
         Ok(())
     }
 
@@ -79,7 +97,7 @@ impl ImpersonateGuard {
             RtlAdjustPrivilege(SE_DEBUG_PRIVILEGE, BOOL(1), BOOL(0), &mut previous_value)
         };
         if status != STATUS_SUCCESS {
-            return Err(CryptError::WindowsPrivilege);
+            return Err(CryptError::Privilege);
         }
         Ok(())
     }
@@ -118,7 +136,7 @@ impl ImpersonateGuard {
         PathBuf::from(fp)
             .file_name()
             .map(name)
-            .ok_or(CryptError::WindowsStr)
+            .ok_or(CryptError::ProcessPath)
     }
 
     // https://learn.microsoft.com/en-us/windows/win32/psapi/enumerating-all-processes
