@@ -1,11 +1,7 @@
-pub mod local_state;
 mod impersonate;
+pub mod local_state;
 
-use std::{
-    ffi::c_void,
-    path::Path,
-    ptr, slice,
-};
+use std::{ffi::c_void, path::Path, ptr, slice};
 
 use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit};
 use base64::{prelude::BASE64_STANDARD, Engine};
@@ -16,17 +12,17 @@ use windows::{
     core::w,
     Win32::{
         Foundation::{self},
-        Security::
-            Cryptography::{
-                self, NCryptOpenKey, NCryptOpenStorageProvider, NCRYPT_KEY_HANDLE,
-                NCRYPT_PROV_HANDLE,
-            }
-        ,
+        Security::Cryptography::{
+            self, NCryptOpenKey, NCryptOpenStorageProvider, NCRYPT_KEY_HANDLE, NCRYPT_PROV_HANDLE,
+        },
     },
 };
 use winnow::{binary::le_u32, error::StrContext, token::take, Parser};
 
-use crate::{error::{CryptError, Result}, win::impersonate::ImpersonateGuard};
+use crate::{
+    error::{CryptError, Result},
+    win::impersonate::ImpersonateGuard,
+};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -87,15 +83,15 @@ impl Decrypter {
             }
 
             let key = &mut encrypted_key[Self::K_CRYPT_APP_BOUND_KEY_PREFIX.len()..];
-            let mut key = {
-                let mut guard = ImpersonateGuard::start_impersonate()?;
+            let (mut key, pid) = {
+                let (mut guard, pid) = ImpersonateGuard::start(None)?;
                 let key = decrypt_with_dpapi(key)?;
-                guard.stop_impersonate()?;
-                key
+                guard.stop()?;
+                (key, pid)
             };
             let key_blob = decrypt_with_dpapi(&mut key)?;
             let key_data = parse_key_blob(&mut key_blob.as_slice()).map_err(CryptError::Context)?;
-            derive_v20_master_key(&key_data)
+            derive_v20_master_key(&key_data, Some(pid))
         })
         .await??;
 
@@ -213,11 +209,11 @@ fn decrypt_with_cng(keydpapi: &[u8]) -> Result<Vec<u8>> {
         Cryptography::NCryptFreeObject(phprovider.into())?;
     };
     output_buffer.truncate(output_len as usize);
-   
+
     Ok(output_buffer)
 }
 
-fn derive_v20_master_key(key_data: &KeyData) -> Result<Vec<u8>> {
+fn derive_v20_master_key(key_data: &KeyData, pid: Option<u32>) -> Result<Vec<u8>> {
     match *key_data {
         KeyData::One { iv, ciphertext, .. } => {
             let aes_key = b"\xB3\x1C\x6E\x24\x1A\xC8\x46\x72\x8D\xA9\xC1\xFA\xC4\x93\x66\x51\xCF\xFB\x94\x4D\x14\x3A\xB8\x16\x27\x6B\xCC\x6D\xA0\x28\x47\x87";
@@ -238,9 +234,9 @@ fn derive_v20_master_key(key_data: &KeyData) -> Result<Vec<u8>> {
         } => {
             let xor_key = b"\xCC\xF8\xA1\xCE\xC5\x66\x05\xB8\x51\x75\x52\xBA\x1A\x2D\x06\x1C\x03\xA2\x9E\x90\x27\x4F\xB2\xFC\xF5\x9B\xA4\xB7\x5C\x39\x23\x90";
             let mut plain_aes_key = {
-                let mut guard = ImpersonateGuard::start_impersonate()?;
+                let (mut guard, _pid) = ImpersonateGuard::start(pid)?;
                 let key = decrypt_with_cng(enctypted_aes_key)?;
-                guard.stop_impersonate()?;
+                guard.stop()?;
                 key
             };
             plain_aes_key

@@ -30,7 +30,7 @@ pub struct ImpersonateGuard {
 
 impl Drop for ImpersonateGuard {
     fn drop(&mut self) {
-        _ = self.stop_impersonate();
+        _ = self.stop();
     }
 }
 
@@ -45,9 +45,14 @@ extern "system" {
 }
 
 impl ImpersonateGuard {
-    pub fn start_impersonate() -> Result<Self> {
+    pub fn start(pid: Option<u32>) -> Result<(Self, u32)> {
         Self::enable_privilege()?;
-        let Some(pid) = Self::get_system_pid_list()?.next()
+        let pid = if let Some(pid) = pid {
+            pid
+        }
+        else if let Some(pid) = Self::get_system_pid_list()?.next() {
+            pid
+        }
         else {
             return Err(CryptError::WindowsNotFoundProcess);
         };
@@ -57,10 +62,10 @@ impl ImpersonateGuard {
             CloseHandle(system_handle)?;
             ImpersonateLoggedOnUser(dup_token)?;
         };
-        Ok(Self { handle: dup_token })
+        Ok((Self { handle: dup_token }, pid))
     }
 
-    pub fn stop_impersonate(&mut self) -> Result<()> {
+    pub fn stop(&mut self) -> Result<()> {
         unsafe {
             CloseHandle(self.handle)?;
             RevertToSelf()?;
