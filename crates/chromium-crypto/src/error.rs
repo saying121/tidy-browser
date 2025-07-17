@@ -51,6 +51,14 @@ pub enum CryptError {
     ChaCha(chacha20poly1305::Error),
     #[error("{0}")]
     Context(winnow::error::ContextError),
+    #[error(r#"app_bound_encrypted_key not start with "APPB""#)]
+    APPB,
+    #[error("Invalid utf-8: corrupt contents")]
+    WindowsStr,
+    #[error("Invalid status from RtlAdjustPrivilege")]
+    WindowsPrivilege,
+    #[error("No such Process lsass.exe or winlogon.exe")]
+    WindowsNotFoundProcess,
 }
 
 pub type Result<T> = std::result::Result<T, CryptError>;

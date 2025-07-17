@@ -1,6 +1,11 @@
 pub mod local_state;
+mod impersonate;
 
-use std::{ffi::c_void, path::Path, ptr, slice};
+use std::{
+    ffi::c_void,
+    path::Path,
+    ptr, slice,
+};
 
 use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit};
 use base64::{prelude::BASE64_STANDARD, Engine};
@@ -10,15 +15,18 @@ use tokio::{fs, task::spawn_blocking};
 use windows::{
     core::w,
     Win32::{
-        Foundation,
-        Security::Cryptography::{
-            self, NCryptOpenKey, NCryptOpenStorageProvider, NCRYPT_KEY_HANDLE, NCRYPT_PROV_HANDLE,
-        },
+        Foundation::{self},
+        Security::
+            Cryptography::{
+                self, NCryptOpenKey, NCryptOpenStorageProvider, NCRYPT_KEY_HANDLE,
+                NCRYPT_PROV_HANDLE,
+            }
+        ,
     },
 };
 use winnow::{binary::le_u32, error::StrContext, token::take, Parser};
 
-use crate::error::{CryptError, Result};
+use crate::{error::{CryptError, Result}, win::impersonate::ImpersonateGuard};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -44,7 +52,7 @@ impl Decrypter {
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=45
     /// Key prefix for a key encrypted with DPAPI.
     const K_DPAPIKEY_PREFIX: &'static [u8] = b"DPAPI";
-
+    // https://source.chromium.org/chromium/chromium/src/+/main:chrome/browser/os_crypt/app_bound_encryption_provider_win.cc;l=40
     const K_APP_BOUND_DATA_PREFIX: &'static [u8] = b"v20";
     const K_CRYPT_APP_BOUND_KEY_PREFIX: &'static [u8] = b"APPB";
 }
@@ -74,15 +82,19 @@ impl Decrypter {
             };
             let mut encrypted_key = BASE64_STANDARD.decode(encrypted_key)?;
 
-            debug_assert!(encrypted_key.starts_with(Self::K_CRYPT_APP_BOUND_KEY_PREFIX));
+            if !encrypted_key.starts_with(Self::K_CRYPT_APP_BOUND_KEY_PREFIX) {
+                return Err(CryptError::APPB);
+            }
 
             let key = &mut encrypted_key[Self::K_CRYPT_APP_BOUND_KEY_PREFIX.len()..];
             let mut key = {
-                // TODO: impersonate lsass.exe with RAII
-                decrypt_with_dpapi(key)?
+                let mut guard = ImpersonateGuard::start_impersonate()?;
+                let key = decrypt_with_dpapi(key)?;
+                guard.stop_impersonate()?;
+                key
             };
             let key_blob = decrypt_with_dpapi(&mut key)?;
-            let key_data = parse_key_blob(&mut &*key_blob).map_err(CryptError::Context)?;
+            let key_data = parse_key_blob(&mut key_blob.as_slice()).map_err(CryptError::Context)?;
             derive_v20_master_key(&key_data)
         })
         .await??;
@@ -138,23 +150,24 @@ fn parse_key_blob<'k>(blob_data: &mut &'k [u8]) -> winnow::Result<KeyData<'k>> {
     let header_len = le_u32(blob_data)? as usize;
     let _header = take(header_len).parse_next(blob_data)?;
     let _content_len = le_u32(blob_data)? as usize;
+    debug_assert_eq!(_content_len, blob_data.len());
 
     let flag = take(1_usize).parse_next(blob_data)?[0];
     match flag {
         1 => Ok(KeyData::One {
             iv: take(12_usize).parse_next(blob_data)?,
-            ciphertext: take(32_usize).parse_next(blob_data)?,
+            ciphertext: take(32_usize + 16).parse_next(blob_data)?,
             // tag: take(16_usize).parse_next(blob_data)?,
         }),
         2 => Ok(KeyData::Two {
             iv: take(12_usize).parse_next(blob_data)?,
-            ciphertext: take(32_usize).parse_next(blob_data)?,
+            ciphertext: take(32_usize + 16).parse_next(blob_data)?,
             // tag: take(16_usize).parse_next(blob_data)?,
         }),
         3 => Ok(KeyData::Three {
             enctypted_aes_key: take(32_usize).parse_next(blob_data)?,
             iv: take(12_usize).parse_next(blob_data)?,
-            ciphertext: take(32_usize).parse_next(blob_data)?,
+            ciphertext: take(32_usize + 16).parse_next(blob_data)?,
             // tag: take(16_usize).parse_next(blob_data)?,
         }),
         _ => {
@@ -197,12 +210,10 @@ fn decrypt_with_cng(keydpapi: &[u8]) -> Result<Vec<u8>> {
 
     unsafe {
         Cryptography::NCryptFreeObject(hkey.into())?;
-    };
-    unsafe {
         Cryptography::NCryptFreeObject(phprovider.into())?;
     };
     output_buffer.truncate(output_len as usize);
-
+   
     Ok(output_buffer)
 }
 
@@ -226,7 +237,12 @@ fn derive_v20_master_key(key_data: &KeyData) -> Result<Vec<u8>> {
             enctypted_aes_key, iv, ciphertext, ..
         } => {
             let xor_key = b"\xCC\xF8\xA1\xCE\xC5\x66\x05\xB8\x51\x75\x52\xBA\x1A\x2D\x06\x1C\x03\xA2\x9E\x90\x27\x4F\xB2\xFC\xF5\x9B\xA4\xB7\x5C\x39\x23\x90";
-            let mut plain_aes_key = decrypt_with_cng(enctypted_aes_key)?;
+            let mut plain_aes_key = {
+                let mut guard = ImpersonateGuard::start_impersonate()?;
+                let key = decrypt_with_cng(enctypted_aes_key)?;
+                guard.stop_impersonate()?;
+                key
+            };
             plain_aes_key
                 .iter_mut()
                 .zip(xor_key)

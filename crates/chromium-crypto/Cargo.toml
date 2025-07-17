@@ -1,23 +1,22 @@
 [package]
 name = "chromium-crypto"
 version = "0.1.0-alpha.0"
-edition.workspace = true
 authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 description = "Chromium crypt"
 homepage = "https://github.com/saying121/tidy-browser/tree/master/crates/chromium-crypto"
-rust-version.workspace = true
-license.workspace = true
 repository.workspace = true
+license.workspace = true
 keywords.workspace = true
 categories.workspace = true
-
-exclude = ["tests/", "examples", "./CHANGELOG.md"]
+exclude = ["./CHANGELOG.md", "examples", "tests/"]
 
 [dependencies]
-tokio = { workspace = true, features = ["rt", "fs"] }
-thiserror = { workspace = true }
-tracing = { workspace = true }
 cfg-if = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["fs", "rt"] }
+tracing = { workspace = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 TinyUFO = { workspace = true }
@@ -25,18 +24,18 @@ aes = { workspace = true }
 cbc = { workspace = true }
 pbkdf2 = { workspace = true, features = ["sha1"] }
 sha1 = { workspace = true }
-
-secret-service = { workspace = true, default-features = true, features = ["rt-tokio-crypto-rust"] }
+secret-service = { workspace = true, default-features = true, features = [
+  "rt-tokio-crypto-rust",
+] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 aes = { workspace = true }
 cbc = { workspace = true }
 pbkdf2 = { workspace = true, features = ["sha1"] }
 sha1 = { workspace = true }
-
 keyring = { workspace = true, default-features = false, features = [
-    "apple-native",
-] } # It is not working as expected on Linux.
+  "apple-native",
+] }  # It is not working as expected on Linux.
 
 [target.'cfg(target_os = "windows")'.dependencies]
 chacha20poly1305 = { workspace = true }
@@ -45,7 +44,13 @@ serde_json = { workspace = true }
 winnow = { workspace = true }
 aes-gcm = { workspace = true }
 base64 = { workspace = true }
-windows = { workspace = true, features = ["Win32_Security_Cryptography"] }
+windows = { workspace = true, features = [
+  "Win32_Security_Cryptography",
+  "Win32_System_ProcessStatus",
+  "Win32_System_Threading",
+  "Win32_System_SystemServices",
+  "Wdk_System_SystemServices",
+] }
 
 [lints]
 workspace = true
