@@ -17,7 +17,12 @@ use windows::{
         },
     },
 };
-use winnow::{binary::le_u32, error::StrContext, token::take, Parser};
+use winnow::{
+    binary::le_u32,
+    combinator::{self, fail},
+    token::{any, take},
+    Parser,
+};
 
 use crate::{
     error::{CryptError, Result},
@@ -89,8 +94,8 @@ impl Decrypter {
                 (key, pid, guard.stop_sys_handle()?)
             };
             let key_blob = decrypt_with_dpapi(&mut key)?;
-            let key_data = parse_key_blob(&mut key_blob.as_slice()).map_err(CryptError::Context)?;
-            derive_v20_master_key(&key_data, Some(pid), Some(sys_handle))
+            let key_data = KeyData::parse(&mut key_blob.as_slice()).map_err(CryptError::Context)?;
+            derive_v20_master_key(key_data, Some(pid), Some(sys_handle))
         })
         .await??;
 
@@ -122,6 +127,7 @@ impl Decrypter {
     }
 }
 
+#[derive(Clone, Copy)]
 enum KeyData<'k> {
     One {
         iv: &'k [u8],
@@ -138,32 +144,42 @@ enum KeyData<'k> {
     },
 }
 
-fn parse_key_blob<'k>(blob_data: &mut &'k [u8]) -> winnow::Result<KeyData<'k>> {
-    let header_len = le_u32(blob_data)? as usize;
-    let _header = take(header_len).parse_next(blob_data)?;
-    let _content_len = le_u32(blob_data)? as usize;
-    debug_assert_eq!(_content_len, blob_data.len());
+impl<'k> KeyData<'k> {
+    fn parse<'b>(blob_data: &mut &'b [u8]) -> winnow::Result<KeyData<'b>> {
+        let header_len = le_u32(blob_data)? as usize;
+        let _header = take(header_len).parse_next(blob_data)?;
+        let _content_len = le_u32(blob_data)? as usize;
+        debug_assert_eq!(_content_len, blob_data.len());
 
-    let flag = take(1_usize).parse_next(blob_data)?[0];
-    match flag {
-        1 => Ok(KeyData::One {
+        combinator::dispatch!(any;
+            1_u8 => Self::flag1,
+            2_u8 => Self::flag2,
+            3_u8 => Self::flag3,
+            _ => fail,
+        )
+        .parse_next(blob_data)
+    }
+
+    fn flag1<'b>(blob_data: &mut &'b [u8]) -> winnow::Result<KeyData<'b>> {
+        Ok(KeyData::One {
             iv: take(12_usize).parse_next(blob_data)?,
             ciphertext: take(32_usize + 16).parse_next(blob_data)?,
-        }),
-        2 => Ok(KeyData::Two {
+        })
+    }
+
+    fn flag2<'b>(blob_data: &mut &'b [u8]) -> winnow::Result<KeyData<'b>> {
+        Ok(KeyData::Two {
             iv: take(12_usize).parse_next(blob_data)?,
             ciphertext: take(32_usize + 16).parse_next(blob_data)?,
-        }),
-        3 => Ok(KeyData::Three {
+        })
+    }
+
+    fn flag3<'b>(blob_data: &mut &'b [u8]) -> winnow::Result<KeyData<'b>> {
+        Ok(KeyData::Three {
             enctypted_aes_key: take(32_usize).parse_next(blob_data)?,
             iv: take(12_usize).parse_next(blob_data)?,
             ciphertext: take(32_usize + 16).parse_next(blob_data)?,
-        }),
-        _ => {
-            let mut err = winnow::error::ContextError::new();
-            err.push(StrContext::Label("Bad key flag"));
-            Err(err)
-        },
+        })
     }
 }
 
@@ -207,11 +223,11 @@ fn decrypt_with_cng(keydpapi: &[u8]) -> Result<Vec<u8>> {
 }
 
 fn derive_v20_master_key(
-    key_data: &KeyData,
+    key_data: KeyData,
     pid: Option<u32>,
     sys_handle: Option<HANDLE>,
 ) -> Result<Vec<u8>> {
-    match *key_data {
+    match key_data {
         KeyData::One { iv, ciphertext } => {
             let aes_key = b"\xB3\x1C\x6E\x24\x1A\xC8\x46\x72\x8D\xA9\xC1\xFA\xC4\x93\x66\x51\xCF\xFB\x94\x4D\x14\x3A\xB8\x16\x27\x6B\xCC\x6D\xA0\x28\x47\x87";
             let cipher = Aes256Gcm::new(aes_key.into());
