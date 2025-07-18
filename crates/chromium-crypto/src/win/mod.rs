@@ -125,19 +125,16 @@ impl Decrypter {
 enum KeyData<'k> {
     One {
         iv: &'k [u8],
-        ciphertext: &'k [u8],
-        // tag: &'k [u8],
+        ciphertext: &'k [u8], // with tag
     },
     Two {
         iv: &'k [u8],
-        ciphertext: &'k [u8],
-        // tag: &'k [u8],
+        ciphertext: &'k [u8], // with tag
     },
     Three {
         enctypted_aes_key: &'k [u8],
         iv: &'k [u8],
-        ciphertext: &'k [u8],
-        // tag: &'k [u8],
+        ciphertext: &'k [u8], // with tag
     },
 }
 
@@ -152,18 +149,15 @@ fn parse_key_blob<'k>(blob_data: &mut &'k [u8]) -> winnow::Result<KeyData<'k>> {
         1 => Ok(KeyData::One {
             iv: take(12_usize).parse_next(blob_data)?,
             ciphertext: take(32_usize + 16).parse_next(blob_data)?,
-            // tag: take(16_usize).parse_next(blob_data)?,
         }),
         2 => Ok(KeyData::Two {
             iv: take(12_usize).parse_next(blob_data)?,
             ciphertext: take(32_usize + 16).parse_next(blob_data)?,
-            // tag: take(16_usize).parse_next(blob_data)?,
         }),
         3 => Ok(KeyData::Three {
             enctypted_aes_key: take(32_usize).parse_next(blob_data)?,
             iv: take(12_usize).parse_next(blob_data)?,
             ciphertext: take(32_usize + 16).parse_next(blob_data)?,
-            // tag: take(16_usize).parse_next(blob_data)?,
         }),
         _ => {
             let mut err = winnow::error::ContextError::new();
@@ -218,23 +212,21 @@ fn derive_v20_master_key(
     sys_handle: Option<HANDLE>,
 ) -> Result<Vec<u8>> {
     match *key_data {
-        KeyData::One { iv, ciphertext, .. } => {
+        KeyData::One { iv, ciphertext } => {
             let aes_key = b"\xB3\x1C\x6E\x24\x1A\xC8\x46\x72\x8D\xA9\xC1\xFA\xC4\x93\x66\x51\xCF\xFB\x94\x4D\x14\x3A\xB8\x16\x27\x6B\xCC\x6D\xA0\x28\x47\x87";
             let cipher = Aes256Gcm::new(aes_key.into());
             cipher
                 .decrypt(iv.into(), ciphertext)
                 .map_err(CryptError::AesGcm)
         },
-        KeyData::Two { iv, ciphertext, .. } => {
+        KeyData::Two { iv, ciphertext } => {
             let chacha_key = b"\xE9\x8F\x37\xD7\xF4\xE1\xFA\x43\x3D\x19\x30\x4D\xC2\x25\x80\x42\x09\x0E\x2D\x1D\x7E\xEA\x76\x70\xD4\x1F\x73\x8D\x08\x72\x96\x60";
             let cipher = ChaCha20Poly1305::new(chacha_key.into());
             cipher
                 .decrypt(iv.into(), ciphertext)
                 .map_err(CryptError::ChaCha)
         },
-        KeyData::Three {
-            enctypted_aes_key, iv, ciphertext, ..
-        } => {
+        KeyData::Three { enctypted_aes_key, iv, ciphertext } => {
             let xor_key = b"\xCC\xF8\xA1\xCE\xC5\x66\x05\xB8\x51\x75\x52\xBA\x1A\x2D\x06\x1C\x03\xA2\x9E\x90\x27\x4F\xB2\xFC\xF5\x9B\xA4\xB7\x5C\x39\x23\x90";
             let mut plain_aes_key = {
                 let (guard, _pid) = ImpersonateGuard::start(pid, sys_handle)?;

@@ -81,6 +81,7 @@ impl ImpersonateGuard {
         Ok(())
     }
 
+    /// stop impersonate and return sys token handle
     pub fn stop_sys_handle(self) -> Result<HANDLE> {
         unsafe { RevertToSelf() }?;
         Ok(self.sys_token_handle)
@@ -103,39 +104,46 @@ impl ImpersonateGuard {
     }
 
     fn get_system_token(handle: HANDLE) -> Result<HANDLE> {
-        let mut token_handle = HANDLE::default();
-        unsafe { OpenProcessToken(handle, TOKEN_DUPLICATE | TOKEN_QUERY, &mut token_handle)? };
-        let mut duplicate_token = HANDLE::default();
-        unsafe {
+        let token_handle = unsafe {
+            let mut token_handle = HANDLE::default();
+            OpenProcessToken(handle, TOKEN_DUPLICATE | TOKEN_QUERY, &mut token_handle)?;
+            token_handle
+        };
+        let duplicate_token = unsafe {
+            let mut duplicate_token = HANDLE::default();
             DuplicateToken(
                 token_handle,
                 Security::SECURITY_IMPERSONATION_LEVEL(2),
                 &mut duplicate_token,
             )?;
             CloseHandle(token_handle)?;
+            duplicate_token
         };
 
         Ok(duplicate_token)
     }
 
-    fn target_process_name<F>(pid: u32, name: F) -> Result<bool>
+    fn process_name_is<F>(pid: u32, name_is: F) -> Result<bool>
     where
         F: FnOnce(&OsStr) -> bool,
     {
         let hprocess = Self::get_process_handle(pid)?;
 
-        let mut lpimagefilename = vec![0; 260];
-        let length =
-            unsafe { K32GetProcessImageFileNameW(hprocess, &mut lpimagefilename) } as usize;
-        unsafe {
-            CloseHandle(hprocess)?;
+        let image_file_name = {
+            let mut lpimagefilename = vec![0; 260];
+            let length =
+                unsafe { K32GetProcessImageFileNameW(hprocess, &mut lpimagefilename) } as usize;
+            unsafe {
+                CloseHandle(hprocess)?;
+            };
+            lpimagefilename.truncate(length);
+            lpimagefilename
         };
-        lpimagefilename.truncate(length);
 
-        let fp = OsString::from_wide(&lpimagefilename);
+        let fp = OsString::from_wide(&image_file_name);
         PathBuf::from(fp)
             .file_name()
-            .map(name)
+            .map(name_is)
             .ok_or(CryptError::ProcessPath)
     }
 
@@ -155,7 +163,7 @@ impl ImpersonateGuard {
             .into_iter()
             .filter(|&v| {
                 v != 0
-                    && Self::target_process_name(v, |n| n == "lsass.exe" || n == "winlogon.exe")
+                    && Self::process_name_is(v, |n| n == "lsass.exe" || n == "winlogon.exe")
                         .unwrap_or(false)
             });
         Ok(filter)
@@ -164,9 +172,6 @@ impl ImpersonateGuard {
     fn get_process_handle(pid: u32) -> Result<HANDLE> {
         let hprocess =
             unsafe { OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, pid) }?;
-        if hprocess.is_invalid() {
-            return Err(windows::core::Error::from_win32().into());
-        }
         Ok(hprocess)
     }
 }
