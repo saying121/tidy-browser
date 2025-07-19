@@ -26,7 +26,7 @@ async fn main() -> anyhow::Result<()> {
     // p: `"$HOME/.mozilla/firefox-esr"`
     // let firefox = FirefoxBuilder::<Firefox>::with_path_profile(Some(p), Some("default-release"))?
     // or
-    let firefox = FirefoxBuilder::<Firefox>::with_path_profile(p, "default")?
+    let firefox = FirefoxBuilder::<Firefox>::with_base_profile(p, "default")?
         .build()
         .await?;
     // TODO: make it show FirefoxEsr?

@@ -15,7 +15,7 @@ async fn main() -> anyhow::Result<()> {
 
     dbg!(&filtered_cookies.first());
 
-    let firefox = FirefoxBuilder::<Firefox>::new()?
+    let firefox = FirefoxBuilder::<Firefox>::new()
         .build()
         .await?;
     let all_cookies = firefox.get_cookies_all().await?;

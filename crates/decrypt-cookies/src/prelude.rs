@@ -8,5 +8,5 @@ pub use crate::{
         ChromiumBuilder, ChromiumCookieCol, ChromiumCookieColIter, ChromiumGetter,
         ChromiumLoginCol, ChromiumLoginColIter,
     },
-    firefox::{FirefoxBuilder, FirefoxGetter, MozCookiesCol, MozCookiesColIter},
+    firefox::{builder::FirefoxBuilder, FirefoxGetter, MozCookiesCol, MozCookiesColIter},
 };

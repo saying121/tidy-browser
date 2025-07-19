@@ -42,7 +42,6 @@ async fn ff_get_all_cookie_work() -> Result<()> {
         .init();
 
     let ff = FirefoxBuilder::<Firefox>::new()
-        .unwrap()
         .build()
         .await?;
     let a = ff.get_cookies_all().await?;

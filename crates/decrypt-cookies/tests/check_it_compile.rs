@@ -47,7 +47,6 @@ async fn can_compile() {
         ($($browser:ident), *) => {
             $(
                 let Ok(getter) = FirefoxBuilder::<$browser>::new()
-                    .unwrap()
                     .build()
                     .await
                 else {

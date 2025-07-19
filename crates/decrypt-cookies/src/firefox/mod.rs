@@ -1,7 +1,7 @@
 pub mod builder;
 pub mod items;
 
-use std::{marker::PhantomData, path::PathBuf};
+use std::marker::PhantomData;
 
 use chrono::Utc;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
@@ -30,15 +30,6 @@ type Result<T> = std::result::Result<T, FirefoxError>;
 #[derive(Default)]
 pub struct FirefoxGetter<T> {
     pub(crate) cookies_query: CookiesQuery,
-    pub(crate) __browser: PhantomData<T>,
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-pub struct FirefoxBuilder<'a, T> {
-    pub(crate) init: Option<PathBuf>,
-    pub(crate) profile: Option<&'a str>,
     pub(crate) __browser: PhantomData<T>,
 }
 
