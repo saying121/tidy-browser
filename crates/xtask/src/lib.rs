@@ -6,8 +6,26 @@
 use std::{convert::Into, ffi::OsString};
 
 use anyhow::Result;
+use owo_colors::OwoColorize;
 
 pub mod args;
+
+pub fn show_rust_env() -> Result<()> {
+    split_line();
+    duct::cmd!("rustup", "show").run()?;
+    split_line();
+    let tools = ["rustc", "cargo", "rustfmt"];
+    for ele in tools {
+        duct::cmd!(ele, "-v", "-V").run()?;
+        split_line();
+    }
+    Ok(())
+}
+
+fn split_line() {
+    let var = "=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>";
+    println!("{}", var.yellow());
+}
 
 /// --lib --bins
 pub fn check_lb() -> Result<()> {
