@@ -270,6 +270,7 @@ chromium!("windows", Yandex  , base: r"AppData\Local\Yandex\YandexBrowser\User D
 
 firefox!("linux", Firefox, base: ".mozilla/firefox");
 firefox!("linux", Librewolf, base: ".librewolf");
+firefox!("linux", Floorp, base: ".floorp");
 
 firefox!("macos", Firefox, base: "Library/Application Support/Firefox");
 firefox!("macos", Librewolf, base: "Library/Application Support/librewolf");
