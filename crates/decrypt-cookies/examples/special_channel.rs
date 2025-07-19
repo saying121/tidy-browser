@@ -31,12 +31,12 @@ async fn main() -> anyhow::Result<()> {
         .await?;
     // TODO: make it show FirefoxEsr?
     dbg!(firefox.to_string());
-    let all_cookies = firefox.get_cookies_all().await?;
+    let all_cookies = firefox.all_cookies().await?;
 
     dbg!(&all_cookies.first());
 
     let filtered_cookies = firefox
-        .get_cookies_filter(MozCookiesCol::Host.contains("google.com"))
+        .cookies_filter(MozCookiesCol::Host.contains("google.com"))
         .await?;
 
     dbg!(&filtered_cookies.first());
