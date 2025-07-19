@@ -10,12 +10,12 @@ async fn main() -> anyhow::Result<()> {
     let chromium = ChromiumBuilder::<Chrome>::with_user_data_dir(p)
         .build()
         .await?;
-    let all_cookies = chromium.get_cookies_all().await?;
+    let all_cookies = chromium.all_cookies().await?;
 
     dbg!(&all_cookies.first());
 
     let filtered_cookies = chromium
-        .get_cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
+        .cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
         .await?;
 
     dbg!(&filtered_cookies.first());
@@ -26,7 +26,7 @@ async fn main() -> anyhow::Result<()> {
     // p: `"$HOME/.mozilla/firefox-esr"`
     // let firefox = FirefoxBuilder::<Firefox>::with_path_profile(Some(p), Some("default-release"))?
     // or
-    let firefox = FirefoxBuilder::<Firefox>::with_base_profile(p, "default")?
+    let firefox = FirefoxBuilder::<Firefox>::with_base_profile(p, "default")
         .build()
         .await?;
     // TODO: make it show FirefoxEsr?
