@@ -15,7 +15,7 @@ async fn chromium_get_all_cookie_work() -> Result<()> {
     let chrmo = ChromiumBuilder::<Chrome>::new()
         .build()
         .await?;
-    let a = match chrmo.get_cookies_all().await {
+    let a = match chrmo.all_cookies().await {
         Ok(it) => it,
         Err(e) => {
             println!("{e}");

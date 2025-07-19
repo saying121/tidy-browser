@@ -51,9 +51,6 @@ impl LoginData {
 }
 
 impl From<logins::Model> for LoginData {
-    // NOTE: The `unwrap_or_default` method is invoked only when the value can be empty
-    // Example: Some(0), Some(""),
-    // reduce user burden
     fn from(v: logins::Model) -> Self {
         Self {
             origin_url: v.origin_url,

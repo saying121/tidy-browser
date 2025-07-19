@@ -14,7 +14,7 @@ async fn passwd() {
         },
     };
     let res = edge_getter
-        .get_logins_all()
+        .all_logins()
         .await
         .unwrap();
     // dbg!(&res[0]);
@@ -48,7 +48,7 @@ async fn passwd_browsers() {
                         return;
                     },
                 };
-                let res = match getter.get_logins_all().await {
+                let res = match getter.all_logins().await {
                     Ok(v) => v,
                     Err(e) => {
                         eprintln!("{e}");

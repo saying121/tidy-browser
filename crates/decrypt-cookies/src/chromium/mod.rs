@@ -1,6 +1,6 @@
 pub mod builder;
 pub(crate) mod items;
-use std::{marker::PhantomData, path::PathBuf};
+use std::marker::PhantomData;
 
 use chromium_crypto::Decrypter;
 use chrono::prelude::Utc;
@@ -65,14 +65,6 @@ pub struct ChromiumGetter<T> {
     pub(crate) crypto: Decrypter,
     pub(crate) __browser: PhantomData<T>,
 }
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
-#[derive(PartialEq, Eq)]
-pub struct ChromiumBuilder<T> {
-    pub(crate) base: PathBuf,
-    pub(crate) __browser: PhantomData<T>,
-}
 
 impl<T: Send + Sync> ChromiumGetter<T> {
     async fn par_decrypt_logins(&self, raw: Vec<logins::Model>) -> Result<Vec<LoginData>> {
@@ -112,13 +104,13 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     ///         .await
     ///         .unwrap();
     ///     let res = edge_getter
-    ///         .get_logins_filter(ChromiumLoginCol::OriginUrl.contains("google.com"))
+    ///         .logins_filter(ChromiumLoginCol::OriginUrl.contains("google.com"))
     ///         .await
     ///         .unwrap_or_default();
     ///     dbg!(res);
     /// }
     /// ```
-    pub async fn get_logins_filter<F>(&self, filter: F) -> Result<Vec<LoginData>>
+    pub async fn logins_filter<F>(&self, filter: F) -> Result<Vec<LoginData>>
     where
         F: IntoCondition + Send,
     {
@@ -129,7 +121,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         self.par_decrypt_logins(raw_login)
             .await
     }
-    pub async fn get_logins_by_host<F>(&self, host: F) -> Result<Vec<LoginData>>
+    pub async fn logins_by_host<F>(&self, host: F) -> Result<Vec<LoginData>>
     where
         F: AsRef<str> + Send,
     {
@@ -141,7 +133,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
             .await
     }
     /// contains passwords
-    pub async fn get_logins_all(&self) -> Result<Vec<LoginData>> {
+    pub async fn all_logins(&self) -> Result<Vec<LoginData>> {
         let raw_login = self
             .login_data_query
             .query_all_login_dt()
@@ -166,48 +158,69 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     ///         .await
     ///         .unwrap();
     ///     let res = edge_getter
-    ///         .get_cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
+    ///         .cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
     ///         .await
     ///         .unwrap_or_default();
     ///     dbg!(res);
     /// }
     /// ```
-    pub async fn get_cookies_filter<F>(&self, filter: F) -> Result<Vec<ChromiumCookie>>
+    pub async fn cookies_filter<F>(&self, filter: F) -> Result<Vec<ChromiumCookie>>
     where
         F: IntoCondition + Send,
     {
         let raw_ck = self
             .cookies_query
-            .query_cookie_filter(filter)
+            .cookie_filter(filter)
             .await?;
         self.par_decrypt_ck(raw_ck).await
     }
     /// decrypt Cookies
-    pub async fn get_cookies_by_host<A: AsRef<str> + Send>(
+    pub async fn cookies_by_host<A: AsRef<str> + Send>(
         &self,
         host: A,
     ) -> Result<Vec<ChromiumCookie>> {
         let raw_ck = self
             .cookies_query
-            .query_cookie_by_host(host.as_ref())
+            .cookie_by_host(host.as_ref())
             .await?;
         self.par_decrypt_ck(raw_ck).await
     }
 
     /// return all cookies
-    pub async fn get_cookies_all(&self) -> Result<Vec<ChromiumCookie>> {
+    pub async fn all_cookies(&self) -> Result<Vec<ChromiumCookie>> {
         let raw_ck = self
             .cookies_query
-            .query_all_cookie()
+            .all_cookie()
             .await?;
         self.par_decrypt_ck(raw_ck).await
+    }
+
+    /// parallel decrypt cookies
+    /// and not blocking scheduling
+    async fn par_decrypt_ck(&self, raw: Vec<cookies::Model>) -> Result<Vec<ChromiumCookie>> {
+        let crypto = self.crypto.clone();
+
+        let decrypted_ck = task::spawn_blocking(move || {
+            raw.into_par_iter()
+                .map(|mut v| {
+                    let res = crypto
+                        .decrypt(&mut v.encrypted_value)
+                        .unwrap_or_default();
+                    let mut cookies = ChromiumCookie::from(v);
+                    cookies.set_encrypted_value(res);
+                    cookies
+                })
+                .collect()
+        })
+        .await?;
+        Ok(decrypted_ck)
     }
 
     /// get `LEETCODE_SESSION` and `csrftoken` for leetcode
     pub async fn get_session_csrf<A: AsRef<str> + Send>(&self, host: A) -> Result<LeetCodeCookies> {
         let cookies = self
             .cookies_query
-            .query_cookie_filter(
+            .cookie_filter(
                 ChromiumCookieCol::HostKey
                     .contains(host.as_ref())
                     .and(
@@ -281,44 +294,9 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         }
         Ok(csrf_token)
     }
-    /// parallel decrypt cookies
-    pub fn par_decrypt_cookies(&self, raw: Vec<cookies::Model>) -> Vec<ChromiumCookie> {
-        raw.into_par_iter()
-            .map(|mut v| {
-                let res = self
-                    .crypto
-                    .decrypt(&mut v.encrypted_value)
-                    .unwrap_or_default();
-                let mut cookies = ChromiumCookie::from(v);
-                cookies.set_encrypted_value(res);
-                cookies
-            })
-            .collect()
-    }
-
-    /// parallel decrypt cookies
-    /// and not blocking scheduling
-    async fn par_decrypt_ck(&self, raw: Vec<cookies::Model>) -> Result<Vec<ChromiumCookie>> {
-        let crypto = self.crypto.clone();
-
-        let decrypted_ck = task::spawn_blocking(move || {
-            raw.into_par_iter()
-                .map(|mut v| {
-                    let res = crypto
-                        .decrypt(&mut v.encrypted_value)
-                        .unwrap_or_default();
-                    let mut cookies = ChromiumCookie::from(v);
-                    cookies.set_encrypted_value(res);
-                    cookies
-                })
-                .collect()
-        })
-        .await?;
-        Ok(decrypted_ck)
-    }
 }
 
-impl<T: Send + Sync> ChromiumGetter<T> {
+impl<T> ChromiumGetter<T> {
     /// the browser's decrypt
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
         Ok(self.crypto.decrypt(ciphertext)?)

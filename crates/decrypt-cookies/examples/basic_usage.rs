@@ -5,12 +5,12 @@ async fn main() -> anyhow::Result<()> {
     let chromium = ChromiumBuilder::<Chrome>::new()
         .build()
         .await?;
-    let all_cookies = chromium.get_cookies_all().await?;
+    let all_cookies = chromium.all_cookies().await?;
 
     dbg!(&all_cookies.first());
 
     let filtered_cookies = chromium
-        .get_cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
+        .cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
         .await?;
 
     dbg!(&filtered_cookies.first());

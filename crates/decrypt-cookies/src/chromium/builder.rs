@@ -1,9 +1,9 @@
-use std::{fmt::Display, path::PathBuf};
+use std::{fmt::Display, marker::PhantomData, path::PathBuf};
 
 use chromium_crypto::Decrypter;
 use tokio::{fs, join};
 
-use super::{ChromiumBuilder, ChromiumGetter};
+use super::ChromiumGetter;
 use crate::{
     browser::ChromiumPath,
     chromium::items::{cookie::cookie_dao::CookiesQuery, passwd::login_data_dao::LoginDataQuery},
@@ -26,6 +26,8 @@ pub enum ChromiumBuilderError {
     Rawcopy(#[from] anyhow::Error),
     #[error(transparent)]
     TokioJoin(#[from] tokio::task::JoinError),
+    #[error("Can not found home dir")]
+    HOME,
 }
 
 pub type Result<T> = std::result::Result<T, ChromiumBuilderError>;
@@ -38,6 +40,14 @@ pub(crate) struct TempPaths {
     pub(crate) cookies_temp: PathBuf,
     pub(crate) login_data_temp: PathBuf,
     pub(crate) key_temp: PathBuf,
+}
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq)]
+pub struct ChromiumBuilder<T> {
+    pub(crate) base: Option<PathBuf>,
+    pub(crate) __browser: PhantomData<T>,
 }
 
 impl<B: ChromiumPath> Display for ChromiumGetter<B> {
@@ -53,13 +63,9 @@ impl<B: ChromiumPath> Display for ChromiumBuilder<B> {
 }
 
 impl<B: ChromiumPath> ChromiumBuilder<B> {
-    pub fn new() -> Self {
-        let mut base = dirs::home_dir().expect("Get home dir failed");
-
-        base.push(B::BASE);
-
+    pub const fn new() -> Self {
         Self {
-            base,
+            base: None,
             __browser: core::marker::PhantomData::<B>,
         }
     }
@@ -67,7 +73,7 @@ impl<B: ChromiumPath> ChromiumBuilder<B> {
     /// When browser start with `--user-data-dir=DIR` or special other channel
     pub const fn with_user_data_dir(base: PathBuf) -> Self {
         Self {
-            base,
+            base: Some(base),
             __browser: core::marker::PhantomData::<B>,
         }
     }
@@ -75,7 +81,20 @@ impl<B: ChromiumPath> ChromiumBuilder<B> {
 
 impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
     pub async fn build(self) -> Result<ChromiumGetter<B>> {
-        let temp_paths = self.cache_data().await?;
+        let base = if let Some(base) = self.base {
+            base
+        }
+        else {
+            let Some(mut base) = dirs::home_dir()
+            else {
+                return Err(ChromiumBuilderError::HOME);
+            };
+
+            base.push(B::BASE);
+            base
+        };
+
+        let temp_paths = Self::cache_data(base).await?;
 
         #[cfg(target_os = "linux")]
         let crypto = Decrypter::build(B::SAFE_STORAGE, crate::browser::need_safe_storage).await?;
@@ -101,14 +120,14 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         })
     }
 
-    async fn cache_data(&self) -> Result<TempPaths> {
-        let cookies = B::cookies(self.base.clone());
+    async fn cache_data(base: PathBuf) -> Result<TempPaths> {
+        let cookies = B::cookies(base.clone());
         let cookies_temp = B::cookies_temp();
 
-        let login_data = B::login_data(self.base.clone());
+        let login_data = B::login_data(base.clone());
         let login_data_temp = B::login_data_temp();
 
-        let key = B::key(self.base.clone());
+        let key = B::key(base.clone());
         let key_temp = B::key_temp();
 
         let ck_temp_p = cookies_temp

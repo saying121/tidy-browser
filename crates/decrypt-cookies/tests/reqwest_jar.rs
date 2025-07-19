@@ -17,10 +17,7 @@ async fn to_jar() {
         .await
         .unwrap();
 
-    let all_cookies = chrmo
-        .get_cookies_all()
-        .await
-        .unwrap();
+    let all_cookies = chrmo.all_cookies().await.unwrap();
     let a = all_cookies
         .iter()
         .find(|v| v.host_key.contains("leetcode.cn"))

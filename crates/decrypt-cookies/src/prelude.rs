@@ -5,7 +5,7 @@ pub use crate::safari::{items::cookie::SafariCookie, SafariBuilder, SafariGetter
 pub use crate::{
     browser::{cookies::LeetCodeCookies, *},
     chromium::{
-        ChromiumBuilder, ChromiumCookieCol, ChromiumCookieColIter, ChromiumGetter,
+        builder::ChromiumBuilder, ChromiumCookieCol, ChromiumCookieColIter, ChromiumGetter,
         ChromiumLoginCol, ChromiumLoginColIter,
     },
     firefox::{builder::FirefoxBuilder, FirefoxGetter, MozCookiesCol, MozCookiesColIter},

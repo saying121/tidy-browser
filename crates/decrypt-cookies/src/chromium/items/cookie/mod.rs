@@ -27,7 +27,7 @@ pub struct ChromiumCookie {
     pub has_expires: bool,
     pub is_persistent: bool,
     pub priority: i32,
-    pub samesite: SameSite,
+    pub same_site: SameSite,
     pub source_scheme: i32,
     pub source_port: i32,
     pub last_update_utc: Option<DateTime<Utc>>,
@@ -77,7 +77,7 @@ impl CookiesInfo for ChromiumCookie {
         self.is_secure
     }
     fn same_site(&self) -> SameSite {
-        self.samesite
+        self.same_site
     }
     fn is_http_only(&self) -> bool {
         self.is_httponly
@@ -113,7 +113,7 @@ impl From<cookies::Model> for ChromiumCookie {
             has_expires: value.has_expires != 0,
             is_persistent: value.is_persistent != 0,
             priority: value.priority,
-            samesite: value.samesite.into(),
+            same_site: value.samesite.into(),
             source_scheme: value.source_scheme,
             source_port: value.source_port,
             last_update_utc: value

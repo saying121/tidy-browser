@@ -29,7 +29,7 @@ impl CookiesQuery {
     }
 
     /// get raw Cookies
-    pub async fn query_cookie_filter<F>(&self, filter: F) -> Result<Vec<Model>>
+    pub async fn cookie_filter<F>(&self, filter: F) -> Result<Vec<Model>>
     where
         F: IntoCondition + Send,
     {
@@ -40,14 +40,15 @@ impl CookiesQuery {
     }
 
     /// get raw Cookies
-    pub async fn query_cookie_by_host(&self, host: &str) -> Result<Vec<Model>> {
+    pub async fn cookie_by_host(&self, host: &str) -> Result<Vec<Model>> {
         Cookies::find()
             .filter(cookies::Column::HostKey.contains(host))
             .all(&self.conn)
             .await
     }
+
     /// get raw Cookies
-    pub async fn query_all_cookie(&self) -> Result<Vec<Model>> {
+    pub async fn all_cookie(&self) -> Result<Vec<Model>> {
         Cookies::find()
             .all(&self.conn)
             .await
