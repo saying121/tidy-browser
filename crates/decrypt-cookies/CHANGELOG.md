@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- use `binary-cookies` crate for Safari cookies.
+- Use `binary-cookies` crate for Safari cookies.
+- Rename apis
 
 ## [0.6.1] - 2024-08-31
 
