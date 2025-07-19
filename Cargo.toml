@@ -22,7 +22,8 @@ panic = "abort"
 
 
 [workspace.dependencies]
-positioned-io = { version = "0.3.3", default-features = false }
+owo-colors = "4.2"
+positioned-io = { version = "0.3", default-features = false }
 pretty_assertions = "1"
 rand = "0.9"
 plist = "1"

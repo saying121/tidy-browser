@@ -3653,6 +3653,7 @@ dependencies = [
  "anyhow",
  "clap",
  "duct",
+ "owo-colors",
  "which",
 ]
 
