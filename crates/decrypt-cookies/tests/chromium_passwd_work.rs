@@ -2,38 +2,6 @@ use decrypt_cookies::prelude::*;
 
 #[ignore = "need realy environment"]
 #[tokio::test]
-async fn passwd() {
-    let edge_getter = match ChromiumBuilder::<Chrome>::new()
-        .build()
-        .await
-    {
-        Ok(it) => it,
-        Err(e) => {
-            eprintln!("{e}");
-            return;
-        },
-    };
-    let res = edge_getter
-        .all_logins()
-        .await
-        .unwrap();
-    // dbg!(&res[0]);
-    for i in res.into_iter().take(6) {
-        println!(
-            "{}, {}, {}, {}",
-            i.origin_url,
-            i.username_value
-                .unwrap_or_default(),
-            i.username_element
-                .unwrap_or_default(),
-            i.password_value
-                .unwrap_or_default()
-        );
-    }
-}
-
-#[ignore = "need realy environment"]
-#[tokio::test]
 async fn passwd_browsers() {
     macro_rules! test_chromium_pwd {
         ($($browser:ident), *) => {
@@ -58,7 +26,8 @@ async fn passwd_browsers() {
                 match res.first() {
                     Some(first) => {
                         println!(
-                            "{} {} {} ",
+                            "{} {} {} {} ",
+                            $browser,
                             first.origin_url,
                             first
                                 .username_value
@@ -70,10 +39,7 @@ async fn passwd_browsers() {
                                 .unwrap_or_default()
                         );
                     },
-                    None => {
-                        println!("=============");
-                        return;
-                    },
+                    None => println!("None ============= {}",$browser),
                 };
                 println!("=============");
             )*

@@ -26,7 +26,7 @@ pub struct MozCookies {
     pub is_http_only: bool,
     pub in_browser_element: i32,
     pub same_site: SameSite,
-    pub raw_same_site: i32,
+    // pub raw_same_site: i32,
     pub scheme_map: i32,
 }
 #[cfg(feature = "reqwest")]
@@ -110,9 +110,9 @@ impl From<moz_cookies::Model> for MozCookies {
                 .in_browser_element
                 .unwrap_or_default(),
             same_site: value.same_site.into(),
-            raw_same_site: value
-                .raw_same_site
-                .unwrap_or_default(),
+            // raw_same_site: value
+            //     .raw_same_site
+            //     .unwrap_or_default(),
             scheme_map: value
                 .scheme_map
                 .unwrap_or_default(),

@@ -62,6 +62,7 @@ type Result<T> = std::result::Result<T, ChromiumError>;
 pub struct ChromiumGetter<T> {
     pub(crate) cookies_query: CookiesQuery,
     pub(crate) login_data_query: LoginDataQuery,
+    pub(crate) login_data_for_account_query: Option<LoginDataQuery>,
     pub(crate) crypto: Decrypter,
     pub(crate) __browser: PhantomData<T>,
 }
@@ -112,12 +113,19 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     /// ```
     pub async fn logins_filter<F>(&self, filter: F) -> Result<Vec<LoginData>>
     where
-        F: IntoCondition + Send,
+        F: IntoCondition + Send + Clone,
     {
-        let raw_login = self
+        let mut raw_login = self
             .login_data_query
-            .query_login_dt_filter(filter)
+            .query_login_dt_filter(filter.clone())
             .await?;
+        if raw_login.is_empty() {
+            if let Some(query) = &self.login_data_for_account_query {
+                raw_login = query
+                    .query_login_dt_filter(filter)
+                    .await?;
+            }
+        }
         self.par_decrypt_logins(raw_login)
             .await
     }
@@ -125,19 +133,31 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     where
         F: AsRef<str> + Send,
     {
-        let raw_login = self
+        let mut raw_login = self
             .login_data_query
             .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host.as_ref()))
             .await?;
+        if raw_login.is_empty() {
+            if let Some(query) = &self.login_data_for_account_query {
+                raw_login = query
+                    .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host.as_ref()))
+                    .await?;
+            }
+        }
         self.par_decrypt_logins(raw_login)
             .await
     }
     /// contains passwords
     pub async fn all_logins(&self) -> Result<Vec<LoginData>> {
-        let raw_login = self
+        let mut raw_login = self
             .login_data_query
             .query_all_login_dt()
             .await?;
+        if raw_login.is_empty() {
+            if let Some(query) = &self.login_data_for_account_query {
+                raw_login = query.query_all_login_dt().await?;
+            }
+        }
         self.par_decrypt_logins(raw_login)
             .await
     }

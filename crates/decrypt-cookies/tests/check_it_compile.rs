@@ -52,7 +52,7 @@ async fn can_compile() {
                 else {
                     return;
                 };
-                let res = match getter.get_cookies_all().await {
+                let res = match getter.all_cookies().await {
                     Ok(v) => v,
                     Err(e) => {
                         eprintln!("{e}");

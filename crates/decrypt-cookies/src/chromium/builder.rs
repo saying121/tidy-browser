@@ -39,6 +39,7 @@ pub type Result<T> = std::result::Result<T, ChromiumBuilderError>;
 pub(crate) struct TempPaths {
     pub(crate) cookies_temp: PathBuf,
     pub(crate) login_data_temp: PathBuf,
+    pub(crate) login_data_for_account_temp: Option<PathBuf>,
     pub(crate) key_temp: PathBuf,
 }
 #[derive(Clone)]
@@ -111,10 +112,20 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         );
         let (cookies_query, login_data_query) = join!(cookies_query, login_data_query);
         let (cookies_query, login_data_query) = (cookies_query?, login_data_query?);
+        let login_data_for_account_query =
+            if let Some(path) = temp_paths.login_data_for_account_temp {
+                LoginDataQuery::new(path)
+                    .await?
+                    .into()
+            }
+            else {
+                None
+            };
 
         Ok(ChromiumGetter {
             cookies_query,
             login_data_query,
+            login_data_for_account_query,
             crypto,
             __browser: self.__browser,
         })
@@ -126,6 +137,9 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
 
         let login_data = B::login_data(base.clone());
         let login_data_temp = B::login_data_temp();
+
+        let login_data_for_account = B::login_data_for_account(base.clone());
+        let login_data_for_account_temp = B::login_data_for_account_temp();
 
         let key = B::key(base.clone());
         let key_temp = B::key_temp();
@@ -157,7 +171,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         })?;
 
         #[cfg(target_os = "windows")]
-        let (cookies_cp, login_cp, key_cp) = {
+        let (cookies_cp, login_cp, lfac_cp, key_cp) = {
             let cookies = cookies.clone();
             let cookies_temp = cookies_temp.clone();
             let cc = tokio::task::spawn_blocking(move || {
@@ -169,24 +183,31 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
             let lc =
                 tokio::task::spawn_blocking(move || crate::utils::shadow_copy(&login, &login_temp));
 
+            let login_for_account = login_data_for_account.clone();
+            let login_for_account_temp = login_data_for_account_temp.clone();
+            let lfac = tokio::task::spawn_blocking(move || {
+                crate::utils::shadow_copy(&login_for_account, &login_for_account_temp)
+            });
+
             let key = key.clone();
             let key_temp = key_temp.clone();
             let kc =
                 tokio::task::spawn_blocking(move || crate::utils::shadow_copy(&key, &key_temp));
 
-            (cc, lc, kc)
+            (cc, lc, lfac, kc)
         };
 
         #[cfg(not(target_os = "windows"))]
-        let (cookies_cp, login_cp, key_cp) = {
+        let (cookies_cp, login_cp, lfac_cp, key_cp) = {
             (
                 fs::copy(&cookies, &cookies_temp),
                 fs::copy(&login_data, &login_data_temp),
+                fs::copy(&login_data_for_account, &login_data_for_account_temp),
                 fs::copy(&key, &key_temp),
             )
         };
 
-        let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
+        let (ck, lg, lfac, k) = join!(cookies_cp, login_cp, lfac_cp, key_cp);
         #[cfg(target_os = "windows")]
         {
             ck??;
@@ -199,10 +220,12 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
             lg.map_err(|e| ChromiumBuilderError::Io { source: e, path: login_data })?;
             k.map_err(|e| ChromiumBuilderError::Io { source: e, path: key })?;
         };
-
         Ok(TempPaths {
             cookies_temp,
             login_data_temp,
+            login_data_for_account_temp: lfac
+                .map(|_| login_data_for_account_temp)
+                .ok(),
             key_temp,
         })
     }

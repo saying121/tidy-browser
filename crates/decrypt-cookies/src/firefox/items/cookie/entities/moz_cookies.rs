@@ -31,8 +31,8 @@ pub struct Model {
     pub in_browser_element: Option<i32>,
     #[sea_orm(column_name = "sameSite")]
     pub same_site: Option<i32>,
-    #[sea_orm(column_name = "rawSameSite")]
-    pub raw_same_site: Option<i32>,
+    // #[sea_orm(column_name = "rawSameSite")]
+    // pub raw_same_site: Option<i32>,
     #[sea_orm(column_name = "schemeMap")]
     pub scheme_map: Option<i32>,
 }

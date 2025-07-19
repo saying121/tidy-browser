@@ -48,12 +48,12 @@ impl<T: Send + Sync> FirefoxGetter<T> {
     ///         .await
     ///         .unwrap();
     ///     let res = ffget
-    ///         .get_cookies_filter(MozCookiesCol::Host.contains("mozilla.com"))
+    ///         .cookies_filter(MozCookiesCol::Host.contains("mozilla.com"))
     ///         .await
     ///         .unwrap_or_default();
     /// }
     /// ```
-    pub async fn get_cookies_filter<F>(&self, filter: F) -> Result<Vec<MozCookies>>
+    pub async fn cookies_filter<F>(&self, filter: F) -> Result<Vec<MozCookies>>
     where
         F: IntoCondition + Send,
     {
@@ -68,7 +68,7 @@ impl<T: Send + Sync> FirefoxGetter<T> {
         Ok(res)
     }
 
-    pub async fn get_cookies_all(&self) -> Result<Vec<MozCookies>> {
+    pub async fn all_cookies(&self) -> Result<Vec<MozCookies>> {
         let res = self
             .cookies_query
             .query_all_cookie()
@@ -80,7 +80,7 @@ impl<T: Send + Sync> FirefoxGetter<T> {
         Ok(res)
     }
 
-    pub async fn get_cookies_by_host(&self, host: &str) -> Result<Vec<MozCookies>> {
+    pub async fn cookies_by_host(&self, host: &str) -> Result<Vec<MozCookies>> {
         let res = self
             .cookies_query
             .query_cookie_by_host(host)
