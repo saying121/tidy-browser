@@ -231,7 +231,7 @@ chromium!("linux", Chromium, base: ".config/chromium"                   , safe_n
 chromium!("linux", Brave   , base: ".config/BraveSoftware/Brave-Browser", safe_name: "Brave"          );
 chromium!("linux", Vivaldi , base: ".config/vivaldi"                    , safe_name: "Vivaldi"        );
 chromium!("linux", Opera   , base: ".config/opera"                      , safe_name: "Opera"          );
-chromium!("linux", Yandex  , base: ".config/yandex-browser"             , login_data: "Ya Passman Data", safe_name: "Yandex");
+chromium!("linux", Yandex  , base: ".config/yandex-browser"             , login_data: "Default/Ya Passman Data", safe_name: "Yandex");
 
 macro_rules! cach_it {
     ($($browser:ident,)*) => {
