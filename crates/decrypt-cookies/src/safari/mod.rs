@@ -6,7 +6,22 @@ pub use self::items::cookie::CookiesGetter;
 use self::items::cookie::SafariCookie;
 use crate::browser::cookies::LeetCodeCookies;
 
-type Result<T> = std::result::Result<T, crate::safari::items::cookie::CookiesGetterError>;
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum SafariError {
+    #[error(transparent)]
+    Parse(#[from] binary_cookies::error::ParseError),
+    #[error("{source}, path: {path}")]
+    Io {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error(transparent)]
+    Task(#[from] tokio::task::JoinError),
+}
+
+type Result<T> = std::result::Result<T, SafariError>;
 
 #[derive(Clone)]
 #[derive(Debug)]

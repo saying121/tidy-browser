@@ -1,5 +1,6 @@
 [alias]
 xtask = "run -p xtask --"
 x = "run -p xtask --"
+
 [target.x86_64-pc-windows-gnu]
 runner = "wsudo"

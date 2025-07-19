@@ -3,27 +3,12 @@ use std::{path::PathBuf, sync::Arc};
 use binary_cookies::{cookie::Cookie, tokio::DecodeBinaryCookie};
 use chrono::{prelude::Utc, DateTime};
 
+use super::super::Result;
 use crate::{
     browser::cookies::{CookiesInfo, LeetCodeCookies},
     prelude::cookies::SameSite,
+    safari::SafariError,
 };
-
-#[derive(Debug)]
-#[derive(thiserror::Error)]
-pub enum CookiesGetterError {
-    #[error(transparent)]
-    Parse(#[from] binary_cookies::error::ParseError),
-    #[error("{source}, path: {path}")]
-    Io {
-        path: PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
-    #[error(transparent)]
-    Task(#[from] tokio::task::JoinError),
-}
-
-type Result<T> = std::result::Result<T, CookiesGetterError>;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -134,7 +119,7 @@ impl CookiesGetter {
         }
 
         let file = binary_cookies::tokio::RandomAccessFile::open(&cookie_path)
-            .map_err(|e| CookiesGetterError::Io { path: cookie_path, source: e })?;
+            .map_err(|e| SafariError::Io { path: cookie_path, source: e })?;
         let file = Arc::new(file);
 
         let bch = file.decode().await?;

@@ -1,16 +1,34 @@
 use std::{fmt::Display, path::PathBuf};
 
-use chromium_crypt::Decrypter;
+use chromium_crypto::Decrypter;
 use tokio::{fs, join};
 
 use super::{ChromiumBuilder, ChromiumGetter};
 use crate::{
     browser::ChromiumPath,
     chromium::items::{cookie::cookie_dao::CookiesQuery, passwd::login_data_dao::LoginDataQuery},
-    BuilderError,
 };
 
-pub type Result<T> = std::result::Result<T, BuilderError>;
+// TODO: add browser name in error
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum ChromiumBuilderError {
+    #[error(transparent)]
+    Decrypter(#[from] chromium_crypto::error::CryptoError),
+    #[error(transparent)]
+    Db(#[from] sea_orm::DbErr),
+    #[error("Io: {source}, path: {path}")]
+    Io {
+        source: std::io::Error,
+        path: std::path::PathBuf,
+    },
+    #[error(transparent)]
+    Rawcopy(#[from] anyhow::Error),
+    #[error(transparent)]
+    TokioJoin(#[from] tokio::task::JoinError),
+}
+
+pub type Result<T> = std::result::Result<T, ChromiumBuilderError>;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -66,7 +84,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         let crypto = Decrypter::build(B::SAFE_STORAGE, B::SAFE_NAME).await?;
 
         #[cfg(target_os = "windows")]
-        let crypto = { Decrypter::build(temp_paths.key_temp).await? };
+        let crypto = Decrypter::build(temp_paths.key_temp).await?;
 
         let (cookies_query, login_data_query) = (
             CookiesQuery::new(temp_paths.cookies_temp),
@@ -106,27 +124,62 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
             .expect("Get parent dir failed");
         let cd_k = fs::create_dir_all(k_temp_p);
         let (cd_ck, cd_lg, cd_k) = join!(cd_ck, cd_lg, cd_k);
-        cd_ck.map_err(|e| BuilderError::Io {
+        cd_ck.map_err(|e| ChromiumBuilderError::Io {
             source: e,
             path: ck_temp_p.to_owned(),
         })?;
-        cd_lg.map_err(|e| BuilderError::Io {
+        cd_lg.map_err(|e| ChromiumBuilderError::Io {
             source: e,
             path: lg_temp_p.to_owned(),
         })?;
-        cd_k.map_err(|e| BuilderError::Io {
+        cd_k.map_err(|e| ChromiumBuilderError::Io {
             source: e,
             path: k_temp_p.to_owned(),
         })?;
 
-        let cookies_cp = fs::copy(&cookies, &cookies_temp);
-        let login_cp = fs::copy(&login_data, &login_data_temp);
-        let key_cp = fs::copy(&key, &key_temp);
+        #[cfg(target_os = "windows")]
+        let (cookies_cp, login_cp, key_cp) = {
+            let cookies = cookies.clone();
+            let cookies_temp = cookies_temp.clone();
+            let cc = tokio::task::spawn_blocking(move || {
+                crate::utils::shadow_copy(&cookies, &cookies_temp)
+            });
+
+            let login = login_data.clone();
+            let login_temp = login_data_temp.clone();
+            let lc =
+                tokio::task::spawn_blocking(move || crate::utils::shadow_copy(&login, &login_temp));
+
+            let key = key.clone();
+            let key_temp = key_temp.clone();
+            let kc =
+                tokio::task::spawn_blocking(move || crate::utils::shadow_copy(&key, &key_temp));
+
+            (cc, lc, kc)
+        };
+
+        #[cfg(not(target_os = "windows"))]
+        let (cookies_cp, login_cp, key_cp) = {
+            (
+                fs::copy(&cookies, &cookies_temp),
+                fs::copy(&login_data, &login_data_temp),
+                fs::copy(&key, &key_temp),
+            )
+        };
 
         let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
-        ck.map_err(|e| BuilderError::Io { source: e, path: cookies })?;
-        lg.map_err(|e| BuilderError::Io { source: e, path: login_data })?;
-        k.map_err(|e| BuilderError::Io { source: e, path: key })?;
+        #[cfg(target_os = "windows")]
+        {
+            ck??;
+            lg??;
+            k??;
+        };
+        #[cfg(not(target_os = "windows"))]
+        {
+            ck.map_err(|e| ChromiumBuilderError::Io { source: e, path: cookies })?;
+            lg.map_err(|e| ChromiumBuilderError::Io { source: e, path: login_data })?;
+            k.map_err(|e| ChromiumBuilderError::Io { source: e, path: key })?;
+        };
 
         Ok(TempPaths {
             cookies_temp,

@@ -28,6 +28,8 @@ pub struct OsCrypt {
     // const K_OS_CRYPT_ENCRYPTED_KEY_PREF_NAME: &[u8] = b"os_crypt.encrypted_key";
     /// Contains base64 random key encrypted with DPAPI.
     pub encrypted_key: String,
+    /// option for prev chromium
+    pub app_bound_encrypted_key: Option<String>,
 }
 
 #[derive(Clone)]
