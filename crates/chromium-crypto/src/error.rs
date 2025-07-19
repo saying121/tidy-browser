@@ -2,7 +2,7 @@
 #[derive(thiserror::Error)]
 #[non_exhaustive]
 #[cfg(target_os = "linux")]
-pub enum CryptError {
+pub enum CryptoError {
     #[error(transparent)]
     GetPass(#[from] secret_service::Error),
     #[error("Not exists: {0}")]
@@ -15,7 +15,7 @@ pub enum CryptError {
 #[derive(thiserror::Error)]
 #[non_exhaustive]
 #[cfg(target_os = "macos")]
-pub enum CryptError {
+pub enum CryptoError {
     #[error(transparent)]
     Keyring(#[from] keyring::Error),
     #[error("Crypt unpad error: {0}")]
@@ -28,7 +28,7 @@ pub enum CryptError {
 #[derive(thiserror::Error)]
 #[non_exhaustive]
 #[cfg(target_os = "windows")]
-pub enum CryptError {
+pub enum CryptoError {
     #[error("{source}, path: {path}")]
     IO {
         path: std::path::PathBuf,
@@ -61,4 +61,4 @@ pub enum CryptError {
     NotFoundProcess,
 }
 
-pub type Result<T> = std::result::Result<T, CryptError>;
+pub type Result<T> = std::result::Result<T, CryptoError>;

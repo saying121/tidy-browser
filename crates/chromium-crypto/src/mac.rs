@@ -3,7 +3,7 @@ use std::convert::Into;
 use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
 use pbkdf2::pbkdf2_hmac;
 
-use crate::error::{CryptError, Result};
+use crate::error::{CryptoError, Result};
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_mac.mm;l=35
 /// Key size required for 128 bit AES.
@@ -51,7 +51,7 @@ impl Decrypter {
             unsafe { std::mem::transmute::<&str, &'static str>(safe_name) };
 
         let entry = tokio::task::spawn_blocking(|| {
-            keyring::Entry::new(safe_storage, safe_name).map_err(|e| -> CryptError { e.into() })
+            keyring::Entry::new(safe_storage, safe_name).map_err(|e| -> CryptoError { e.into() })
         })
         .await??;
         entry
@@ -80,7 +80,7 @@ impl Decrypter {
 
         decrypter
             .decrypt_padded_mut::<block_padding::Pkcs7>(&mut ciphertext[prefix_len..])
-            .map_err(CryptError::Unpadding)
+            .map_err(CryptoError::Unpadding)
             .map(|res| {
                 String::from_utf8(res.to_vec()).unwrap_or_else(|_| {
                     tracing::info!("Decoding for chromium >= 130.x");

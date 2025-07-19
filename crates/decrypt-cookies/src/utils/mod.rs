@@ -7,13 +7,13 @@ pub fn need_sep(path: &Path) -> bool {
 }
 
 #[cfg(target_os = "windows")]
-pub fn shadow_copy(from: &Path, to: &Path) -> crate::Result<()> {
+pub fn shadow_copy(from: &Path, to: &Path) -> crate::chromium::builder::Result<()> {
     // shadow copy `to` must is dir
 
-    use crate::BuilderError;
+    use crate::chromium::builder::ChromiumBuilderError;
     if !to.is_dir() && to.exists() {
         if let Err(e) = std::fs::remove_file(to) {
-            return Err(BuilderError::Io { source: e, path: to.to_owned() });
+            return Err(ChromiumBuilderError::Io { source: e, path: to.to_owned() });
         }
     }
 

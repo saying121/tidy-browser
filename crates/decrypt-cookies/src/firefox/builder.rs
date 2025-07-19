@@ -10,7 +10,7 @@ use crate::{
 // TODO: add browser name in error
 #[derive(Debug)]
 #[derive(thiserror::Error)]
-pub enum BuilderError {
+pub enum FirefoxBuilderError {
     #[error(transparent)]
     Ini(#[from] ini::Error),
     #[error(transparent)]
@@ -28,7 +28,7 @@ pub enum BuilderError {
     },
 }
 
-pub type Result<T> = std::result::Result<T, BuilderError>;
+pub type Result<T> = std::result::Result<T, FirefoxBuilderError>;
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -87,7 +87,7 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
 
         let ini_str = fs::read_to_string(&ini_path)
             .await
-            .map_err(|e| BuilderError::Io { source: e, path: ini_path.clone() })?;
+            .map_err(|e| FirefoxBuilderError::Io { source: e, path: ini_path.clone() })?;
 
         let ini_file = ini::Ini::load_from_str(&ini_str)?;
         for (sec, prop) in ini_file {
@@ -106,7 +106,7 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
                 if profile_name == profile {
                     let Some(var) = prop.get("Path")
                     else {
-                        return Err(BuilderError::ProfilePath(profile_name.to_owned()));
+                        return Err(FirefoxBuilderError::ProfilePath(profile_name.to_owned()));
                     };
                     base.push(var);
                     break;
@@ -118,7 +118,7 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
                 }
                 let Some(default) = prop.get("Default")
                 else {
-                    return Err(BuilderError::InstallPath(sec));
+                    return Err(FirefoxBuilderError::InstallPath(sec));
                 };
                 base.push(default);
                 break;
@@ -154,15 +154,15 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
             .expect("Get parent dir failed");
         let cd_k = fs::create_dir_all(k_temp_p);
         let (cd_ck, cd_lg, cd_k) = join!(cd_ck, cd_lg, cd_k);
-        cd_ck.map_err(|e| BuilderError::Io {
+        cd_ck.map_err(|e| FirefoxBuilderError::Io {
             source: e,
             path: ck_temp_p.to_owned(),
         })?;
-        cd_lg.map_err(|e| BuilderError::Io {
+        cd_lg.map_err(|e| FirefoxBuilderError::Io {
             source: e,
             path: lg_temp_p.to_owned(),
         })?;
-        cd_k.map_err(|e| BuilderError::Io {
+        cd_k.map_err(|e| FirefoxBuilderError::Io {
             source: e,
             path: k_temp_p.to_owned(),
         })?;
@@ -172,9 +172,9 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
         let key_cp = fs::copy(&key, &key_temp);
 
         let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
-        ck.map_err(|e| BuilderError::Io { source: e, path: cookies })?;
-        lg.map_err(|e| BuilderError::Io { source: e, path: login_data })?;
-        k.map_err(|e| BuilderError::Io { source: e, path: key })?;
+        ck.map_err(|e| FirefoxBuilderError::Io { source: e, path: cookies })?;
+        lg.map_err(|e| FirefoxBuilderError::Io { source: e, path: login_data })?;
+        k.map_err(|e| FirefoxBuilderError::Io { source: e, path: key })?;
 
         Ok(TempPaths {
             cookies_temp,

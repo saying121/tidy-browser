@@ -25,7 +25,7 @@ use winnow::{
 };
 
 use crate::{
-    error::{CryptError, Result},
+    error::{CryptoError, Result},
     win::impersonate::ImpersonateGuard,
 };
 
@@ -66,7 +66,7 @@ impl Decrypter {
     async fn get_pass<A: AsRef<Path> + Send + Sync>(key_path: A) -> Result<Vec<u8>> {
         let string_str = fs::read_to_string(&key_path)
             .await
-            .map_err(|e| CryptError::IO {
+            .map_err(|e| CryptoError::IO {
                 path: key_path.as_ref().to_owned(),
                 source: e,
             })?;
@@ -84,7 +84,7 @@ impl Decrypter {
             let mut encrypted_key = BASE64_STANDARD.decode(encrypted_key)?;
 
             if !encrypted_key.starts_with(Self::K_CRYPT_APP_BOUND_KEY_PREFIX) {
-                return Err(CryptError::APPB);
+                return Err(CryptoError::APPB);
             }
 
             let key = &mut encrypted_key[Self::K_CRYPT_APP_BOUND_KEY_PREFIX.len()..];
@@ -94,7 +94,8 @@ impl Decrypter {
                 (key, pid, guard.stop_sys_handle()?)
             };
             let key_blob = decrypt_with_dpapi(&mut key)?;
-            let key_data = KeyData::parse(&mut key_blob.as_slice()).map_err(CryptError::Context)?;
+            let key_data =
+                KeyData::parse(&mut key_blob.as_slice()).map_err(CryptoError::Context)?;
             derive_v20_master_key(key_data, Some(pid), Some(sys_handle))
         })
         .await??;
@@ -123,7 +124,7 @@ impl Decrypter {
         cipher
             .decrypt(nonce.into(), raw_ciphertext)
             .map(|v| String::from_utf8_lossy(&v).to_string())
-            .map_err(CryptError::AesGcm)
+            .map_err(CryptoError::AesGcm)
     }
 }
 
@@ -233,14 +234,14 @@ fn derive_v20_master_key(
             let cipher = Aes256Gcm::new(aes_key.into());
             cipher
                 .decrypt(iv.into(), ciphertext)
-                .map_err(CryptError::AesGcm)
+                .map_err(CryptoError::AesGcm)
         },
         KeyData::Two { iv, ciphertext } => {
             let chacha_key = b"\xE9\x8F\x37\xD7\xF4\xE1\xFA\x43\x3D\x19\x30\x4D\xC2\x25\x80\x42\x09\x0E\x2D\x1D\x7E\xEA\x76\x70\xD4\x1F\x73\x8D\x08\x72\x96\x60";
             let cipher = ChaCha20Poly1305::new(chacha_key.into());
             cipher
                 .decrypt(iv.into(), ciphertext)
-                .map_err(CryptError::ChaCha)
+                .map_err(CryptoError::ChaCha)
         },
         KeyData::Three { enctypted_aes_key, iv, ciphertext } => {
             let xor_key = b"\xCC\xF8\xA1\xCE\xC5\x66\x05\xB8\x51\x75\x52\xBA\x1A\x2D\x06\x1C\x03\xA2\x9E\x90\x27\x4F\xB2\xFC\xF5\x9B\xA4\xB7\x5C\x39\x23\x90";
@@ -258,7 +259,7 @@ fn derive_v20_master_key(
             let cipher = Aes256Gcm::new(plain_aes_key.as_slice().into());
             cipher
                 .decrypt(iv.into(), ciphertext)
-                .map_err(CryptError::AesGcm)
+                .map_err(CryptoError::AesGcm)
         },
     }
 }
@@ -283,7 +284,7 @@ pub fn decrypt_with_dpapi(ciphertext: &mut [u8]) -> Result<Vec<u8>> {
         )?;
     };
     if output.pbData.is_null() {
-        return Err(CryptError::CryptUnprotectDataNull);
+        return Err(CryptoError::CryptUnprotectDataNull);
     }
 
     let decrypted_data =

@@ -5,7 +5,7 @@ use pbkdf2::pbkdf2_hmac;
 use secret_service::{EncryptionType, SecretService};
 use tinyufo::TinyUfo;
 
-use crate::error::{CryptError, Result};
+use crate::error::{CryptoError, Result};
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=32
 /// Key size required for 128 bit AES.
@@ -137,7 +137,7 @@ impl Decrypter {
                     String::from_utf8_lossy(&res[32..]).to_string()
                 })
             })
-            .map_err(CryptError::Unpadding)
+            .map_err(CryptoError::Unpadding)
     }
 }
 

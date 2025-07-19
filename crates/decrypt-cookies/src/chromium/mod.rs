@@ -38,7 +38,7 @@ pub enum ChromiumError {
     #[error(transparent)]
     Db(#[from] DbErr),
     #[error(transparent)]
-    Decrypt(#[from] chromium_crypto::error::CryptError),
+    Decrypt(#[from] chromium_crypto::error::CryptoError),
 }
 
 type Result<T> = std::result::Result<T, ChromiumError>;

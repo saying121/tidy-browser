@@ -22,7 +22,7 @@ use windows::{
     },
 };
 
-use crate::error::{CryptError, Result};
+use crate::error::{CryptoError, Result};
 
 pub struct ImpersonateGuard {
     sys_token_handle: HANDLE,
@@ -54,7 +54,7 @@ impl ImpersonateGuard {
             pid
         }
         else {
-            return Err(CryptError::NotFoundProcess);
+            return Err(CryptoError::NotFoundProcess);
         };
         let sys_token = if let Some(handle) = sys_handle {
             handle
@@ -98,7 +98,7 @@ impl ImpersonateGuard {
             RtlAdjustPrivilege(SE_DEBUG_PRIVILEGE, BOOL(1), BOOL(0), &mut previous_value)
         };
         if status != STATUS_SUCCESS {
-            return Err(CryptError::Privilege);
+            return Err(CryptoError::Privilege);
         }
         Ok(())
     }
@@ -144,7 +144,7 @@ impl ImpersonateGuard {
         PathBuf::from(fp)
             .file_name()
             .map(name_is)
-            .ok_or(CryptError::ProcessPath)
+            .ok_or(CryptoError::ProcessPath)
     }
 
     // https://learn.microsoft.com/en-us/windows/win32/psapi/enumerating-all-processes
