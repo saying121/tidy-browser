@@ -123,7 +123,7 @@ impl Decrypter {
 
         cipher
             .decrypt(nonce.into(), raw_ciphertext)
-            .map(|v| String::from_utf8_lossy(&v).to_string())
+            .map(|v| String::from_utf8_lossy(&v[32..]).to_string())
             .map_err(CryptoError::AesGcm)
     }
 }
