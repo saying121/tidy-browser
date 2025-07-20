@@ -251,7 +251,7 @@ chromium!("macos", Edge    , base: "Library/Application Support/Microsoft Edge" 
 chromium!("macos", Chromium, base: "Library/Application Support/Chromium"                   , safe_name: "Chromium"      );
 chromium!("macos", Brave   , base: "Library/Application Support/BraveSoftware/Brave-Browser", safe_name: "Brave"         );
 chromium!("macos", Vivaldi , base: "Library/Application Support/Vivaldi"                    , safe_name: "Vivaldi"       );
-chromium!("macos", CocCoc  , base: "Library/Application Support/CocCoc/Browser"                     , safe_name: "CocCoc"        );
+chromium!("macos", CocCoc  , base: "Library/Application Support/CocCoc/Browser"             , safe_name: "CocCoc"        );
 chromium!("macos", Arc     , base: "Library/Application Support/Arc/User Data"              , safe_name: "Arc"           );
 chromium!("macos", Opera   , base: "Library/Application Support/com.operasoftware.Opera"    , safe_name: "Opera"         );
 chromium!("macos", OperaGX , base: "Library/Application Support/com.operasoftware.OperaGX"  , cookies: "Cookies", login_data: "Login Data", safe_name: "Opera");
@@ -263,7 +263,7 @@ chromium!("windows", Chromium, base: r"AppData\Local\Chromium\User Data"        
 chromium!("windows", Brave   , base: r"AppData\Local\BraveSoftware\Brave-Browser\User Data" );
 chromium!("windows", Vivaldi , base: r"AppData\Local\Vivaldi\User Data"                     );
 chromium!("windows", Opera   , base: r"AppData\Roaming\Opera Software\Opera Stable"         );
-chromium!("windows", OperaGX , base: r"AppData\Roaming\Opera Software\Opera GX Stable"     , cookies: r"Network\Cookies", login_data: r"Login Data", login_data_fa: r"Login Data For Account" );
+chromium!("windows", OperaGX , base: r"AppData\Roaming\Opera Software\Opera GX Stable"      , cookies: r"Network\Cookies", login_data: r"Login Data", login_data_fa: r"Login Data For Account" );
 chromium!("windows", CocCoc  , base: r"AppData\Local\CocCoc\Browser\User Data"              );
 chromium!("windows", Arc     , base: r"AppData\Local\Packages\TheBrowserCompany.Arc_ttt1ap7aakyb4\LocalCache\Local\Arc\User Data" );
 chromium!("windows", Yandex  , base: r"AppData\Local\Yandex\YandexBrowser\User Data"       , login_data: r"Default\Ya Passman Data" );
@@ -274,6 +274,7 @@ firefox!("linux", Floorp, base: ".floorp");
 
 firefox!("macos", Firefox, base: "Library/Application Support/Firefox");
 firefox!("macos", Librewolf, base: "Library/Application Support/librewolf");
+firefox!("macos", Floorp, base: "Library/Application Support/Floorp");
 
 firefox!("windows", Firefox, base: r"AppData\Roaming\Mozilla\Firefox");
 firefox!("windows", Librewolf, base: r"AppData\Roaming\librewolf");

@@ -6,7 +6,7 @@ use decrypt_cookies::{
 #[ignore = "need realy environment"]
 #[tokio::test]
 async fn chromium_cookies_test() {
-    macro_rules! test_chromium_pwd {
+    macro_rules! test_browser {
         ($($browser:ident), *) => {
             $(
                 let getter = match ChromiumBuilder::<$browser>::new()
@@ -44,15 +44,15 @@ async fn chromium_cookies_test() {
         }
     }
 
-    test_chromium_pwd!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi, Opera);
+    test_browser!(Chrome, Edge, Chromium, Brave, Yandex, Vivaldi, Opera);
     #[cfg(not(target_os = "linux"))]
-    test_chromium_pwd!(OperaGX, CocCoc, Arc);
+    test_browser!(OperaGX, CocCoc, Arc);
 }
 
 #[ignore = "need realy environment"]
 #[tokio::test]
 async fn ff_cookies_test() {
-    macro_rules! test_chromium_pwd {
+    macro_rules! test_browser {
         ($($browser:ident), *) => {
             $(
                 let getter = match FirefoxBuilder::<$browser>::new()
@@ -90,5 +90,5 @@ async fn ff_cookies_test() {
         }
     }
 
-    test_chromium_pwd!(Firefox, Librewolf);
+    test_browser!(Firefox, Librewolf, Floorp);
 }

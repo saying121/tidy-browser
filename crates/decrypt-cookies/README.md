@@ -91,10 +91,11 @@ async fn main() -> miette::Result<()> {
 
 - Macos:
 
-|  Browser  | Cookies | passwd | Test Date  |      version (`brew info *` or `* --version`)      |
+|  Browser  | Cookies | passwd | Test Date  |                      version                       |
 | :-------: | :-----: | :----: | :--------: | :------------------------------------------------: |
 |  Firefox  |   🔑    |   🚫   | 2025-07-19 |                      140.0.4                       |
 | Librewolf |   🔑    |   🚫   | 2025-07-19 |                     140.0.4,1                      |
+|  Floorp   |   🔑    |   🚫   | 2025-07-19 |                     12.0.15                      |
 |  Chrome   |   🔑    |   🔑   | 2025-07-19 |                   138.0.7204.158                   |
 |   Edge    |   🔑    |   🔑   | 2025-07-19 | 138.0.3351.95,70a9712a-3712-420f-a3f0-8f2032f1c838 |
 | Chromium  |   🔑    |   🔑   | 2025-07-19 |                    140.0.7306.0                    |
