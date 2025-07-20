@@ -440,7 +440,7 @@ dependencies = [
 
 [[package]]
 name = "chromium-crypto"
-version = "0.1.0-alpha.0"
+version = "0.1.0"
 dependencies = [
  "TinyUFO",
  "aes",
@@ -740,7 +740,7 @@ dependencies = [
 
 [[package]]
 name = "decrypt-cookies"
-version = "0.7.0-alpha.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "binary-cookies",
