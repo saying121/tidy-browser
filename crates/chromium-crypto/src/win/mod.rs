@@ -119,18 +119,23 @@ impl Decrypter {
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=213
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
-        let pass =
+        let (pass, prefix_len) =
             if ciphertext.starts_with(Self::K_APP_BOUND_DATA_PREFIX) && self.pass_v20.is_some() {
-                #[expect(clippy::unwrap_used, reason = "Must be Some")]
-                self.pass_v20.as_deref().unwrap()
+                #[expect(clippy::unwrap_used, reason = "Must be Some, TODO: use let-chains")]
+                (
+                    self.pass_v20.as_deref().unwrap(),
+                    Self::K_APP_BOUND_DATA_PREFIX.len(),
+                )
             }
             else if ciphertext.starts_with(Self::K_ENCRYPTION_VERSION_PREFIX) {
-                self.pass_v10.as_slice()
+                (
+                    self.pass_v10.as_slice(),
+                    Self::K_ENCRYPTION_VERSION_PREFIX.len(),
+                )
             }
             else {
                 return Ok(String::from_utf8_lossy(&decrypt_with_dpapi(ciphertext)?).to_string());
             };
-        let prefix_len = 3;
         let nonce_len = Self::K_NONCE_LENGTH;
 
         let nonce = &ciphertext[prefix_len..][..nonce_len];
