@@ -7,6 +7,12 @@ impl ChromiumPath for NewBrowserBasedChromium {
     const BASE: &'static str = ".config/NewBrowserBasedChromium"; // See `../src/browser/mod.rs`
 
     const NAME: &'static str = "NewBrowserBasedChromium";
+
+    #[cfg(not(target_os = "windows"))]
+    const SAFE_STORAGE: &str = "New Safe Storage";
+
+    #[cfg(target_os = "macos")]
+    const SAFE_NAME: &str = "New";
 }
 
 #[expect(clippy::exhaustive_structs, reason = "example")]
