@@ -1,7 +1,7 @@
 mod impersonate;
 pub mod local_state;
 
-use std::{ffi::c_void, path::Path, ptr, slice};
+use std::{ffi::c_void, fmt::Display, path::Path, ptr, slice};
 
 use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit};
 use base64::{prelude::BASE64_STANDARD, Engine};
@@ -18,9 +18,9 @@ use windows::{
     },
 };
 use winnow::{
-    binary::le_u32,
-    combinator::{self, fail},
-    token::{any, take},
+    binary::{le_u32, le_u8},
+    error::{ContextError, FromExternalError, StrContext},
+    token::take,
     Parser,
 };
 
@@ -94,8 +94,17 @@ impl Decrypter {
                 (key, pid, guard.stop_sys_handle()?)
             };
             let key_blob = decrypt_with_dpapi(&mut key)?;
-            let key_data =
-                KeyData::parse(&mut key_blob.as_slice()).map_err(CryptoError::Context)?;
+            // let key_data = KeyData::parse(&mut key_blob.as_slice()).map_err(|e|CryptoError::Context(e))?;
+            let key_data = match KeyData::parse(&mut key_blob.as_slice()) {
+                Ok(v) => v,
+                Err(e) => {
+                    tracing::info!("Fallback DPAPI: {e}");
+                    let encrypted_key =
+                        BASE64_STANDARD.decode(local_state.os_crypt.encrypted_key)?;
+                    let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
+                    return decrypt_with_dpapi(&mut key);
+                },
+            };
             derive_v20_master_key(key_data, Some(pid), Some(sys_handle))
         })
         .await??;
@@ -113,17 +122,22 @@ impl Decrypter {
         else {
             return Ok(String::from_utf8_lossy(&decrypt_with_dpapi(ciphertext)?).to_string());
         };
-        let prefix_len = Self::K_ENCRYPTION_VERSION_PREFIX.len();
+        let prefix_len = 3;
         let nonce_len = Self::K_NONCE_LENGTH;
 
-        let nonce = &ciphertext[prefix_len..nonce_len + prefix_len];
+        let nonce = &ciphertext[prefix_len..][..nonce_len];
         let raw_ciphertext = &ciphertext[nonce_len + prefix_len..];
 
         let cipher = Aes256Gcm::new(pass.into());
 
         cipher
             .decrypt(nonce.into(), raw_ciphertext)
-            .map(|v| String::from_utf8_lossy(&v[32..]).to_string())
+            .map(|v| {
+                String::from_utf8(v.clone()).unwrap_or_else(|e| {
+                    tracing::debug!("Decoding for chromium 130.x: {e}");
+                    String::from_utf8_lossy(&v[32..]).into_owned()
+                })
+            })
             .map_err(CryptoError::AesGcm)
     }
 }
@@ -145,6 +159,17 @@ enum KeyData<'k> {
     },
 }
 
+#[derive(Debug)]
+struct FlagError(u8);
+
+impl Display for FlagError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl std::error::Error for FlagError {}
+
 impl<'k> KeyData<'k> {
     fn parse<'b>(blob_data: &mut &'b [u8]) -> winnow::Result<KeyData<'b>> {
         let header_len = le_u32(blob_data)? as usize;
@@ -152,13 +177,24 @@ impl<'k> KeyData<'k> {
         let _content_len = le_u32(blob_data)? as usize;
         debug_assert_eq!(_content_len, blob_data.len());
 
-        combinator::dispatch!(any;
-            1_u8 => Self::flag1,
-            2_u8 => Self::flag2,
-            3_u8 => Self::flag3,
-            _ => fail,
-        )
-        .parse_next(blob_data)
+        let initial = le_u8.parse_next(blob_data)?;
+        match initial {
+            1_u8 => Self::flag1
+                .context(StrContext::Label("flag 1"))
+                .parse_next(blob_data),
+            2_u8 => Self::flag2
+                .context(StrContext::Label("flag 2"))
+                .parse_next(blob_data),
+            3_u8 => Self::flag3
+                .context(StrContext::Label("flag 3"))
+                .parse_next(blob_data),
+            value => {
+                let mut context_error =
+                    ContextError::from_external_error(blob_data, FlagError(value));
+                context_error.push(StrContext::Label("flag"));
+                Err(context_error)
+            },
+        }
     }
 
     fn flag1<'b>(blob_data: &mut &'b [u8]) -> winnow::Result<KeyData<'b>> {

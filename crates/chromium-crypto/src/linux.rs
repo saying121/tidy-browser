@@ -132,8 +132,8 @@ impl Decrypter {
         decrypter
             .decrypt_padded_mut::<block_padding::Pkcs7>(&mut ciphertext[prefix_len..])
             .map(|res| {
-                String::from_utf8(res.to_vec()).unwrap_or_else(|_| {
-                    tracing::info!("Decoding for chromium 130.x");
+                String::from_utf8(res.to_vec()).unwrap_or_else(|e| {
+                    tracing::info!("Decoding for chromium 130.x: {e}");
                     String::from_utf8_lossy(&res[32..]).to_string()
                 })
             })
