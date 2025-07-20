@@ -4,11 +4,9 @@
 
 - [Decrypt Cookies](#decrypt-cookies)
   - [Example](#example)
-  - [To add new](#to-add-new)
-    - [ChromiumBase](#chromiumbase)
-    - [FirefoxBase](#firefoxbase)
-  - [TODO](#todo)
+  - [To add a new browser](#to-add-a-new-browser)
   - [TEST STATUS](#test-status)
+  - [TODO](#todo)
   - [Credits](#credits)
   <!--toc:end-->
 
@@ -34,20 +32,13 @@ async fn main() -> miette::Result<()> {
 }
 ```
 
-## To add new
+## To add a new browser
 
-### ChromiumBase
+`BASE`: A browser all data location relative to home dir.
+`COOKIES`, `LOGIN_DATA`, `KEY`: Relative to `BASE` path.
+`NAME`: browser name
 
-- ./src/browser/info.rs `ChromiumInfo` trait,
-  `safe_name`, `storage` method, modify and impl.
-
-### FirefoxBase
-
-- ./src/browser/info.rs `FfInfo` trait, modify and impl.
-
-## TODO
-
-- Decrypt passwd etc.
+Implement [`ChromiumInfo`, `FirefoxPath`](./src/browser/mod.rs) trait.
 
 ## TEST STATUS
 
@@ -58,7 +49,7 @@ async fn main() -> miette::Result<()> {
 
 - Linux:
 
-|  Browser  | Cookies | passwd | Test Date  |    Version     |
+|  Browser  | Cookies | Passwd | Test Date  |    Version     |
 | :-------: | :-----: | :----: | :--------: | :------------: |
 |  Firefox  |   🔑    |   🚫   | 2025-07-19 |    140.0.4     |
 | Librewolf |   🔑    |   🚫   | 2025-07-19 |   140.0.2-1    |
@@ -73,7 +64,7 @@ async fn main() -> miette::Result<()> {
 
 - Windows:
 
-|  Browser  | Cookies | passwd | Test Date  |    Version     |
+|  Browser  | Cookies | Passwd | Test Date  |    Version     |
 | :-------: | :-----: | :----: | :--------: | :------------: |
 |  Firefox  |   🔑    |   🚫   | 2025-07-20 |    140.0.4     |
 | Librewolf |   🔑    |   🚫   | 2025-07-20 |   140.0.4-1    |
@@ -91,11 +82,11 @@ async fn main() -> miette::Result<()> {
 
 - Macos:
 
-|  Browser  | Cookies | passwd | Test Date  |                      version                       |
+|  Browser  | Cookies | Passwd | Test Date  |                      Version                       |
 | :-------: | :-----: | :----: | :--------: | :------------------------------------------------: |
 |  Firefox  |   🔑    |   🚫   | 2025-07-19 |                      140.0.4                       |
 | Librewolf |   🔑    |   🚫   | 2025-07-19 |                     140.0.4,1                      |
-|  Floorp   |   🔑    |   🚫   | 2025-07-19 |                     12.0.15                      |
+|  Floorp   |   🔑    |   🚫   | 2025-07-19 |                      12.0.15                       |
 |  Chrome   |   🔑    |   🔑   | 2025-07-19 |                   138.0.7204.158                   |
 |   Edge    |   🔑    |   🔑   | 2025-07-19 | 138.0.3351.95,70a9712a-3712-420f-a3f0-8f2032f1c838 |
 | Chromium  |   🔑    |   🔑   | 2025-07-19 |                    140.0.7306.0                    |
@@ -107,6 +98,10 @@ async fn main() -> miette::Result<()> {
 |  CocCoc   |   🔑    |   🔑   | 2025-07-19 |                   136.0.7103.154                   |
 |    Arc    |   🔑    |   🔑   | 2025-07-19 |                   1.104.0,65533                    |
 |  Safari   |   🔑    |   🚫   | 2025-07-19 |                                                    |
+
+## TODO
+
+- Decrypt firefox passwd.
 
 ## Credits
 
