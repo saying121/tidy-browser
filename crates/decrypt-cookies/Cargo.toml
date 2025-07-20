@@ -1,39 +1,37 @@
 [package]
 name = "decrypt-cookies"
 version = "0.7.0"
-description = "A decrypt browser crate"
-license = { workspace = true }
-edition = { workspace = true }
 authors = { workspace = true }
+edition = { workspace = true }
+rust-version = { workspace = true }
+description = "A decrypt browser crate"
 homepage = "https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies"
 repository = { workspace = true }
+license = { workspace = true }
 keywords = { workspace = true }
 categories = { workspace = true }
-rust-version = { workspace = true }
-
-exclude = ["tests/", "examples", "./CHANGELOG.md"]
+exclude = ["./CHANGELOG.md", "examples", "tests/"]
 
 [dependencies]
-tokio = { workspace = true }
 anyhow = { workspace = true }
-thiserror = { workspace = true }
-rayon = { workspace = true }
+binary-cookies = { workspace = true, features = ["tokio"], optional = true }
+chromium-crypto = { workspace = true }
 chrono = { workspace = true }
-
+dirs = { workspace = true }
+rayon = { workspace = true }
+reqwest = { workspace = true, default-features = false, features = ["cookies"], optional = true }
+rust-ini = { workspace = true }  # firefox
 sea-orm = { workspace = true }
-
+serde = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
 tracing = { workspace = true }
 
-serde = { workspace = true }
-
-rust-ini = { workspace = true } # firefox
-
-dirs = { workspace = true }
-
-reqwest = { workspace = true, default-features = false, features = ["cookies"], optional = true }
-
-chromium-crypto = { workspace = true }
-binary-cookies = { workspace = true, features = ["tokio"], optional = true }
+[dev-dependencies]
+anyhow = { workspace = true }
+reqwest = { workspace = true, features = ["cookies"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tracing-subscriber = { workspace = true }
 
 [target.'cfg(not(windows))'.dependencies]
 const_format = { workspace = true }
@@ -41,16 +39,10 @@ const_format = { workspace = true }
 [target.'cfg(windows)'.dependencies]
 rawcopy-rs-next = { workspace = true }
 
-[dev-dependencies]
-tracing-subscriber = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
-anyhow = { workspace = true }
-reqwest = { workspace = true, features = ["cookies"] }
-
 [features]
+Safari = ["dep:binary-cookies"]  # `binary_cookies` does not depend on Macos
 default = ["reqwest"]
 reqwest = ["dep:reqwest"]
-Safari = ["dep:binary-cookies"] # `binary_cookies` does not depend on Macos
 
 [lints]
 workspace = true
