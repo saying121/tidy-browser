@@ -34,7 +34,8 @@ use crate::{
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct Decrypter {
-    pass: Vec<u8>,
+    pass_v20: Option<Vec<u8>>,
+    pass_v10: Vec<u8>,
 }
 
 impl Decrypter {
@@ -60,10 +61,12 @@ impl Decrypter {
 
 impl Decrypter {
     pub async fn build<A: AsRef<Path> + Send + Sync>(key_path: A) -> Result<Self> {
-        let pass = Self::get_pass(key_path).await?;
-        Ok(Self { pass })
+        let (pass_v20, pass_v10) = Self::get_pass(key_path).await?;
+        Ok(Self { pass_v20, pass_v10 })
     }
-    async fn get_pass<A: AsRef<Path> + Send + Sync>(key_path: A) -> Result<Vec<u8>> {
+    async fn get_pass<A: AsRef<Path> + Send + Sync>(
+        key_path: A,
+    ) -> Result<(Option<Vec<u8>>, Vec<u8>)> {
         let string_str = fs::read_to_string(&key_path)
             .await
             .map_err(|e| CryptoError::IO {
@@ -71,57 +74,62 @@ impl Decrypter {
                 source: e,
             })?;
 
-        let key = spawn_blocking(move || {
+        let key = spawn_blocking(move || -> Result<(Option<Vec<u8>>, Vec<u8>)> {
             let local_state: LocalState = serde_json::from_str(&string_str)?;
-            let Some(encrypted_key) = local_state
+            let v10 = Self::pass_v10(&local_state.os_crypt.encrypted_key)?;
+            if let Some(encrypted_key_v20) = local_state
                 .os_crypt
                 .app_bound_encrypted_key
-            else {
-                let encrypted_key = BASE64_STANDARD.decode(local_state.os_crypt.encrypted_key)?;
-                let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
-                return decrypt_with_dpapi(&mut key);
-            };
-            let mut encrypted_key = BASE64_STANDARD.decode(encrypted_key)?;
-
-            if !encrypted_key.starts_with(Self::K_CRYPT_APP_BOUND_KEY_PREFIX) {
-                return Err(CryptoError::APPB);
+            {
+                let v20 = Self::pass_v20(encrypted_key_v20)?;
+                Ok((Some(v20), v10))
             }
-
-            let key = &mut encrypted_key[Self::K_CRYPT_APP_BOUND_KEY_PREFIX.len()..];
-            let (mut key, pid, sys_handle) = {
-                let (guard, pid) = ImpersonateGuard::start(None, None)?;
-                let key = decrypt_with_dpapi(key)?;
-                (key, pid, guard.stop_sys_handle()?)
-            };
-            let key_blob = decrypt_with_dpapi(&mut key)?;
-            // let key_data = KeyData::parse(&mut key_blob.as_slice()).map_err(|e|CryptoError::Context(e))?;
-            let key_data = match KeyData::parse(&mut key_blob.as_slice()) {
-                Ok(v) => v,
-                Err(e) => {
-                    tracing::info!("Fallback DPAPI: {e}");
-                    let encrypted_key =
-                        BASE64_STANDARD.decode(local_state.os_crypt.encrypted_key)?;
-                    let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
-                    return decrypt_with_dpapi(&mut key);
-                },
-            };
-            derive_v20_master_key(key_data, Some(pid), Some(sys_handle))
+            else {
+                Ok((None, v10))
+            }
         })
         .await??;
 
         Ok(key)
     }
 
+    fn pass_v10(key_v10: &str) -> Result<Vec<u8>> {
+        let encrypted_key = BASE64_STANDARD.decode(key_v10)?;
+        let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
+        decrypt_with_dpapi(&mut key)
+    }
+
+    fn pass_v20(encrypted_key_v20: String) -> Result<Vec<u8>> {
+        let mut encrypted_key_v20 = BASE64_STANDARD.decode(encrypted_key_v20)?;
+
+        if !encrypted_key_v20.starts_with(Self::K_CRYPT_APP_BOUND_KEY_PREFIX) {
+            return Err(CryptoError::APPB);
+        }
+
+        let key = &mut encrypted_key_v20[Self::K_CRYPT_APP_BOUND_KEY_PREFIX.len()..];
+        let (mut key, pid, sys_handle) = {
+            let (guard, pid) = ImpersonateGuard::start(None, None)?;
+            let key = decrypt_with_dpapi(key)?;
+            (key, pid, guard.stop_sys_handle()?)
+        };
+        let key_blob = decrypt_with_dpapi(&mut key)?;
+        let key_data = KeyData::parse(&mut key_blob.as_slice()).map_err(CryptoError::Context)?;
+        derive_v20_master_key(key_data, Some(pid), Some(sys_handle))
+    }
+
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=213
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
-        let pass = if ciphertext.starts_with(Self::K_ENCRYPTION_VERSION_PREFIX)
-            || ciphertext.starts_with(Self::K_APP_BOUND_DATA_PREFIX)
-        {
-            self.pass.as_slice()
-        }
-        else {
-            return Ok(String::from_utf8_lossy(&decrypt_with_dpapi(ciphertext)?).to_string());
-        };
+        let pass =
+            if ciphertext.starts_with(Self::K_APP_BOUND_DATA_PREFIX) && self.pass_v20.is_some() {
+                #[expect(clippy::unwrap_used, reason = "Must be Some")]
+                self.pass_v20.as_deref().unwrap()
+            }
+            else if ciphertext.starts_with(Self::K_ENCRYPTION_VERSION_PREFIX) {
+                self.pass_v10.as_slice()
+            }
+            else {
+                return Ok(String::from_utf8_lossy(&decrypt_with_dpapi(ciphertext)?).to_string());
+            };
         let prefix_len = 3;
         let nonce_len = Self::K_NONCE_LENGTH;
 
@@ -157,6 +165,7 @@ enum KeyData<'k> {
         iv: &'k [u8],
         ciphertext: &'k [u8], // with tag
     },
+    Plain(&'k [u8]),
 }
 
 #[derive(Debug)]
@@ -174,8 +183,12 @@ impl<'k> KeyData<'k> {
     fn parse<'b>(blob_data: &mut &'b [u8]) -> winnow::Result<KeyData<'b>> {
         let header_len = le_u32(blob_data)? as usize;
         let _header = take(header_len).parse_next(blob_data)?;
-        let _content_len = le_u32(blob_data)? as usize;
-        debug_assert_eq!(_content_len, blob_data.len());
+        let content_len = le_u32(blob_data)? as usize;
+        // dbg!(content_len);
+        debug_assert_eq!(content_len, blob_data.len());
+        if content_len == 32 {
+            return Ok(KeyData::Plain(blob_data));
+        }
 
         let initial = le_u8.parse_next(blob_data)?;
         match initial {
@@ -297,6 +310,7 @@ fn derive_v20_master_key(
                 .decrypt(iv.into(), ciphertext)
                 .map_err(CryptoError::AesGcm)
         },
+        KeyData::Plain(key) => Ok(key.to_vec()),
     }
 }
 
