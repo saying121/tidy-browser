@@ -225,9 +225,9 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                 .map(|mut v| {
                     let res = crypto
                         .decrypt(&mut v.encrypted_value)
-                        .unwrap_or_default();
+                        .ok();
                     let mut cookies = ChromiumCookie::from(v);
-                    cookies.set_encrypted_value(res);
+                    cookies.decrypted_value = res;
                     cookies
                 })
                 .collect()
