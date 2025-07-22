@@ -44,12 +44,6 @@ pub struct LoginData {
     // pub sender_profile_image_url:       Option<String>,
 }
 
-impl LoginData {
-    pub fn set_password_value(&mut self, password_value: String) {
-        self.password_value = Some(password_value);
-    }
-}
-
 impl From<logins::Model> for LoginData {
     fn from(v: logins::Model) -> Self {
         Self {

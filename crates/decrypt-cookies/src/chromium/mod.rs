@@ -77,14 +77,11 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                     let res = v
                         .password_value
                         .as_mut()
-                        .map_or_else(String::new, |passwd| {
-                            crypto
-                                .decrypt(passwd)
-                                .unwrap_or_default()
-                        });
-                    let mut cookies = LoginData::from(v);
-                    cookies.set_password_value(res);
-                    cookies
+                        .and_then(|v| crypto.decrypt(v).ok());
+
+                    let mut login_data = LoginData::from(v);
+                    login_data.password_value = res;
+                    login_data
                 })
                 .collect()
         })
@@ -225,9 +222,9 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                 .map(|mut v| {
                     let res = crypto
                         .decrypt(&mut v.encrypted_value)
-                        .unwrap_or_default();
+                        .ok();
                     let mut cookies = ChromiumCookie::from(v);
-                    cookies.set_encrypted_value(res);
+                    cookies.decrypted_value = res;
                     cookies
                 })
                 .collect()
