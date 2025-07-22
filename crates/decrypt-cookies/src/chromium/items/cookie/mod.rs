@@ -32,6 +32,7 @@ pub struct ChromiumCookie {
     pub source_port: i32,
     pub last_update_utc: Option<DateTime<Utc>>,
 }
+
 #[cfg(feature = "reqwest")]
 impl TryFrom<ChromiumCookie> for reqwest::header::HeaderValue {
     type Error = reqwest::header::InvalidHeaderValue;
@@ -81,12 +82,6 @@ impl CookiesInfo for ChromiumCookie {
     }
     fn is_http_only(&self) -> bool {
         self.is_httponly
-    }
-}
-
-impl ChromiumCookie {
-    pub fn set_encrypted_value(&mut self, encrypted_value: String) {
-        self.decrypted_value = Some(encrypted_value);
     }
 }
 

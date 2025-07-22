@@ -190,7 +190,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     {
         let raw_ck = self
             .cookies_query
-            .cookie_filter(filter)
+            .cookies_filter(filter)
             .await?;
         self.par_decrypt_ck(raw_ck).await
     }
@@ -201,7 +201,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     ) -> Result<Vec<ChromiumCookie>> {
         let raw_ck = self
             .cookies_query
-            .cookie_by_host(host.as_ref())
+            .cookies_by_host(host.as_ref())
             .await?;
         self.par_decrypt_ck(raw_ck).await
     }
@@ -210,7 +210,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     pub async fn all_cookies(&self) -> Result<Vec<ChromiumCookie>> {
         let raw_ck = self
             .cookies_query
-            .all_cookie()
+            .all_cookies()
             .await?;
         self.par_decrypt_ck(raw_ck).await
     }
@@ -240,7 +240,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     pub async fn get_session_csrf<A: AsRef<str> + Send>(&self, host: A) -> Result<LeetCodeCookies> {
         let cookies = self
             .cookies_query
-            .cookie_filter(
+            .cookies_filter(
                 ChromiumCookieCol::HostKey
                     .contains(host.as_ref())
                     .and(
