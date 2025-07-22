@@ -22,6 +22,7 @@ panic = "abort"
 
 
 [workspace.dependencies]
+snafu = "0.8"
 owo-colors = "4.2"
 positioned-io = { version = "0.3", default-features = false }
 chacha20poly1305 = "0.10"
@@ -49,7 +50,6 @@ tracing = { version = "^0.1" }
 tracing-subscriber = { version = "^0.3", default-features = true, features = ["env-filter"] }
 
 anyhow = "^1"
-miette = { version = "^7", default-features = true }
 thiserror = { version = "^2" }
 
 serde = { version = "^1", default-features = false, features = ["derive"] }
