@@ -80,6 +80,7 @@ impl<T: Send + Sync> FirefoxGetter<T> {
         Ok(res)
     }
 
+    /// Filter cookies by host
     pub async fn cookies_by_host(&self, host: &str) -> Result<Vec<MozCookies>> {
         let res = self
             .cookies_query
