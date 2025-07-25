@@ -103,7 +103,7 @@ impl Decrypter {
         let mut encrypted_key_v20 = BASE64_STANDARD.decode(encrypted_key_v20)?;
 
         if !encrypted_key_v20.starts_with(Self::K_CRYPT_APP_BOUND_KEY_PREFIX) {
-            return Err(CryptoError::APPB);
+            return Err(CryptoError::Appb);
         }
 
         let key = &mut encrypted_key_v20[Self::K_CRYPT_APP_BOUND_KEY_PREFIX.len()..];

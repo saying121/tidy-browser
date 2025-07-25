@@ -52,7 +52,7 @@ pub enum CryptoError {
     #[error("{0}")]
     Context(winnow::error::ContextError),
     #[error(r#"app_bound_encrypted_key not start with "APPB""#)]
-    APPB,
+    Appb,
     #[error("Get process path failed")]
     ProcessPath,
     #[error("Invalid status from RtlAdjustPrivilege")]
