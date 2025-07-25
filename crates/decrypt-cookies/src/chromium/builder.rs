@@ -85,6 +85,10 @@ impl<B: ChromiumPath> ChromiumBuilder<B> {
 }
 
 impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Chromium build", skip(self), fields(browser), level = "debug")
+    )]
     pub async fn build(self) -> Result<ChromiumGetter<B>> {
         let base = if let Some(base) = self.base {
             base
@@ -97,6 +101,12 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
 
             base.push(B::BASE);
             base
+        };
+
+        #[cfg(feature = "tracing")]
+        {
+            tracing::Span::current().record("browser", B::NAME);
+            tracing::debug!(base = %base.display());
         };
 
         let temp_paths = Self::cache_data(base).await?;

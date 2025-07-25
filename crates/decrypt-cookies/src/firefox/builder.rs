@@ -206,11 +206,13 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
             }
         }
 
-        tracing::debug!("path: {:?}", base);
-
         Ok(base)
     }
 
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Firefox build", skip(self), fields(browser), level = "debug")
+    )]
     pub async fn build(self) -> Result<FirefoxGetter<B>> {
         let profile_path = if let Some(path) = self.profile_path {
             path.into()
@@ -218,6 +220,13 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
         else {
             self.get_profile_path().await?
         };
+
+        #[cfg(feature = "tracing")]
+        {
+            tracing::Span::current().record("browser", B::NAME);
+            tracing::debug!(profile_path = %profile_path.display());
+        };
+
         let temp_paths = Self::cache_data(profile_path).await?;
 
         let query = CookiesQuery::new(temp_paths.cookies_temp).await?;

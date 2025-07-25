@@ -88,6 +88,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         .await;
         Ok(login_data?)
     }
+
     /// contains passwords
     ///
     /// # Example:
@@ -126,6 +127,8 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         self.par_decrypt_logins(raw_login)
             .await
     }
+
+    /// Filter by host
     pub async fn logins_by_host<F>(&self, host: F) -> Result<Vec<LoginData>>
     where
         F: AsRef<str> + Send,
@@ -144,6 +147,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         self.par_decrypt_logins(raw_login)
             .await
     }
+
     /// contains passwords
     pub async fn all_logins(&self) -> Result<Vec<LoginData>> {
         let mut raw_login = self
@@ -191,7 +195,8 @@ impl<T: Send + Sync> ChromiumGetter<T> {
             .await?;
         self.par_decrypt_ck(raw_ck).await
     }
-    /// decrypt Cookies
+
+    /// Filter by host
     pub async fn cookies_by_host<A: AsRef<str> + Send>(
         &self,
         host: A,
@@ -272,14 +277,14 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                     }
                 }
 
-                let csrf_hd =
-                    task::spawn_blocking(move || match cy.decrypt(&mut cookie.encrypted_value) {
-                        Ok(it) => it,
-                        Err(err) => {
-                            tracing::warn!("decrypt csrf failed: {err}");
-                            String::new()
-                        },
-                    });
+                let csrf_hd = task::spawn_blocking(move || {
+                    cy.decrypt(&mut cookie.encrypted_value)
+                        .inspect_err(|_e| {
+                            #[cfg(feature = "tracing")]
+                            tracing::warn!("decrypt csrf failed: {_e}");
+                        })
+                        .unwrap_or_default()
+                });
                 hds.push((csrf_hd, CsrfSession::Csrf));
             }
             else if cookie.name == "LEETCODE_SESSION" {
@@ -293,17 +298,18 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                     }
                 }
 
-                let session_hd =
-                    task::spawn_blocking(move || match cy.decrypt(&mut cookie.encrypted_value) {
-                        Ok(it) => it,
-                        Err(err) => {
-                            tracing::warn!("decrypt session failed: {err}");
-                            String::new()
-                        },
-                    });
+                let session_hd = task::spawn_blocking(move || {
+                    cy.decrypt(&mut cookie.encrypted_value)
+                        .inspect_err(|_e| {
+                            #[cfg(feature = "tracing")]
+                            tracing::warn!("decrypt session failed: {_e}");
+                        })
+                        .unwrap_or_default()
+                });
                 hds.push((session_hd, CsrfSession::Session));
             }
         }
+
         for (handle, flag) in hds {
             let res = handle.await?;
             match flag {
@@ -316,7 +322,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
 }
 
 impl<T> ChromiumGetter<T> {
-    /// the browser's decrypt
+    /// The browser's decrypt
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
         Ok(self.crypto.decrypt(ciphertext)?)
     }
