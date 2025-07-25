@@ -83,6 +83,14 @@ impl CookiesInfo for ChromiumCookie {
     fn is_http_only(&self) -> bool {
         self.is_httponly
     }
+
+    fn creation(&self) -> Option<DateTime<Utc>> {
+        self.creation_utc
+    }
+
+    fn expires(&self) -> Option<DateTime<Utc>> {
+        self.expires_utc
+    }
 }
 
 impl From<cookies::Model> for ChromiumCookie {

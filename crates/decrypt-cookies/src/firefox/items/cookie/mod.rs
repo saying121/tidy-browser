@@ -77,6 +77,14 @@ impl CookiesInfo for MozCookies {
     fn name(&self) -> &str {
         &self.name
     }
+
+    fn creation(&self) -> Option<DateTime<Utc>> {
+        self.creation_time
+    }
+
+    fn expires(&self) -> Option<DateTime<Utc>> {
+        self.expiry
+    }
 }
 
 impl From<moz_cookies::Model> for MozCookies {

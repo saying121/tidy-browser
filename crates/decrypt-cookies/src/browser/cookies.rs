@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone)]
@@ -22,11 +23,28 @@ impl LeetCodeCookies {
 
 impl Display for LeetCodeCookies {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        format!("LEETCODE_SESSION={};csrftoken={};", self.session, self.csrf).fmt(f)
+        f.write_fmt(format_args!(
+            "LEETCODE_SESSION={};csrftoken={};",
+            self.session, self.csrf
+        ))
     }
 }
 
 pub trait CookiesInfo {
+    fn to_csv(&self) -> String {
+        format!(
+            "{},{},{},{},{},{},{},{}\n",
+            self.domain(),
+            self.name(),
+            self.path(),
+            self.value(),
+            self.creation().unwrap_or_default(),
+            self.expires().unwrap_or_default(),
+            self.is_secure(),
+            self.is_http_only(),
+        )
+    }
+
     /// <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie>
     fn get_set_cookie_header(&self) -> String {
         let mut properties = vec![
@@ -62,6 +80,8 @@ pub trait CookiesInfo {
     fn is_secure(&self) -> bool;
     fn is_http_only(&self) -> bool;
     fn same_site(&self) -> SameSite;
+    fn creation(&self) -> Option<DateTime<Utc>>;
+    fn expires(&self) -> Option<DateTime<Utc>>;
 }
 
 #[derive(Clone, Copy)]
