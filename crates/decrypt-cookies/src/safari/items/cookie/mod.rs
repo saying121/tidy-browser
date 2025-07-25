@@ -83,6 +83,14 @@ impl CookiesInfo for SafariCookie {
     fn same_site(&self) -> SameSite {
         self.same_site
     }
+
+    fn creation(&self) -> Option<DateTime<Utc>> {
+        self.creation
+    }
+
+    fn expires(&self) -> Option<DateTime<Utc>> {
+        self.expires
+    }
 }
 
 #[non_exhaustive]
