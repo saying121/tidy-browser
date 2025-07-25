@@ -146,8 +146,9 @@ impl Decrypter {
         cipher
             .decrypt(nonce.into(), raw_ciphertext)
             .map(|v| {
-                String::from_utf8(v.clone()).unwrap_or_else(|e| {
-                    tracing::debug!("Decoding for chromium 130.x: {e}");
+                String::from_utf8(v.clone()).unwrap_or_else(|_e| {
+                    #[cfg(feature = "tracing")]
+                    tracing::info!("Decoding for chromium >=130.x: {_e}");
                     String::from_utf8_lossy(&v[32..]).into_owned()
                 })
             })
