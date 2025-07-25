@@ -19,9 +19,9 @@ pub struct LoginDataQuery {
 
 impl LoginDataQuery {
     pub async fn new<P: AsRef<Path> + Send>(path: P) -> Result<Self> {
-        let db_conn_str = format!("sqlite:{}?mode=rwc", path.as_ref().to_string_lossy());
+        let db_url = format!("sqlite:{}?mode=ro", path.as_ref().to_string_lossy());
 
-        let db = Database::connect(db_conn_str).await?;
+        let db = Database::connect(db_url).await?;
         Ok(Self { conn: db })
     }
 

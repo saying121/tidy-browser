@@ -36,11 +36,10 @@ impl Key4Query {
     /// * `browser`: `edge`, `chrome`
     pub async fn new(browser: Browser) -> Result<Self> {
         let cookie_path = file_path(browser, BrowserFile::Key).await?;
-        tracing::debug!(path = ?cookie_path);
 
-        let db_conn_str = format!("sqlite:{}?mode=rwc", cookie_path.to_string_lossy());
+        let db_url = format!("sqlite:{}?mode=ro", cookie_path.to_string_lossy());
 
-        let db = Database::connect(db_conn_str)
+        let db = Database::connect(db_url)
             .await
             .into_diagnostic()?;
         Ok(Self { conn: db })
