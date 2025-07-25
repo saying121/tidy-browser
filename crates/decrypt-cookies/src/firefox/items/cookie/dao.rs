@@ -4,7 +4,6 @@ use sea_orm::{
     sea_query::IntoCondition, ColumnTrait, Database, DatabaseConnection, DbErr, EntityTrait,
     QueryFilter,
 };
-use tracing::debug;
 
 use super::entities::{
     moz_cookies::{self, Model},
@@ -26,11 +25,9 @@ impl CookiesQuery {
     where
         P: AsRef<Path> + Send,
     {
-        let db_conn_str = format!("sqlite:{}?mode=rwc", path.as_ref().to_string_lossy());
+        let db_url = format!("sqlite:{}?mode=ro", path.as_ref().to_string_lossy());
 
-        debug!("database dir: {}", &db_conn_str);
-
-        let db = Database::connect(db_conn_str).await?;
+        let db = Database::connect(db_url).await?;
         Ok(Self { conn: db })
     }
 
@@ -45,6 +42,7 @@ impl CookiesQuery {
 
         Ok(res)
     }
+
     pub async fn query_cookie_by_host(&self, host: &str) -> Result<Vec<Model>> {
         let res = MozCookies::find()
             .filter(moz_cookies::Column::Host.contains(host))
