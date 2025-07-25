@@ -26,6 +26,8 @@ pub enum FirefoxBuilderError {
         source: std::io::Error,
         path: PathBuf,
     },
+    #[error("Can not found home dir")]
+    Home,
 }
 
 pub type Result<T> = std::result::Result<T, FirefoxBuilderError>;
