@@ -259,6 +259,10 @@ impl<T: Send + Sync> ChromiumGetter<T> {
             Csrf,
             Session,
         }
+
+        // # Safety: scope task
+        let cy = unsafe { std::mem::transmute::<&Decrypter, &'static Decrypter>(&self.crypto) };
+
         for mut cookie in cookies {
             if cookie.name == "csrftoken" {
                 let expir = cookie
@@ -271,7 +275,6 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                     }
                 }
 
-                let cy = self.crypto.clone();
                 let csrf_hd =
                     task::spawn_blocking(move || match cy.decrypt(&mut cookie.encrypted_value) {
                         Ok(it) => it,
@@ -293,7 +296,6 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                     }
                 }
 
-                let cy = self.crypto.clone();
                 let session_hd =
                     task::spawn_blocking(move || match cy.decrypt(&mut cookie.encrypted_value) {
                         Ok(it) => it,
