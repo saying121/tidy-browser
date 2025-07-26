@@ -74,7 +74,7 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
         }
     }
 
-    /// `profile_path`: when browser start with `-profile <profile_path>`
+    /// `profile_path`: when browser started with `-profile <profile_path>`
     /// When set `profile_path` ignore other parameters like `base`, `profile`.
     pub fn with_profile_path<P>(profile_path: P) -> Self
     where
@@ -88,13 +88,13 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
         }
     }
 
-    /// `base`: When firefox data path changed
+    /// `base`: When Firefox data path changed
     pub fn base(&mut self, base: PathBuf) -> &mut Self {
         self.base = base.into();
         self
     }
 
-    /// `profile`: When start with `-P <profile>`
+    /// `profile`: When started with `-P <profile>`
     pub fn profile(&mut self, profile: &'b str) -> &mut Self {
         self.profile = profile.into();
         self

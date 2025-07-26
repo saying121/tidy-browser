@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use decrypt_cookies::{chromium::ChromiumCookie, prelude::*};
 use snafu::ResultExt;
 
-use crate::error::{self, Result};
+use crate::{
+    args::ChromiumName,
+    error::{self, Result},
+};
 
 #[derive(Clone, Copy)]
 #[derive(Debug)]
@@ -12,7 +15,11 @@ use crate::error::{self, Result};
 pub struct ChromiumBased {}
 
 impl ChromiumBased {
-    pub async fn cookies<D, H>(name: &str, data_dir: D, host: H) -> Result<Vec<ChromiumCookie>>
+    pub async fn cookies<D, H>(
+        name: ChromiumName,
+        data_dir: D,
+        host: H,
+    ) -> Result<Vec<ChromiumCookie>>
     where
         D: Into<Option<PathBuf>>,
         H: for<'a> Into<Option<&'a str>>,
@@ -24,7 +31,7 @@ impl ChromiumBased {
             ($($browser:ident,) *) => {
                 match name {
                     $(
-                    v if v.eq_ignore_ascii_case($browser::NAME) => {
+                    ChromiumName::$browser => {
                         let chromium = if let Some(dir) = data_dir {
                             ChromiumBuilder::<$browser>::with_user_data_dir(dir)
                         }
@@ -44,7 +51,6 @@ impl ChromiumBased {
                         Ok(cookies)
                     },
                     )*
-                    name => error::ChromiumNotSupportSnafu { name: name.to_owned() }.fail(),
                 }
             };
         }
