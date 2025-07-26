@@ -10,6 +10,7 @@ pub mod login_data_entities;
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LoginData {
     pub origin_url: String,
     pub action_url: Option<String>,

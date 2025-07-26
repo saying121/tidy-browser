@@ -1,17 +1,16 @@
 use std::fmt::Display;
 
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone)]
-#[derive(Serialize, Deserialize)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct LeetCodeCookies {
     pub csrf: String,
     pub session: String,
-    #[serde(skip)]
+    #[cfg_attr(feature = "serde", serde(skip))]
     pub expiry: bool,
 }
 
@@ -92,6 +91,7 @@ pub trait CookiesInfo {
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SameSite {
     #[default]
     None,

@@ -22,7 +22,7 @@ rayon = { workspace = true }
 reqwest = { workspace = true, default-features = false, features = ["cookies"], optional = true }
 rust-ini = { workspace = true }  # firefox
 sea-orm = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, optional = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true, optional = true }
@@ -42,9 +42,10 @@ rawcopy-rs-next = { workspace = true }
 
 [features]
 Safari = ["dep:binary-cookies"]  # `binary_cookies` does not depend on Macos
-default = ["reqwest", "tracing"]
+default = ["reqwest", "serde", "tracing"]
 reqwest = ["dep:reqwest"]
-tracing = ["dep:tracing", "chromium-crypto/tracing"]
+serde = ["chrono/serde", "dep:serde"]
+tracing = ["chromium-crypto/tracing", "dep:tracing"]
 
 [lints]
 workspace = true

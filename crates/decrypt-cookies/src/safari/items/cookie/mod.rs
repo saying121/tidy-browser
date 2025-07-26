@@ -17,6 +17,7 @@ use crate::{
     clippy::exhaustive_structs,
     reason = "Breaking change with Binarycookies format"
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SafariCookie {
     pub version: u32,
 
