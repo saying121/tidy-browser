@@ -11,6 +11,7 @@ pub mod cookie_entities;
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
 #[non_exhaustive]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ChromiumCookie {
     pub creation_utc: Option<DateTime<Utc>>,
     pub host_key: String,
