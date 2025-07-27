@@ -20,6 +20,10 @@ pub struct Args {
     #[arg(long, default_value(","))]
     /// Csv separator
     pub sep: String,
+
+    #[arg(long)]
+    /// Filter by host/domain
+    pub host: Option<String>,
 }
 
 #[derive(Clone)]
@@ -63,6 +67,9 @@ pub struct SafariArgs {
     )]
     /// Only support cookie
     pub values: Vec<Value>,
+
+    #[arg(long)]
+    pub cookies_path: Option<PathBuf>,
 }
 
 #[derive(Clone)]
@@ -86,10 +93,6 @@ pub struct ChromiumArgs {
         doc = r"[default value: ~\AppData\Local\Google\Chrome\User Data]"
     )]
     pub user_data_dir: Option<PathBuf>,
-
-    #[arg(long)]
-    /// Filter by host/domain
-    pub host: Option<String>,
 
     #[arg(short, long, value_delimiter(','))]
     pub values: Vec<Value>,
@@ -147,10 +150,6 @@ pub struct FirefoxArgs {
     /// When browser is started with `--profile <path>   Start with profile at <path>.`
     /// When the arg is used, other args (such as `--base`, `-P`) are ignore.
     pub profile_path: Option<PathBuf>,
-
-    #[arg(long)]
-    /// Filter by host/domain
-    pub host: Option<String>,
 
     #[arg(short, long, value_delimiter(','))]
     /// Only support cookie

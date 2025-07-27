@@ -10,5 +10,5 @@ async fn safari_binary_cookies() {
         .await
         .unwrap();
     let all = safari.all_cookies();
-    dbg!(all[0]);
+    dbg!(&all[0]);
 }

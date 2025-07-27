@@ -174,9 +174,11 @@ impl CookiesGetter {
         }
         lc_cookies
     }
-    pub fn all_cookies(&self) -> Vec<&SafariCookie> {
-        self.cookies.iter().collect()
+
+    pub fn all_cookies(&self) -> &[SafariCookie] {
+        &self.cookies
     }
+
     pub fn iter_cookies(&self) -> impl Iterator<Item = &SafariCookie> {
         self.cookies.iter()
     }

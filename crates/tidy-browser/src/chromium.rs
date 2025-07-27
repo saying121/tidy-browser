@@ -1,6 +1,6 @@
 use std::{collections::HashSet, fmt::Display, fs::File, io::IoSlice, path::PathBuf};
 
-use decrypt_cookies::{browser::cookies::CookiesInfo, chromium::ChromiumCookie, prelude::*};
+use decrypt_cookies::prelude::*;
 use snafu::ResultExt;
 use strum::IntoEnumIterator;
 use tokio::task;
@@ -8,7 +8,7 @@ use tokio::task;
 use crate::{
     args::{ChromiumName, Value},
     error::{self, Result},
-    utils::write_all_vectored,
+    utils::{self, write_all_vectored},
 };
 
 #[derive(Clone, Copy)]
@@ -22,18 +22,24 @@ fn login_csv_header<D: Display>(sep: D) -> String {
 }
 
 impl ChromiumBased {
-    pub(crate) async fn multi_data(
+    pub(crate) async fn multi_data<H>(
         names: impl Iterator<Item = ChromiumName>,
         output_dir: PathBuf,
         sep: String,
-    ) -> Result<()> {
+        host: H,
+    ) -> Result<()>
+    where
+        H: Into<Option<String>>,
+    {
+        let host = host.into();
         for task in names.map(|name| {
+            let host = host.clone();
             let output_dir = output_dir.clone();
             let sep = sep.clone();
             let values = HashSet::from_iter(Value::iter());
 
             tokio::task::spawn(async move {
-                Self::write_data(name, None, None, values, output_dir, sep).await
+                Self::write_data(name, None, host, values, output_dir, sep).await
             })
         }) {
             task.await
@@ -156,43 +162,15 @@ impl ChromiumBased {
         let mut tasks = Vec::with_capacity(cap);
 
         if let Some(cookies) = cookies {
-            let out_file = output_dir.join("cookies.csv");
+            let out_file = output_dir.join(crate::COOKIES_FILE);
             let sep = sep.clone();
 
-            let handle = task::spawn_blocking(move || {
-                let mut file = File::options()
-                    .write(true)
-                    .create(true)
-                    .truncate(true)
-                    .open(&out_file)
-                    .context(error::IoSnafu { path: out_file.clone() })?;
-
-                let header = <ChromiumCookie as CookiesInfo>::csv_header(sep.clone());
-
-                let mut slices = Vec::with_capacity(2 + cookies.len() * 2);
-                slices.push(IoSlice::new(header.as_bytes()));
-                slices.push(IoSlice::new(b"\n"));
-
-                let csvs: Vec<_> = cookies
-                    .into_iter()
-                    .map(|v| v.to_csv(sep.clone()))
-                    .collect();
-
-                for csv in &csvs {
-                    slices.push(IoSlice::new(csv.as_bytes()));
-                    slices.push(IoSlice::new(b"\n"));
-                }
-
-                write_all_vectored(&mut file, &mut slices)
-                    .context(error::IoSnafu { path: out_file.clone() })?;
-
-                Ok::<(), error::Error>(())
-            });
+            let handle = utils::write_cookies(out_file, cookies, sep);
             tasks.push(handle);
         }
 
         if let Some(logins) = logins {
-            let out_file = output_dir.join("logins.csv");
+            let out_file = output_dir.join(crate::LOGINS_FILE);
             let sep = sep.clone();
 
             let handle = task::spawn_blocking(move || {

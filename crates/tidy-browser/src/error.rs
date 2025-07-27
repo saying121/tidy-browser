@@ -1,8 +1,11 @@
 use std::path::PathBuf;
 
-use decrypt_cookies::chromium::{builder::ChromiumBuilderError, ChromiumError};
-use decrypt_cookies::firefox::builder::FirefoxBuilderError;
-use decrypt_cookies::firefox::FirefoxError;
+#[cfg(target_os = "macos")]
+use decrypt_cookies::safari::SafariError;
+use decrypt_cookies::{
+    chromium::{builder::ChromiumBuilderError, ChromiumError},
+    firefox::{builder::FirefoxBuilderError, FirefoxError},
+};
 use snafu::{Location, Snafu};
 
 #[derive(Snafu)]
@@ -30,6 +33,13 @@ pub enum Error {
     #[snafu(display("Firefox: {source}{location}"))]
     Firefox {
         source: FirefoxError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[cfg(target_os = "macos")]
+    #[snafu(display("Firefox: {source}{location}"))]
+    Safari {
+        source: SafariError,
         #[snafu(implicit)]
         location: Location,
     },
