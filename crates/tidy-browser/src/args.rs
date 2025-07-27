@@ -122,8 +122,8 @@ pub enum ChromiumName {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(clap::Args)]
 pub struct FirefoxArgs {
-    #[arg(short, long, value_delimiter(','))]
-    pub name: Vec<FirefoxName>,
+    #[arg(short, long)]
+    pub name: FirefoxName,
 
     #[arg(long, id("DIR"))]
     /// Browser data dir.
