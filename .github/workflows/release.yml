@@ -31,15 +31,10 @@ jobs:
       - name: Fetch Repository
         uses: actions/checkout@v4
 
-      - name: Install Stable Rust Toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: 1.82
-
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
         with:
-          version: 'v0.10.0'
+          version: "v0.10.0"
 
       - name: Install cargo-binstall
         uses: taiki-e/install-action@v2
@@ -78,11 +73,6 @@ jobs:
     steps:
       - name: Fetch Repository
         uses: actions/checkout@v4
-
-      - name: Install Stable Rust Toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
 
       - name: Install jql
         uses: taiki-e/install-action@v2
@@ -156,16 +146,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Stable Rust Toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          targets: ${{ matrix.target }}
-
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
         with:
-          version: '0.10.0'
+          version: "0.10.0"
 
       - name: Install cross-compilation tools
         if: ${{ matrix.cross }}

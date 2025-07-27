@@ -16,9 +16,5 @@ jobs:
           # my rustfmt config use many nightly features
           toolchain: nightly
           components: rustfmt, cargo
-      - name: Run fmt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_MSG: |
-            fmt: with nightly rustfmt
+      - name: Run Fmt Check
         run: cargo x fmt -- --check

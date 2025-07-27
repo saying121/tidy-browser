@@ -19,11 +19,6 @@ jobs:
       RUSTC_WRAPPER: "sccache"
 
     steps:
-      - uses: actions/checkout/@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: 1.82
-
       - name: Install cargo-hack
         uses: taiki-e/install-action@v2
         with:
