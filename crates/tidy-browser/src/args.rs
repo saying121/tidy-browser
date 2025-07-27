@@ -130,14 +130,14 @@ pub struct FirefoxArgs {
 
     #[arg(long, id("DIR"))]
     /// Browser data dir.
-    #[cfg_attr(target_os = "linux", doc = "[possible value: ~/.mozilla/firefox]")]
+    #[cfg_attr(target_os = "linux", doc = "[default value: ~/.mozilla/firefox]")]
     #[cfg_attr(
         target_os = "macos",
-        doc = "[possible value: ~/Library/Application Support/Firefox]"
+        doc = "[default value: ~/Library/Application Support/Firefox]"
     )]
     #[cfg_attr(
         target_os = "windows",
-        doc = r"[possible value: ~\AppData\Roaming\Mozilla\Firefox]"
+        doc = r"[default value: ~\AppData\Roaming\Mozilla\Firefox]"
     )]
     pub base: Option<PathBuf>,
 
