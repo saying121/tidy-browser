@@ -431,7 +431,7 @@ dependencies = [
 
 [[package]]
 name = "chromium-crypto"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "TinyUFO",
  "aes",
@@ -731,7 +731,7 @@ dependencies = [
 
 [[package]]
 name = "decrypt-cookies"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "anyhow",
  "binary-cookies",
@@ -2989,7 +2989,7 @@ dependencies = [
 
 [[package]]
 name = "tidy-browser"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "clap",
  "decrypt-cookies",

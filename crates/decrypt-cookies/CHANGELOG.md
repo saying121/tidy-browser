@@ -1,4 +1,5 @@
 <!-- markdownlint-disable MD024 -->
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -6,7 +7,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.7.0]
+## [0.8.0] - 2025-07-27
+
+### Changed
+
+- Rename apis: `*Getter`: `all_cookies` -> `cookies_all`, `CookiesInfo`: `get_set_cookie_header` -> `set_cookie_header`, `get_url` -> `url`.
+- Rename Error: `HOME` -> `Home`
+
+### Added
+
+- SafariGetter: add `cookies_by_host`.
+
+
+## [0.7.0] - 2025-07-20
 
 ### Changed
 
