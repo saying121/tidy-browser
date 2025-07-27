@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use chrono::{DateTime, Utc};
 
 use self::login_data_entities::logins;
@@ -10,6 +12,7 @@ pub mod login_data_entities;
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LoginData {
     pub origin_url: String,
     pub action_url: Option<String>,
@@ -45,8 +48,24 @@ pub struct LoginData {
 }
 
 impl LoginData {
-    pub fn set_password_value(&mut self, password_value: String) {
-        self.password_value = Some(password_value);
+    pub fn to_csv<D: Display>(&self, sep: D) -> String {
+        format!(
+            "{}{sep}{}{sep}{}{sep}{}{sep}{}{sep}{}{sep}{}",
+            self.origin_url,
+            self.username_value
+                .as_deref()
+                .unwrap_or_default(),
+            self.display_name,
+            self.password_value
+                .as_deref()
+                .unwrap_or_default(),
+            self.date_created
+                .unwrap_or_default(),
+            self.date_last_used
+                .unwrap_or_default(),
+            self.date_password_modified
+                .unwrap_or_default(),
+        )
     }
 }
 

@@ -19,7 +19,7 @@ async fn chromium_cookies_test() {
                         return;
                     },
                 };
-                let res = match getter.all_cookies().await {
+                let res = match getter.cookies_all().await {
                     Ok(v) => v,
                     Err(e) => {
                         eprintln!("{e}");
@@ -65,7 +65,7 @@ async fn ff_cookies_test() {
                         return;
                     },
                 };
-                let res = match getter.all_cookies().await {
+                let res = match getter.cookies_all().await {
                     Ok(v) => v,
                     Err(e) => {
                         eprintln!("{e}");

@@ -17,6 +17,7 @@ use crate::{
     clippy::exhaustive_structs,
     reason = "Breaking change with Binarycookies format"
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SafariCookie {
     pub version: u32,
 
@@ -82,6 +83,14 @@ impl CookiesInfo for SafariCookie {
     }
     fn same_site(&self) -> SameSite {
         self.same_site
+    }
+
+    fn creation(&self) -> Option<DateTime<Utc>> {
+        self.creation
+    }
+
+    fn expires(&self) -> Option<DateTime<Utc>> {
+        self.expires
     }
 }
 
@@ -165,9 +174,11 @@ impl CookiesGetter {
         }
         lc_cookies
     }
-    pub fn all_cookies(&self) -> Vec<&SafariCookie> {
-        self.cookies.iter().collect()
+
+    pub fn cookies_all(&self) -> &[SafariCookie] {
+        &self.cookies
     }
+
     pub fn iter_cookies(&self) -> impl Iterator<Item = &SafariCookie> {
         self.cookies.iter()
     }

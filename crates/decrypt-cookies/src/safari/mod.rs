@@ -1,6 +1,6 @@
 pub mod items;
 
-use std::path::PathBuf;
+use std::{fmt::Display, path::PathBuf};
 
 pub use self::items::cookie::CookiesGetter;
 use self::items::cookie::SafariCookie;
@@ -32,6 +32,12 @@ pub struct SafariGetter {
     pub cookie_getter: CookiesGetter,
 }
 
+impl Display for SafariGetter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(Self::NAME)
+    }
+}
+
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
@@ -61,10 +67,16 @@ impl SafariBuilder {
 }
 
 impl SafariGetter {
-    const NAME: &'static str = "Safari";
+    pub const NAME: &'static str = "Safari";
 
-    pub fn all_cookies(&self) -> Vec<&SafariCookie> {
-        self.cookie_getter.all_cookies()
+    pub fn cookies_all(&self) -> &[SafariCookie] {
+        self.cookie_getter.cookies_all()
+    }
+
+    pub fn cookies_by_host<'a>(&'a self, host: &'a str) -> impl Iterator<Item = &'a SafariCookie> {
+        self.cookie_getter
+            .iter_cookies()
+            .filter(move |v| v.domain.contains(host))
     }
 
     pub fn get_session_csrf(&self, host: &str) -> LeetCodeCookies {

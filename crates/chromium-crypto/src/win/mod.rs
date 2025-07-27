@@ -103,7 +103,7 @@ impl Decrypter {
         let mut encrypted_key_v20 = BASE64_STANDARD.decode(encrypted_key_v20)?;
 
         if !encrypted_key_v20.starts_with(Self::K_CRYPT_APP_BOUND_KEY_PREFIX) {
-            return Err(CryptoError::APPB);
+            return Err(CryptoError::Appb);
         }
 
         let key = &mut encrypted_key_v20[Self::K_CRYPT_APP_BOUND_KEY_PREFIX.len()..];
@@ -146,8 +146,9 @@ impl Decrypter {
         cipher
             .decrypt(nonce.into(), raw_ciphertext)
             .map(|v| {
-                String::from_utf8(v.clone()).unwrap_or_else(|e| {
-                    tracing::debug!("Decoding for chromium 130.x: {e}");
+                String::from_utf8(v.clone()).unwrap_or_else(|_e| {
+                    #[cfg(feature = "tracing")]
+                    tracing::info!("Decoding for chromium >=130.x: {_e}");
                     String::from_utf8_lossy(&v[32..]).into_owned()
                 })
             })

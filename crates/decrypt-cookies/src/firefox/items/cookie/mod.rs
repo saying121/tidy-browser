@@ -11,6 +11,7 @@ pub mod entities;
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
 #[non_exhaustive]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MozCookies {
     pub id: i32,
     pub origin_attributes: String,
@@ -34,7 +35,7 @@ impl TryFrom<MozCookies> for reqwest::header::HeaderValue {
     type Error = reqwest::header::InvalidHeaderValue;
 
     fn try_from(value: MozCookies) -> Result<Self, Self::Error> {
-        Self::from_str(&value.get_set_cookie_header())
+        Self::from_str(&value.set_cookie_header())
     }
 }
 #[cfg(feature = "reqwest")]
@@ -42,8 +43,8 @@ impl FromIterator<MozCookies> for reqwest::cookie::Jar {
     fn from_iter<T: IntoIterator<Item = MozCookies>>(iter: T) -> Self {
         let jar = Self::default();
         for cookie in iter {
-            let set_cookie = cookie.get_set_cookie_header();
-            if let Ok(url) = reqwest::Url::parse(&cookie.get_url()) {
+            let set_cookie = cookie.set_cookie_header();
+            if let Ok(url) = reqwest::Url::parse(&cookie.url()) {
                 jar.add_cookie_str(&set_cookie, &url);
             }
         }
@@ -76,6 +77,14 @@ impl CookiesInfo for MozCookies {
     }
     fn name(&self) -> &str {
         &self.name
+    }
+
+    fn creation(&self) -> Option<DateTime<Utc>> {
+        self.creation_time
+    }
+
+    fn expires(&self) -> Option<DateTime<Utc>> {
+        self.expiry
     }
 }
 

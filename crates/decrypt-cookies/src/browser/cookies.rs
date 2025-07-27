@@ -1,16 +1,16 @@
 use std::fmt::Display;
 
-use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
 
 #[derive(Default, Clone)]
-#[derive(Serialize, Deserialize)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct LeetCodeCookies {
     pub csrf: String,
     pub session: String,
-    #[serde(skip)]
+    #[cfg_attr(feature = "serde", serde(skip))]
     pub expiry: bool,
 }
 
@@ -22,13 +22,34 @@ impl LeetCodeCookies {
 
 impl Display for LeetCodeCookies {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        format!("LEETCODE_SESSION={};csrftoken={};", self.session, self.csrf).fmt(f)
+        f.write_fmt(format_args!(
+            "LEETCODE_SESSION={};csrftoken={};",
+            self.session, self.csrf
+        ))
     }
 }
 
 pub trait CookiesInfo {
+    fn csv_header<D: Display>(sep: D) -> String {
+        format!("domain{sep}name{sep}path{sep}value{sep}creation{sep}expires{sep}is_secure{sep}is_http_only")
+    }
+
+    fn to_csv<D: Display>(&self, sep: D) -> String {
+        format!(
+            "{}{sep}{}{sep}{}{sep}{}{sep}{}{sep}{}{sep}{}{sep}{}",
+            self.domain(),
+            self.name(),
+            self.path(),
+            self.value(),
+            self.creation().unwrap_or_default(),
+            self.expires().unwrap_or_default(),
+            self.is_secure(),
+            self.is_http_only(),
+        )
+    }
+
     /// <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie>
-    fn get_set_cookie_header(&self) -> String {
+    fn set_cookie_header(&self) -> String {
         let mut properties = vec![
             format!("{}={}", self.name(), self.value()),
             format!("Path={}", self.path()),
@@ -50,7 +71,8 @@ pub trait CookiesInfo {
         properties.join("; ")
     }
 
-    fn get_url(&self) -> String {
+    // TODO: reanme to `url`
+    fn url(&self) -> String {
         format!("https://{}{}", self.domain().trim_matches('.'), self.path())
     }
 
@@ -62,12 +84,15 @@ pub trait CookiesInfo {
     fn is_secure(&self) -> bool;
     fn is_http_only(&self) -> bool;
     fn same_site(&self) -> SameSite;
+    fn creation(&self) -> Option<DateTime<Utc>>;
+    fn expires(&self) -> Option<DateTime<Utc>>;
 }
 
 #[derive(Clone, Copy)]
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SameSite {
     #[default]
     None,

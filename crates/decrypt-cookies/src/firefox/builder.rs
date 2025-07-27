@@ -26,6 +26,8 @@ pub enum FirefoxBuilderError {
         source: std::io::Error,
         path: PathBuf,
     },
+    #[error("Can not found home dir")]
+    Home,
 }
 
 pub type Result<T> = std::result::Result<T, FirefoxBuilderError>;
@@ -44,9 +46,9 @@ pub(crate) struct TempPaths {
 #[derive(Debug)]
 #[derive(Default)]
 pub struct FirefoxBuilder<'a, T> {
-    pub(crate) init: Option<PathBuf>,
+    pub(crate) base: Option<PathBuf>,
     pub(crate) profile: Option<&'a str>,
-    pub(crate) profile_path: Option<&'a str>,
+    pub(crate) profile_path: Option<PathBuf>,
     pub(crate) __browser: PhantomData<T>,
 }
 
@@ -65,46 +67,34 @@ impl<B: FirefoxPath> Display for FirefoxBuilder<'_, B> {
 impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
     pub const fn new() -> Self {
         Self {
-            init: None,
+            base: None,
             profile: None,
             profile_path: None,
             __browser: core::marker::PhantomData::<B>,
         }
     }
 
-    /// Get firefox data dir
-    pub fn init() -> PathBuf {
-        dirs::home_dir()
-            .expect("Get home dir failed")
-            .join(B::BASE)
-    }
-
-    /// `profile_path`: when browser start with `-profile <profile_path>`
-    pub fn with_profile_path<P>(profile_path: P) -> Result<Self>
-    where
-        P: Into<Option<&'b str>>,
-    {
-        Ok(Self {
-            init: None,
+    /// `profile_path`: when browser started with `-profile <profile_path>`
+    /// When set `profile_path` ignore other parameters like `base`, `profile`.
+    pub fn with_profile_path(profile_path: PathBuf) -> Self {
+        Self {
+            base: None,
             profile: None,
             profile_path: profile_path.into(),
             __browser: core::marker::PhantomData::<B>,
-        })
+        }
     }
 
-    /// `init`: When firefox init path changed
-    /// `profile`: When start with `-P <profile>`
-    pub fn with_base_profile<I, P>(init: I, profile: P) -> Self
-    where
-        I: Into<Option<PathBuf>>,
-        P: Into<Option<&'b str>>,
-    {
-        Self {
-            init: init.into(),
-            profile: profile.into(),
-            profile_path: None,
-            __browser: core::marker::PhantomData::<B>,
-        }
+    /// `base`: When Firefox data path changed
+    pub fn base(&mut self, base: PathBuf) -> &mut Self {
+        self.base = base.into();
+        self
+    }
+
+    /// `profile`: When started with `-P <profile>`
+    pub fn profile(&mut self, profile: &'b str) -> &mut Self {
+        self.profile = profile.into();
+        self
     }
 
     async fn cache_data(profile_path: PathBuf) -> Result<TempPaths> {
@@ -162,11 +152,18 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
 
 impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
     /// Get user specify profile path
-    pub async fn get_profile_path(&self) -> Result<PathBuf> {
-        let mut base = self
-            .init
-            .clone()
-            .unwrap_or_else(Self::init);
+    pub async fn get_profile_path(self) -> Result<PathBuf> {
+        let mut base = if let Some(base) = self.base {
+            base
+        }
+        else {
+            let Some(mut home) = dirs::home_dir()
+            else {
+                return Err(FirefoxBuilderError::Home);
+            };
+            home.push(B::BASE);
+            home
+        };
         let ini_path = base.join("profiles.ini");
 
         let ini_str = fs::read_to_string(&ini_path)
@@ -196,10 +193,7 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
                     break;
                 }
             }
-            else {
-                if !section.starts_with("Install") {
-                    continue;
-                }
+            else if section.starts_with("Install") {
                 let Some(default) = prop.get("Default")
                 else {
                     return Err(FirefoxBuilderError::InstallPath(section));
@@ -209,18 +203,27 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
             }
         }
 
-        tracing::debug!("path: {:?}", base);
-
         Ok(base)
     }
 
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Firefox build", skip(self), fields(browser), level = "debug")
+    )]
     pub async fn build(self) -> Result<FirefoxGetter<B>> {
         let profile_path = if let Some(path) = self.profile_path {
-            path.into()
+            path
         }
         else {
             self.get_profile_path().await?
         };
+
+        #[cfg(feature = "tracing")]
+        {
+            tracing::Span::current().record("browser", B::NAME);
+            tracing::debug!(profile_path = %profile_path.display());
+        };
+
         let temp_paths = Self::cache_data(profile_path).await?;
 
         let query = CookiesQuery::new(temp_paths.cookies_temp).await?;

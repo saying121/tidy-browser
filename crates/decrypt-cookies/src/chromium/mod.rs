@@ -77,20 +77,18 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                     let res = v
                         .password_value
                         .as_mut()
-                        .map_or_else(String::new, |passwd| {
-                            crypto
-                                .decrypt(passwd)
-                                .unwrap_or_default()
-                        });
-                    let mut cookies = LoginData::from(v);
-                    cookies.set_password_value(res);
-                    cookies
+                        .and_then(|v| crypto.decrypt(v).ok());
+
+                    let mut login_data = LoginData::from(v);
+                    login_data.password_value = res;
+                    login_data
                 })
                 .collect()
         })
         .await;
         Ok(login_data?)
     }
+
     /// contains passwords
     ///
     /// # Example:
@@ -129,6 +127,8 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         self.par_decrypt_logins(raw_login)
             .await
     }
+
+    /// Filter by host
     pub async fn logins_by_host<F>(&self, host: F) -> Result<Vec<LoginData>>
     where
         F: AsRef<str> + Send,
@@ -147,6 +147,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         self.par_decrypt_logins(raw_login)
             .await
     }
+
     /// contains passwords
     pub async fn all_logins(&self) -> Result<Vec<LoginData>> {
         let mut raw_login = self
@@ -190,27 +191,28 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     {
         let raw_ck = self
             .cookies_query
-            .cookie_filter(filter)
+            .cookies_filter(filter)
             .await?;
         self.par_decrypt_ck(raw_ck).await
     }
-    /// decrypt Cookies
+
+    /// Filter by host
     pub async fn cookies_by_host<A: AsRef<str> + Send>(
         &self,
         host: A,
     ) -> Result<Vec<ChromiumCookie>> {
         let raw_ck = self
             .cookies_query
-            .cookie_by_host(host.as_ref())
+            .cookies_by_host(host.as_ref())
             .await?;
         self.par_decrypt_ck(raw_ck).await
     }
 
     /// return all cookies
-    pub async fn all_cookies(&self) -> Result<Vec<ChromiumCookie>> {
+    pub async fn cookies_all(&self) -> Result<Vec<ChromiumCookie>> {
         let raw_ck = self
             .cookies_query
-            .all_cookie()
+            .cookies_all()
             .await?;
         self.par_decrypt_ck(raw_ck).await
     }
@@ -225,9 +227,9 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                 .map(|mut v| {
                     let res = crypto
                         .decrypt(&mut v.encrypted_value)
-                        .unwrap_or_default();
+                        .ok();
                     let mut cookies = ChromiumCookie::from(v);
-                    cookies.set_encrypted_value(res);
+                    cookies.decrypted_value = res;
                     cookies
                 })
                 .collect()
@@ -240,7 +242,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     pub async fn get_session_csrf<A: AsRef<str> + Send>(&self, host: A) -> Result<LeetCodeCookies> {
         let cookies = self
             .cookies_query
-            .cookie_filter(
+            .cookies_filter(
                 ChromiumCookieCol::HostKey
                     .contains(host.as_ref())
                     .and(
@@ -259,6 +261,10 @@ impl<T: Send + Sync> ChromiumGetter<T> {
             Csrf,
             Session,
         }
+
+        // # Safety: scope task
+        let cy = unsafe { std::mem::transmute::<&Decrypter, &'static Decrypter>(&self.crypto) };
+
         for mut cookie in cookies {
             if cookie.name == "csrftoken" {
                 let expir = cookie
@@ -271,15 +277,14 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                     }
                 }
 
-                let cy = self.crypto.clone();
-                let csrf_hd =
-                    task::spawn_blocking(move || match cy.decrypt(&mut cookie.encrypted_value) {
-                        Ok(it) => it,
-                        Err(err) => {
-                            tracing::warn!("decrypt csrf failed: {err}");
-                            String::new()
-                        },
-                    });
+                let csrf_hd = task::spawn_blocking(move || {
+                    cy.decrypt(&mut cookie.encrypted_value)
+                        .inspect_err(|_e| {
+                            #[cfg(feature = "tracing")]
+                            tracing::warn!("decrypt csrf failed: {_e}");
+                        })
+                        .unwrap_or_default()
+                });
                 hds.push((csrf_hd, CsrfSession::Csrf));
             }
             else if cookie.name == "LEETCODE_SESSION" {
@@ -293,18 +298,18 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                     }
                 }
 
-                let cy = self.crypto.clone();
-                let session_hd =
-                    task::spawn_blocking(move || match cy.decrypt(&mut cookie.encrypted_value) {
-                        Ok(it) => it,
-                        Err(err) => {
-                            tracing::warn!("decrypt session failed: {err}");
-                            String::new()
-                        },
-                    });
+                let session_hd = task::spawn_blocking(move || {
+                    cy.decrypt(&mut cookie.encrypted_value)
+                        .inspect_err(|_e| {
+                            #[cfg(feature = "tracing")]
+                            tracing::warn!("decrypt session failed: {_e}");
+                        })
+                        .unwrap_or_default()
+                });
                 hds.push((session_hd, CsrfSession::Session));
             }
         }
+
         for (handle, flag) in hds {
             let res = handle.await?;
             match flag {
@@ -317,7 +322,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
 }
 
 impl<T> ChromiumGetter<T> {
-    /// the browser's decrypt
+    /// The browser's decrypt
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
         Ok(self.crypto.decrypt(ciphertext)?)
     }

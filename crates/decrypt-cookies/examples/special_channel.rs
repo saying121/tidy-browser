@@ -10,7 +10,7 @@ async fn main() -> anyhow::Result<()> {
     let chromium = ChromiumBuilder::<Chrome>::with_user_data_dir(p)
         .build()
         .await?;
-    let all_cookies = chromium.all_cookies().await?;
+    let all_cookies = chromium.cookies_all().await?;
 
     dbg!(&all_cookies.first());
 
@@ -23,15 +23,13 @@ async fn main() -> anyhow::Result<()> {
     let mut p = dirs::home_dir().expect("Get home dir failed");
     p.push(".mozilla/firefox-esr");
 
-    // p: `"$HOME/.mozilla/firefox-esr"`
-    // let firefox = FirefoxBuilder::<Firefox>::with_path_profile(Some(p), Some("default-release"))?
-    // or
-    let firefox = FirefoxBuilder::<Firefox>::with_base_profile(p, "default")
-        .build()
-        .await?;
+    let mut firefox = FirefoxBuilder::<Firefox>::new();
+    firefox.base(p).profile("default");
+    let firefox = firefox.build().await?;
+
     // TODO: make it show FirefoxEsr?
     dbg!(firefox.to_string());
-    let all_cookies = firefox.all_cookies().await?;
+    let all_cookies = firefox.cookies_all().await?;
 
     dbg!(&all_cookies.first());
 

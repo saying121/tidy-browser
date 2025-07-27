@@ -1,4 +1,8 @@
-use std::{fmt::Display, marker::PhantomData, path::PathBuf};
+use std::{
+    fmt::{Debug, Display},
+    marker::PhantomData,
+    path::PathBuf,
+};
 
 use chromium_crypto::Decrypter;
 use tokio::{fs, join};
@@ -20,14 +24,14 @@ pub enum ChromiumBuilderError {
     #[error("Io: {source}, path: {path}")]
     Io {
         source: std::io::Error,
-        path: std::path::PathBuf,
+        path: PathBuf,
     },
     #[error(transparent)]
     Rawcopy(#[from] anyhow::Error),
     #[error(transparent)]
     TokioJoin(#[from] tokio::task::JoinError),
     #[error("Can not found home dir")]
-    HOME,
+    Home,
 }
 
 pub type Result<T> = std::result::Result<T, ChromiumBuilderError>;
@@ -67,7 +71,7 @@ impl<B: ChromiumPath> ChromiumBuilder<B> {
     pub const fn new() -> Self {
         Self {
             base: None,
-            __browser: core::marker::PhantomData::<B>,
+            __browser: PhantomData::<B>,
         }
     }
 
@@ -75,12 +79,16 @@ impl<B: ChromiumPath> ChromiumBuilder<B> {
     pub const fn with_user_data_dir(base: PathBuf) -> Self {
         Self {
             base: Some(base),
-            __browser: core::marker::PhantomData::<B>,
+            __browser: PhantomData::<B>,
         }
     }
 }
 
 impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Chromium build", skip(self), fields(browser), level = "debug")
+    )]
     pub async fn build(self) -> Result<ChromiumGetter<B>> {
         let base = if let Some(base) = self.base {
             base
@@ -88,11 +96,17 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         else {
             let Some(mut base) = dirs::home_dir()
             else {
-                return Err(ChromiumBuilderError::HOME);
+                return Err(ChromiumBuilderError::Home);
             };
 
             base.push(B::BASE);
             base
+        };
+
+        #[cfg(feature = "tracing")]
+        {
+            tracing::Span::current().record("browser", B::NAME);
+            tracing::debug!(base = %base.display());
         };
 
         let temp_paths = Self::cache_data(base).await?;

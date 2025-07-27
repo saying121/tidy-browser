@@ -20,7 +20,7 @@ async fn main() -> miette::Result<()> {
     let chromium = ChromiumBuilder::new(Browser::Chromium)
         .build()
         .await?;
-    let all_cookies = chromium.all_cookies().await?;
+    let all_cookies = chromium.cookies_all().await?;
 
     dbg!(&all_cookies[0]);
 

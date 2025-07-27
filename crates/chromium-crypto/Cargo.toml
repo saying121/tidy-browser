@@ -16,7 +16,7 @@ exclude = ["./CHANGELOG.md", "examples", "tests/"]
 cfg-if = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["fs", "rt"] }
-tracing = { workspace = true }
+tracing = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 TinyUFO = { workspace = true }
@@ -51,6 +51,9 @@ windows = { workspace = true, features = [
   "Win32_System_SystemServices",
   "Wdk_System_SystemServices",
 ] }
+
+[features]
+tracing = ["dep:tracing"]
 
 [lints]
 workspace = true
