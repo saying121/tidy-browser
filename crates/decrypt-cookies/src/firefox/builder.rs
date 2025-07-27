@@ -48,7 +48,7 @@ pub(crate) struct TempPaths {
 pub struct FirefoxBuilder<'a, T> {
     pub(crate) base: Option<PathBuf>,
     pub(crate) profile: Option<&'a str>,
-    pub(crate) profile_path: Option<&'a str>,
+    pub(crate) profile_path: Option<PathBuf>,
     pub(crate) __browser: PhantomData<T>,
 }
 
@@ -76,10 +76,7 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
 
     /// `profile_path`: when browser started with `-profile <profile_path>`
     /// When set `profile_path` ignore other parameters like `base`, `profile`.
-    pub fn with_profile_path<P>(profile_path: P) -> Self
-    where
-        P: Into<Option<&'b str>>,
-    {
+    pub fn with_profile_path(profile_path: PathBuf) -> Self {
         Self {
             base: None,
             profile: None,
@@ -215,7 +212,7 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
     )]
     pub async fn build(self) -> Result<FirefoxGetter<B>> {
         let profile_path = if let Some(path) = self.profile_path {
-            path.into()
+            path
         }
         else {
             self.get_profile_path().await?
