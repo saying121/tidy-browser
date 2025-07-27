@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use decrypt_cookies::chromium::{builder::ChromiumBuilderError, ChromiumError};
 use snafu::{Location, Snafu};
 
@@ -14,6 +16,19 @@ pub enum Error {
     #[snafu(display("Chromium: {source}{location}"))]
     Chromium {
         source: ChromiumError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source} path: {}{location}", path.display()))]
+    Io {
+        source: std::io::Error,
+        path: PathBuf,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}"))]
+    TokioTask {
+        source: tokio::task::JoinError,
         #[snafu(implicit)]
         location: Location,
     },

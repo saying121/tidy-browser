@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use clap::ArgAction;
+
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
@@ -7,6 +9,17 @@ use std::path::PathBuf;
 pub struct Args {
     #[command(subcommand)]
     pub core: Core,
+
+    #[arg(short, long)]
+    pub output_dir: Option<PathBuf>,
+
+    #[arg(short, long)]
+    /// All browsers data
+    pub all_browsers: bool,
+
+    #[arg(long, default_value(","))]
+    /// Csv separator
+    pub sep: String,
 }
 
 #[derive(Clone)]
@@ -28,6 +41,8 @@ pub enum Core {
 #[derive(Default)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(clap::ValueEnum)]
+#[derive(Hash)]
+#[derive(strum::EnumIter)]
 pub enum Value {
     #[default]
     Cookie,
@@ -39,7 +54,13 @@ pub enum Value {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(clap::Args)]
 pub struct SafariArgs {
-    #[arg(short, long, value_delimiter(','))]
+    #[arg(
+        short,
+        long,
+        value_delimiter(','),
+        action(ArgAction::Append),
+        required(true)
+    )]
     /// Only support cookie
     pub values: Vec<Value>,
 }
@@ -49,8 +70,8 @@ pub struct SafariArgs {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(clap::Args)]
 pub struct ChromiumArgs {
-    #[arg(short, long, value_delimiter(','))]
-    pub name: Vec<ChromiumName>,
+    #[arg(short, long)]
+    pub name: ChromiumName,
 
     #[arg(long, id("DIR"))]
     #[arg(verbatim_doc_comment)]
@@ -70,10 +91,6 @@ pub struct ChromiumArgs {
     /// Filter by host/domain
     pub host: Option<String>,
 
-    #[arg(short, long)]
-    /// All browsers data
-    pub all_browsers: bool,
-
     #[arg(short, long, value_delimiter(','))]
     pub values: Vec<Value>,
 }
@@ -83,6 +100,7 @@ pub struct ChromiumArgs {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(clap::ValueEnum)]
 #[clap(rename_all = "PascalCase")]
+#[derive(strum::EnumIter)]
 pub enum ChromiumName {
     Chrome,
     Edge,
@@ -133,9 +151,6 @@ pub struct FirefoxArgs {
     #[arg(long)]
     /// Filter by host/domain
     pub host: Option<String>,
-    #[arg(short, long)]
-    /// All browsers data
-    pub all_browsers: bool,
 
     #[arg(short, long, value_delimiter(','))]
     /// Only support cookie
@@ -147,6 +162,7 @@ pub struct FirefoxArgs {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(clap::ValueEnum)]
 #[clap(rename_all = "PascalCase")]
+#[derive(strum::EnumIter)]
 pub enum FirefoxName {
     Firefox,
     Librewolf,

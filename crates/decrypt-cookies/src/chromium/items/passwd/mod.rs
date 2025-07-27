@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use chrono::{DateTime, Utc};
 
 use self::login_data_entities::logins;
@@ -43,6 +45,28 @@ pub struct LoginData {
     // pub sharing_notification_displayed: i32,
     // pub keychain_identifier:            Vec<u8>,
     // pub sender_profile_image_url:       Option<String>,
+}
+
+impl LoginData {
+    pub fn to_csv<D: Display>(&self, sep: D) -> String {
+        format!(
+            "{}{sep}{}{sep}{}{sep}{}{sep}{}{sep}{}{sep}{}",
+            self.origin_url,
+            self.username_value
+                .as_deref()
+                .unwrap_or_default(),
+            self.display_name,
+            self.password_value
+                .as_deref()
+                .unwrap_or_default(),
+            self.date_created
+                .unwrap_or_default(),
+            self.date_last_used
+                .unwrap_or_default(),
+            self.date_password_modified
+                .unwrap_or_default(),
+        )
+    }
 }
 
 impl From<logins::Model> for LoginData {

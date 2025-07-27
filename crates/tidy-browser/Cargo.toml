@@ -16,6 +16,7 @@ exclude = ["CHANGELOG.md", "examples", "tests/"]
 clap = { workspace = true, features = ["derive"] }
 decrypt-cookies = { workspace = true }
 snafu = { workspace = true }
+strum = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "tracing"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

@@ -1,3 +1,50 @@
+use std::{collections::HashSet, path::PathBuf, str::FromStr};
+
+use strum::IntoEnumIterator;
+
+use crate::{
+    args::{self, ChromiumArgs, ChromiumName, FirefoxArgs, SafariArgs},
+    chromium::ChromiumBased,
+    error::Result,
+};
+
+pub async fn run_cli(args: crate::args::Args) -> Result<()> {
+    let output_dir = args
+        .output_dir
+        .unwrap_or_else(|| PathBuf::from_str("results").unwrap());
+
+    if args.all_browsers {
+        ChromiumBased::multi_data(ChromiumName::iter(), output_dir, args.sep).await?;
+
+        return Ok(());
+    }
+    match args.core {
+        args::Core::Chromium(ChromiumArgs { name, user_data_dir, host, values }) => {
+            ChromiumBased::write_data(
+                name,
+                user_data_dir,
+                host,
+                HashSet::from_iter(values.into_iter()),
+                output_dir,
+                args.sep,
+            )
+            .await?;
+        },
+        args::Core::Firefox(FirefoxArgs {
+            name,
+            base,
+            profile,
+            profile_path,
+            host,
+            values,
+        }) => {},
+        #[cfg(target_os = "macos")]
+        args::Core::Safari(SafariArgs { values }) => {},
+    }
+
+    Ok(())
+}
+
 // #![expect(warnings)]
 //
 // use decrypt_cookies::prelude::*;
