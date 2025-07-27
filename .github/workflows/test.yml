@@ -26,6 +26,8 @@ jobs:
 
       - name: Install rust-toolchain
         uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.82
 
       - name: Install cargo-nextest
         uses: taiki-e/install-action@v2

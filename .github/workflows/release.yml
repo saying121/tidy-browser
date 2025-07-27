@@ -33,6 +33,8 @@ jobs:
 
       - name: Install Stable Rust Toolchain
         uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.82
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
@@ -79,6 +81,8 @@ jobs:
 
       - name: Install Stable Rust Toolchain
         uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.82
 
       - name: Install jql
         uses: taiki-e/install-action@v2
@@ -155,6 +159,7 @@ jobs:
       - name: Install Stable Rust Toolchain
         uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.82
           targets: ${{ matrix.target }}
 
       - name: Run sccache-cache
