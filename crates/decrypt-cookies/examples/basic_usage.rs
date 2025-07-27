@@ -5,7 +5,7 @@ async fn main() -> anyhow::Result<()> {
     let chromium = ChromiumBuilder::<Chrome>::new()
         .build()
         .await?;
-    let all_cookies = chromium.all_cookies().await?;
+    let all_cookies = chromium.cookies_all().await?;
 
     dbg!(&all_cookies.first());
 
@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
     let firefox = FirefoxBuilder::<Firefox>::new()
         .build()
         .await?;
-    let all_cookies = firefox.all_cookies().await?;
+    let all_cookies = firefox.cookies_all().await?;
 
     dbg!(&all_cookies.first());
 

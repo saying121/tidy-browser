@@ -10,7 +10,7 @@ async fn main() -> anyhow::Result<()> {
     let chromium = ChromiumBuilder::<Chrome>::with_user_data_dir(p)
         .build()
         .await?;
-    let all_cookies = chromium.all_cookies().await?;
+    let all_cookies = chromium.cookies_all().await?;
 
     dbg!(&all_cookies.first());
 
@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
 
     // TODO: make it show FirefoxEsr?
     dbg!(firefox.to_string());
-    let all_cookies = firefox.all_cookies().await?;
+    let all_cookies = firefox.cookies_all().await?;
 
     dbg!(&all_cookies.first());
 

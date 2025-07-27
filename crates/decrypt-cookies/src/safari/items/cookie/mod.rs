@@ -175,7 +175,7 @@ impl CookiesGetter {
         lc_cookies
     }
 
-    pub fn all_cookies(&self) -> &[SafariCookie] {
+    pub fn cookies_all(&self) -> &[SafariCookie] {
         &self.cookies
     }
 

@@ -39,7 +39,7 @@ impl TryFrom<ChromiumCookie> for reqwest::header::HeaderValue {
     type Error = reqwest::header::InvalidHeaderValue;
 
     fn try_from(value: ChromiumCookie) -> Result<Self, Self::Error> {
-        Self::from_str(&value.get_set_cookie_header())
+        Self::from_str(&value.set_cookie_header())
     }
 }
 #[cfg(feature = "reqwest")]
@@ -47,8 +47,8 @@ impl FromIterator<ChromiumCookie> for reqwest::cookie::Jar {
     fn from_iter<T: IntoIterator<Item = ChromiumCookie>>(iter: T) -> Self {
         let jar = Self::default();
         for cookie in iter {
-            let set_cookie = cookie.get_set_cookie_header();
-            if let Ok(url) = reqwest::Url::parse(&cookie.get_url()) {
+            let set_cookie = cookie.set_cookie_header();
+            if let Ok(url) = reqwest::Url::parse(&cookie.url()) {
                 jar.add_cookie_str(&set_cookie, &url);
             }
         }

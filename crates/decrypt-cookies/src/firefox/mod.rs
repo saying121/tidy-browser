@@ -68,7 +68,7 @@ impl<T: Send + Sync> FirefoxGetter<T> {
         Ok(res)
     }
 
-    pub async fn all_cookies(&self) -> Result<Vec<MozCookies>> {
+    pub async fn cookies_all(&self) -> Result<Vec<MozCookies>> {
         let res = self
             .cookies_query
             .query_all_cookie()

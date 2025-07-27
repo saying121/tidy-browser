@@ -69,8 +69,8 @@ impl SafariBuilder {
 impl SafariGetter {
     pub const NAME: &'static str = "Safari";
 
-    pub fn all_cookies(&self) -> &[SafariCookie] {
-        self.cookie_getter.all_cookies()
+    pub fn cookies_all(&self) -> &[SafariCookie] {
+        self.cookie_getter.cookies_all()
     }
 
     pub fn get_session_csrf(&self, host: &str) -> LeetCodeCookies {

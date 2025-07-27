@@ -49,7 +49,7 @@ pub trait CookiesInfo {
     }
 
     /// <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie>
-    fn get_set_cookie_header(&self) -> String {
+    fn set_cookie_header(&self) -> String {
         let mut properties = vec![
             format!("{}={}", self.name(), self.value()),
             format!("Path={}", self.path()),
@@ -71,7 +71,8 @@ pub trait CookiesInfo {
         properties.join("; ")
     }
 
-    fn get_url(&self) -> String {
+    // TODO: reanme to `url`
+    fn url(&self) -> String {
         format!("https://{}{}", self.domain().trim_matches('.'), self.path())
     }
 

@@ -209,10 +209,10 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     }
 
     /// return all cookies
-    pub async fn all_cookies(&self) -> Result<Vec<ChromiumCookie>> {
+    pub async fn cookies_all(&self) -> Result<Vec<ChromiumCookie>> {
         let raw_ck = self
             .cookies_query
-            .all_cookies()
+            .cookies_all()
             .await?;
         self.par_decrypt_ck(raw_ck).await
     }

@@ -98,7 +98,7 @@ impl FirefoxBased {
                                         firefox.cookies_by_host(host).await
                                     }
                                     else {
-                                        firefox.all_cookies().await
+                                        firefox.cookies_all().await
                                     }
                                     .context(error::FirefoxSnafu)?;
                                     Ok::<_, error::Error>(cookies)

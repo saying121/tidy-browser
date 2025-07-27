@@ -90,7 +90,7 @@ impl ChromiumBased {
                                         .await
                                 }
                                 else {
-                                    chromium.all_cookies().await
+                                    chromium.cookies_all().await
                                 }
                                 .context(error::ChromiumSnafu)?;
                                 Ok::<_, error::Error>(cookies)

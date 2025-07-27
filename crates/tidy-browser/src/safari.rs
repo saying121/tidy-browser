@@ -51,7 +51,7 @@ impl SafariBased {
                     .collect()
             }
             else {
-                safari.all_cookies().to_vec()
+                safari.cookies_all().to_vec()
             };
 
             output_dir.push(SafariGetter::NAME);

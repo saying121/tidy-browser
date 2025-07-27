@@ -47,7 +47,7 @@ impl CookiesQuery {
     }
 
     /// get raw Cookies
-    pub async fn all_cookies(&self) -> Result<Vec<Model>> {
+    pub async fn cookies_all(&self) -> Result<Vec<Model>> {
         Cookies::find()
             .all(&self.conn)
             .await
