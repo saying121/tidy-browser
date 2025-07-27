@@ -8,7 +8,7 @@ use clap::ArgAction;
 #[derive(clap::Parser)]
 pub struct Args {
     #[command(subcommand)]
-    pub core: Core,
+    pub core: Option<Core>,
 
     #[arg(short, long)]
     pub output_dir: Option<PathBuf>,

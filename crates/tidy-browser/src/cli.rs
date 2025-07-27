@@ -62,48 +62,50 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
 
         return Ok(());
     }
-    match args.core {
-        args::Core::Chromium(ChromiumArgs { name, user_data_dir, values }) => {
-            ChromiumBased::write_data(
-                name,
-                user_data_dir,
-                args.host,
-                HashSet::from_iter(values.into_iter()),
-                output_dir,
-                args.sep,
-            )
-            .await?;
-        },
-        args::Core::Firefox(FirefoxArgs {
-            name,
-            base,
-            profile,
-            profile_path,
-            values,
-        }) => {
-            FirefoxBased::write_data(
+    if let Some(core) = args.core {
+        match core {
+            args::Core::Chromium(ChromiumArgs { name, user_data_dir, values }) => {
+                ChromiumBased::write_data(
+                    name,
+                    user_data_dir,
+                    args.host,
+                    HashSet::from_iter(values.into_iter()),
+                    output_dir,
+                    args.sep,
+                )
+                .await?;
+            },
+            args::Core::Firefox(FirefoxArgs {
                 name,
                 base,
                 profile,
                 profile_path,
-                args.host,
-                HashSet::from_iter(values.into_iter()),
-                output_dir,
-                args.sep,
-            )
-            .await?
-        },
-        #[cfg(target_os = "macos")]
-        args::Core::Safari(SafariArgs { values, cookies_path }) => {
-            SafariBased::write_data(
-                HashSet::from_iter(values.into_iter()),
-                cookies_path,
-                args.host,
-                args.sep,
-                output_dir,
-            )
-            .await?
-        },
+                values,
+            }) => {
+                FirefoxBased::write_data(
+                    name,
+                    base,
+                    profile,
+                    profile_path,
+                    args.host,
+                    HashSet::from_iter(values.into_iter()),
+                    output_dir,
+                    args.sep,
+                )
+                .await?
+            },
+            #[cfg(target_os = "macos")]
+            args::Core::Safari(SafariArgs { values, cookies_path }) => {
+                SafariBased::write_data(
+                    HashSet::from_iter(values.into_iter()),
+                    cookies_path,
+                    args.host,
+                    args.sep,
+                    output_dir,
+                )
+                .await?
+            },
+        }
     }
 
     Ok(())

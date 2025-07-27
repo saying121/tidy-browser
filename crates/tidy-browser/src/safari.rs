@@ -54,6 +54,10 @@ impl SafariBased {
 
             output_dir.push(SafariGetter::NAME);
 
+            tokio::fs::create_dir_all(&output_dir)
+                .await
+                .context(error::IoSnafu { path: output_dir.clone() })?;
+
             let out_file = output_dir.join(crate::COOKIES_FILE);
 
             utils::write_cookies(out_file, cookies, sep)
