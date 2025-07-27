@@ -73,6 +73,12 @@ impl SafariGetter {
         self.cookie_getter.cookies_all()
     }
 
+    pub fn cookies_by_host<'a>(&'a self, host: &'a str) -> impl Iterator<Item = &'a SafariCookie> {
+        self.cookie_getter
+            .iter_cookies()
+            .filter(move |v| v.domain.contains(host))
+    }
+
     pub fn get_session_csrf(&self, host: &str) -> LeetCodeCookies {
         self.cookie_getter
             .get_session_csrf(host)

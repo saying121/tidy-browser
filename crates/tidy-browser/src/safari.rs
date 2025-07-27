@@ -42,11 +42,9 @@ impl SafariBased {
         let host: Option<String> = host.into();
 
         if values.contains(&Value::Cookie) {
-            let cookies = if let Some(host) = host {
+            let cookies = if let Some(host) = &host {
                 safari
-                    .cookie_getter
-                    .iter_cookies()
-                    .filter(|v| v.domain.contains(&host))
+                    .cookies_by_host(host)
                     .cloned()
                     .collect()
             }
