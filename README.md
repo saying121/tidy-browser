@@ -11,7 +11,7 @@
 
 ```shell
 cargo install tidy-browser
-tidy-browser
+tidy-browser -a
 cd results
 ```
 
