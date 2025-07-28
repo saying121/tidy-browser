@@ -19,6 +19,7 @@ use crate::browser::cookies::LeetCodeCookies;
 
 #[derive(Debug)]
 #[derive(Snafu)]
+#[snafu(visibility(pub))]
 pub enum FirefoxError {
     #[snafu(display("{source}:{location}"))]
     Db {

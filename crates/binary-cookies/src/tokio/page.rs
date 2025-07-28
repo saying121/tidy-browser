@@ -1,3 +1,4 @@
+use snafu::ResultExt;
 use tokio::io::{AsyncRead, AsyncReadExt};
 
 use super::{cookie::CookieHandle, cursor::CookieCursor};
@@ -7,7 +8,7 @@ use crate::{
         pages::{PageFsm, PagesOffset},
         DecodeResult, OffsetSize,
     },
-    error::Result,
+    error::{self, Result},
 };
 
 #[derive(Clone)]
@@ -63,7 +64,8 @@ impl<'a, R: AsyncRead + Unpin + Send, F: CookieCursor + Sync> PageDecoder<'a, R,
         loop {
             self.rd
                 .read_exact(fsm.buffer.space())
-                .await?;
+                .await
+                .context(error::ReadSnafu)?;
             let count = fsm.buffer.available_space();
             fsm.buffer.fill(count);
             match fsm.process()? {

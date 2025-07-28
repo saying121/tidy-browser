@@ -2,13 +2,13 @@ use std::{path::PathBuf, sync::Arc};
 
 use binary_cookies::{cookie::Cookie, tokio::DecodeBinaryCookie};
 use chrono::{prelude::Utc, DateTime};
-use snafu::ResultExt;
+use snafu::{OptionExt, ResultExt};
 
 use super::super::Result;
 use crate::{
     browser::cookies::{CookiesInfo, LeetCodeCookies},
     prelude::cookies::SameSite,
-    safari::{self},
+    safari::{self, HomeSnafu},
 };
 
 #[derive(Clone)]
@@ -120,10 +120,10 @@ impl CookiesGetter {
             cookie_path = path.into();
         }
         else {
-            cookie_path = dirs::home_dir().expect("get home dir failed");
+            cookie_path = dirs::home_dir().context(HomeSnafu)?;
             cookie_path.push(Self::COOKIES);
             if !cookie_path.exists() {
-                cookie_path = dirs::home_dir().expect("get home dir failed");
+                cookie_path = dirs::home_dir().context(HomeSnafu)?;
                 cookie_path.push(Self::COOKIES_OLD);
             }
         }

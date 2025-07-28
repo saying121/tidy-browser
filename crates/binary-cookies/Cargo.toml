@@ -21,7 +21,7 @@ chrono = { workspace = true }
 oval = { workspace = true }
 positioned-io = { workspace = true }
 serde = { workspace = true, optional = true }
-thiserror = { workspace = true }
+snafu = { workspace = true, features = ["rust_1_81"] }
 tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"], optional = true }
 winnow = { workspace = true }
 

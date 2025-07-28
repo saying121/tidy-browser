@@ -2,11 +2,10 @@ macro_rules! mode_err {
     ($self:ident, $e:ident, $buffer:expr) => {
         use winnow::error::ErrMode;
         use winnow::error::Needed;
-        use $crate::error::ParseError;
         use $crate::decode::DecodeResult;
 
         match $e {
-            ErrMode::Backtrack(e) | ErrMode::Cut(e) => Err(ParseError::WinnowCtx(e)),
+            ErrMode::Backtrack(e) | ErrMode::Cut(e) => Err(crate::error::WinnowCtxSnafu { render: e }.build()),
             ErrMode::Incomplete(Needed::Unknown) => {
                 // The branch is unreachable?
                 let new_cap = $buffer.capacity() * 2;

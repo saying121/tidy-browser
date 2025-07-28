@@ -2,7 +2,7 @@ use snafu::{Location, Snafu};
 
 #[derive(Debug)]
 #[derive(Snafu)]
-#[snafu(visibility(pub(crate)))]
+#[snafu(visibility(pub))]
 #[cfg(target_os = "linux")]
 pub enum CryptoError {
     #[snafu(display("{source}:{location}"))]
@@ -21,7 +21,7 @@ pub enum CryptoError {
 
 #[derive(Debug)]
 #[derive(Snafu)]
-#[snafu(visibility(pub(crate)))]
+#[snafu(visibility(pub))]
 #[cfg(target_os = "macos")]
 pub enum CryptoError {
     #[snafu(display("{source}:{location}"))]
@@ -46,7 +46,7 @@ pub enum CryptoError {
 
 #[derive(Debug)]
 #[derive(Snafu)]
-#[snafu(visibility(pub(crate)))]
+#[snafu(visibility(pub))]
 #[cfg(target_os = "windows")]
 pub enum CryptoError {
     #[snafu(display("{source}, path: {}:{location}",path.display()))]

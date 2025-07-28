@@ -50,7 +50,6 @@ tracing = { version = "^0.1" }
 tracing-subscriber = { version = "^0.3", default-features = true, features = ["env-filter"] }
 
 anyhow = "^1"
-thiserror = { version = "^2" }
 
 serde = { version = "^1", default-features = false, features = ["derive"] }
 serde_json = { version = "^1" }
@@ -209,4 +208,4 @@ string_to_string = "warn"
 ### cargo group
 cargo = { level = "warn", priority = -1 }
 multiple_crate_versions = "allow"
-exhaustive_structs = "warn"
+exhaustive_structs = "allow"

@@ -10,6 +10,7 @@ use crate::browser::cookies::LeetCodeCookies;
 
 #[derive(Debug)]
 #[derive(Snafu)]
+#[snafu(visibility(pub))]
 pub enum SafariError {
     #[snafu(display("{source}:{location}"))]
     Parse {
@@ -27,6 +28,11 @@ pub enum SafariError {
     #[snafu(display("{source}:{location}"))]
     Task {
         source: tokio::task::JoinError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("Can not found home dir:{location}"))]
+    Home {
         #[snafu(implicit)]
         location: Location,
     },

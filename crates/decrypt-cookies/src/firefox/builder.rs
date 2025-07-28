@@ -1,6 +1,6 @@
 use std::{fmt::Display, marker::PhantomData, path::PathBuf};
 
-use snafu::{Location, ResultExt, Snafu};
+use snafu::{Location, OptionExt, ResultExt, Snafu};
 use tokio::{fs, join};
 
 use crate::{
@@ -11,6 +11,7 @@ use crate::{
 // TODO: add browser name in error
 #[derive(Debug)]
 #[derive(Snafu)]
+#[snafu(visibility(pub))]
 pub enum FirefoxBuilderError {
     #[snafu(display("{source}:{location}"))]
     Ini {
@@ -125,13 +126,13 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
 
     async fn cache_data(profile_path: PathBuf) -> Result<TempPaths> {
         let cookies = B::cookies(profile_path.clone());
-        let cookies_temp = B::cookies_temp();
+        let cookies_temp = B::cookies_temp().context(HomeSnafu)?;
 
         let login_data = B::login_data(profile_path.clone());
-        let login_data_temp = B::login_data_temp();
+        let login_data_temp = B::login_data_temp().context(HomeSnafu)?;
 
         let key = B::key(profile_path.clone());
-        let key_temp = B::key_temp();
+        let key_temp = B::key_temp().context(HomeSnafu)?;
 
         let ck_temp_p = cookies_temp
             .parent()
@@ -174,10 +175,7 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
             base
         }
         else {
-            let Some(mut home) = dirs::home_dir()
-            else {
-                return Err(HomeSnafu.build());
-            };
+            let mut home = dirs::home_dir().context(HomeSnafu)?;
             home.push(B::BASE);
             home
         };

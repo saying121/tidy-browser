@@ -33,6 +33,7 @@ use crate::{
 
 #[derive(Debug)]
 #[derive(Snafu)]
+#[snafu(visibility(pub))]
 pub enum ChromiumError {
     #[snafu(display("{source}:{location}"))]
     Task {

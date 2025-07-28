@@ -21,7 +21,7 @@ macro_rules! push_exact {
 
 macro_rules! push_temp {
     ($cache:ident, $val:path) => {
-        let mut $cache = dirs::cache_dir().expect("Get cache dir failed");
+        let mut $cache = dirs::cache_dir()?;
         $cache.reserve_exact(CACHE_PATH.len() + Self::NAME.len() + $val.len() + 3);
         $cache.push(CACHE_PATH);
         $cache.push(Self::NAME);
@@ -60,10 +60,10 @@ pub trait ChromiumPath {
         base
     }
     /// Copy the decryption key file to a location to avoid conflicts with the browser over access to it.
-    fn key_temp() -> PathBuf {
+    fn key_temp() -> Option<PathBuf> {
         push_temp!(cache, Self::KEY);
 
-        cache
+        cache.into()
     }
 
     /// Cookies path (sqlite3 database)
@@ -73,10 +73,10 @@ pub trait ChromiumPath {
         base
     }
     /// Copy the cookies file to a location to avoid conflicts with the browser over access to it.
-    fn cookies_temp() -> PathBuf {
+    fn cookies_temp() -> Option<PathBuf> {
         push_temp!(cache, Self::COOKIES);
 
-        cache
+        cache.into()
     }
 
     /// Login data file (sqlite3 database)
@@ -85,10 +85,10 @@ pub trait ChromiumPath {
         base
     }
     /// Copy the Login data file to a location to avoid conflicts with the browser over access to it.
-    fn login_data_temp() -> PathBuf {
+    fn login_data_temp() -> Option<PathBuf> {
         push_temp!(cache, Self::LOGIN_DATA);
 
-        cache
+        cache.into()
     }
 
     /// Login data file (sqlite3 database)
@@ -97,10 +97,10 @@ pub trait ChromiumPath {
         base
     }
     /// Copy the Login data file to a location to avoid conflicts with the browser over access to it.
-    fn login_data_for_account_temp() -> PathBuf {
+    fn login_data_for_account_temp() -> Option<PathBuf> {
         push_temp!(cache, Self::LOGIN_DATA_FOR_ACCOUNT);
 
-        cache
+        cache.into()
     }
 }
 
@@ -123,10 +123,10 @@ pub trait FirefoxPath {
         base
     }
     /// Copy the decryption key file to a location to avoid conflicts with the browser over access to it.
-    fn key_temp() -> PathBuf {
+    fn key_temp() -> Option<PathBuf> {
         push_temp!(cache, Self::KEY);
 
-        cache
+        cache.into()
     }
 
     /// Cookies path (sqlite3 database)
@@ -136,10 +136,10 @@ pub trait FirefoxPath {
         base
     }
     /// Copy the cookies file to a location to avoid conflicts with the browser over access to it.
-    fn cookies_temp() -> PathBuf {
+    fn cookies_temp() -> Option<PathBuf> {
         push_temp!(cache, Self::COOKIES);
 
-        cache
+        cache.into()
     }
 
     /// Login data path (json)
@@ -149,10 +149,10 @@ pub trait FirefoxPath {
         base
     }
     /// Copy the login data file to a location to avoid conflicts with the browser over access to it.
-    fn login_data_temp() -> PathBuf {
+    fn login_data_temp() -> Option<PathBuf> {
         push_temp!(cache, Self::LOGIN_DATA);
 
-        cache
+        cache.into()
     }
 }
 

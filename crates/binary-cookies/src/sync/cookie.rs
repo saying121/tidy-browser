@@ -1,5 +1,7 @@
 use std::io::Read;
 
+use snafu::ResultExt;
+
 use super::cursor::CookieCursor;
 use crate::{
     cookie::Cookie,
@@ -7,7 +9,7 @@ use crate::{
         cookies::{CookieFsm, CookiesOffset},
         DecodeResult, OffsetSize,
     },
-    error::Result,
+    error::{self, Result},
 };
 
 #[derive(Clone)]
@@ -63,7 +65,8 @@ impl<R: Read> CookieDecoder<R> {
         let mut fsm = CookieFsm::with_capacity(self.size as usize);
         loop {
             self.rd
-                .read_exact(fsm.buffer.space())?;
+                .read_exact(fsm.buffer.space())
+                .context(error::ReadSnafu)?;
             let count = fsm.buffer.available_space();
             fsm.buffer.fill(count);
             match fsm.process()? {

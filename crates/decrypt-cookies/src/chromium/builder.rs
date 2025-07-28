@@ -7,7 +7,7 @@ use std::{
 };
 
 use chromium_crypto::Decrypter;
-use snafu::{Location, ResultExt, Snafu};
+use snafu::{Location, OptionExt, ResultExt, Snafu};
 use tokio::{fs, join};
 
 use super::ChromiumGetter;
@@ -119,10 +119,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
             base
         }
         else {
-            let Some(mut base) = dirs::home_dir()
-            else {
-                return Err(HomeSnafu.build());
-            };
+            let mut base = dirs::home_dir().context(HomeSnafu)?;
 
             base.push(B::BASE);
             base
@@ -182,16 +179,16 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
 
     async fn cache_data(base: PathBuf) -> Result<TempPaths> {
         let cookies = B::cookies(base.clone());
-        let cookies_temp = B::cookies_temp();
+        let cookies_temp = B::cookies_temp().context(HomeSnafu)?;
 
         let login_data = B::login_data(base.clone());
-        let login_data_temp = B::login_data_temp();
+        let login_data_temp = B::login_data_temp().context(HomeSnafu)?;
 
         let login_data_for_account = B::login_data_for_account(base.clone());
-        let login_data_for_account_temp = B::login_data_for_account_temp();
+        let login_data_for_account_temp = B::login_data_for_account_temp().context(HomeSnafu)?;
 
         let key = B::key(base.clone());
-        let key_temp = B::key_temp();
+        let key_temp = B::key_temp().context(HomeSnafu)?;
 
         let ck_temp_p = cookies_temp
             .parent()

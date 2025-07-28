@@ -1,39 +1,62 @@
 use std::{error::Error, fmt::Display};
 
+use chrono::offset::LocalResult;
+use snafu::{Location, Snafu};
 use winnow::error::ContextError;
 
 #[derive(Debug)]
-#[derive(thiserror::Error)]
+#[derive(Snafu)]
+#[snafu(visibility(pub))]
 pub enum ParseError {
-    #[error("{0}")]
-    WinnowCtx(ContextError),
-    #[error("Time broken: {0:?}")]
-    Time(chrono::offset::LocalResult<chrono::DateTime<chrono::Utc>>),
-    #[error(transparent)]
-    Bplist(#[from] BplistErr),
-    #[error(transparent)]
-    IO(#[from] std::io::Error),
-    #[error("End of binarycookies, can't decode any more data")]
-    ParsingCompleted,
+    #[snafu(display("{render}, at:{location}"))]
+    WinnowCtx {
+        render: ContextError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("Time broken: {local_result:?}, at:{location}"))]
+    Time {
+        local_result: LocalResult<chrono::DateTime<chrono::Utc>>,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}, at:{location}"))]
+    Bplist {
+        source: BplistErr,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("Read: {source}, at:{location}",))]
+    Read {
+        source: std::io::Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("End of binarycookies, can't decode any more data"))]
+    ParsingCompleted {
+        #[snafu(implicit)]
+        location: Location,
+    },
 }
 
 impl ParseError {
     pub const fn is_completed(&self) -> bool {
-        matches!(self, Self::ParsingCompleted)
+        matches!(self, Self::ParsingCompleted { .. })
     }
 }
 
 #[derive(Clone, Copy)]
 #[derive(Debug)]
-#[derive(thiserror::Error)]
+#[derive(Snafu)]
+#[snafu(visibility(pub))]
 pub enum BplistErr {
-    #[error(r#"Not start with b"bplist00""#)]
+    #[snafu(display(r#"Not start with b"bplist00""#))]
     Magic,
-    #[error(r#"The object not dict, need update decoder"#)]
+    #[snafu(display(r#"The object not dict, need update decoder"#))]
     NotDict,
-    #[error(r#"The dict key not `NSHTTPCookieAcceptPolicy`, need update decoder"#)]
+    #[snafu(display(r#"The dict key not `NSHTTPCookieAcceptPolicy`, need update decoder"#))]
     BadKey,
-    #[error(r#"The int not one byte, need update decoder"#)]
+    #[snafu(display(r#"The int not one byte, need update decoder"#))]
     OneByteInt,
 }
 
@@ -57,16 +80,16 @@ impl Error for ExpectErr {}
 impl Display for ExpectErr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::U32(binary) => f.write_fmt(format_args!("{:#>06x}", binary)),
-            Self::U64(binary) => f.write_fmt(format_args!("{:#010x}", binary)),
+            Self::U32(binary) => f.write_fmt(format_args!("got: {:#>06x}", binary)),
+            Self::U64(binary) => f.write_fmt(format_args!("got: {:#010x}", binary)),
             Self::Magic(e) => {
                 let s: String = e
                     .iter()
                     .map(|&v| v as char)
                     .collect();
-                f.write_fmt(format_args!(r#"b"{s}""#))
+                f.write_fmt(format_args!(r#"got: b"{s}""#))
             },
-            Self::EndHeader(e) => f.write_fmt(format_args!("{e:?}")),
+            Self::EndHeader(e) => f.write_fmt(format_args!("got: {e:?}")),
         }
     }
 }
