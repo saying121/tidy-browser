@@ -3,9 +3,10 @@ use std::sync::LazyLock;
 use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
 use pbkdf2::pbkdf2_hmac;
 use secret_service::{EncryptionType, SecretService};
+use snafu::ResultExt;
 use tinyufo::TinyUfo;
 
-use crate::error::{CryptoError, Result};
+use crate::error::{self, Result};
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=32
 /// Key size required for 128 bit AES.
@@ -57,13 +58,28 @@ impl Decrypter {
         }
 
         // initialize secret service (dbus connection and encryption session)
-        let ss = SecretService::connect(EncryptionType::Dh).await?;
-        let collection = ss.get_default_collection().await?;
+        let ss = SecretService::connect(EncryptionType::Dh)
+            .await
+            .context(error::GetPassSnafu)?;
+        let collection = ss
+            .get_default_collection()
+            .await
+            .context(error::GetPassSnafu)?;
 
-        if collection.is_locked().await? {
-            collection.unlock().await?;
+        if collection
+            .is_locked()
+            .await
+            .context(error::GetPassSnafu)?
+        {
+            collection
+                .unlock()
+                .await
+                .context(error::GetPassSnafu)?;
         }
-        let coll = collection.get_all_items().await?;
+        let coll = collection
+            .get_all_items()
+            .await
+            .context(error::GetPassSnafu)?;
 
         let predicate: Option<F> = need.into();
 
@@ -138,7 +154,7 @@ impl Decrypter {
                     String::from_utf8_lossy(&res[32..]).to_string()
                 })
             })
-            .map_err(CryptoError::Unpadding)
+            .context(error::UnpaddingSnafu)
     }
 }
 

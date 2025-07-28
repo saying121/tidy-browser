@@ -14,13 +14,14 @@ exclude = ["./CHANGELOG.md", "examples", "tests/"]
 
 [dependencies]
 cfg-if = { workspace = true }
-thiserror = { workspace = true }
+snafu = { workspace = true }
 tokio = { workspace = true, features = ["fs", "rt"] }
 tracing = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 TinyUFO = { workspace = true }
 aes = { workspace = true }
+block-padding = { workspace = true }
 cbc = { workspace = true }
 pbkdf2 = { workspace = true, features = ["sha1"] }
 sha1 = { workspace = true }
@@ -30,6 +31,7 @@ secret-service = { workspace = true, default-features = true, features = [
 
 [target.'cfg(target_os = "macos")'.dependencies]
 aes = { workspace = true }
+block-padding = { workspace = true }
 cbc = { workspace = true }
 pbkdf2 = { workspace = true, features = ["sha1"] }
 sha1 = { workspace = true }
@@ -43,6 +45,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 winnow = { workspace = true }
 aes-gcm = { workspace = true }
+aead = { workspace = true, features = ["std"] }
 base64 = { workspace = true }
 windows = { workspace = true, features = [
   "Win32_Security_Cryptography",

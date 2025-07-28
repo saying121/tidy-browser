@@ -4,6 +4,7 @@ use std::{
     path::PathBuf,
 };
 
+use snafu::ResultExt;
 use windows::{
     core::BOOL,
     Wdk::System::SystemServices::SE_DEBUG_PRIVILEGE,
@@ -22,7 +23,7 @@ use windows::{
     },
 };
 
-use crate::error::{CryptoError, Result};
+use crate::error::{self, Result};
 
 pub struct ImpersonateGuard {
     sys_token_handle: HANDLE,
@@ -54,7 +55,7 @@ impl ImpersonateGuard {
             pid
         }
         else {
-            return Err(CryptoError::NotFoundProcess);
+            return Err(error::NotFoundProcessSnafu.build());
         };
         let sys_token = if let Some(handle) = sys_handle {
             handle
@@ -63,32 +64,32 @@ impl ImpersonateGuard {
             let system_handle = Self::get_process_handle(pid)?;
             let sys_token = Self::get_system_token(system_handle)?;
             unsafe {
-                CloseHandle(system_handle)?;
+                CloseHandle(system_handle).context(error::CryptUnprotectDataSnafu)?;
             };
 
             sys_token
         };
         unsafe {
-            ImpersonateLoggedOnUser(sys_token)?;
+            ImpersonateLoggedOnUser(sys_token).context(error::CryptUnprotectDataSnafu)?;
         };
         Ok((Self { sys_token_handle: sys_token }, pid))
     }
 
     pub fn stop() -> Result<()> {
         unsafe {
-            RevertToSelf()?;
+            RevertToSelf().context(error::CryptUnprotectDataSnafu)?;
         };
         Ok(())
     }
 
     /// stop impersonate and return sys token handle
     pub fn stop_sys_handle(self) -> Result<HANDLE> {
-        unsafe { RevertToSelf() }?;
+        unsafe { RevertToSelf() }.context(error::CryptUnprotectDataSnafu)?;
         Ok(self.sys_token_handle)
     }
 
     pub fn close_sys_handle(&self) -> Result<()> {
-        unsafe { CloseHandle(self.sys_token_handle) }?;
+        unsafe { CloseHandle(self.sys_token_handle) }.context(error::CryptUnprotectDataSnafu)?;
         Ok(())
     }
 
@@ -98,7 +99,7 @@ impl ImpersonateGuard {
             RtlAdjustPrivilege(SE_DEBUG_PRIVILEGE, BOOL(1), BOOL(0), &mut previous_value)
         };
         if status != STATUS_SUCCESS {
-            return Err(CryptoError::Privilege);
+            return Err(error::PrivilegeSnafu.build());
         }
         Ok(())
     }
@@ -106,7 +107,8 @@ impl ImpersonateGuard {
     fn get_system_token(handle: HANDLE) -> Result<HANDLE> {
         let token_handle = unsafe {
             let mut token_handle = HANDLE::default();
-            OpenProcessToken(handle, TOKEN_DUPLICATE | TOKEN_QUERY, &mut token_handle)?;
+            OpenProcessToken(handle, TOKEN_DUPLICATE | TOKEN_QUERY, &mut token_handle)
+                .context(error::CryptUnprotectDataSnafu)?;
             token_handle
         };
         let duplicate_token = unsafe {
@@ -115,8 +117,9 @@ impl ImpersonateGuard {
                 token_handle,
                 Security::SECURITY_IMPERSONATION_LEVEL(2),
                 &mut duplicate_token,
-            )?;
-            CloseHandle(token_handle)?;
+            )
+            .context(error::CryptUnprotectDataSnafu)?;
+            CloseHandle(token_handle).context(error::CryptUnprotectDataSnafu)?;
             duplicate_token
         };
 
@@ -134,7 +137,7 @@ impl ImpersonateGuard {
             let length =
                 unsafe { K32GetProcessImageFileNameW(hprocess, &mut lpimagefilename) } as usize;
             unsafe {
-                CloseHandle(hprocess)?;
+                CloseHandle(hprocess).context(error::CryptUnprotectDataSnafu)?;
             };
             lpimagefilename.truncate(length);
             lpimagefilename
@@ -144,7 +147,7 @@ impl ImpersonateGuard {
         PathBuf::from(fp)
             .file_name()
             .map(name_is)
-            .ok_or(CryptoError::ProcessPath)
+            .ok_or_else(|| error::ProcessPathSnafu.build())
     }
 
     // https://learn.microsoft.com/en-us/windows/win32/psapi/enumerating-all-processes
@@ -154,7 +157,8 @@ impl ImpersonateGuard {
         let mut lpcbneeded = 0;
 
         unsafe {
-            EnumProcesses(lpidprocess.as_mut_ptr(), cap as u32 * 4, &mut lpcbneeded)?;
+            EnumProcesses(lpidprocess.as_mut_ptr(), cap as u32 * 4, &mut lpcbneeded)
+                .context(error::CryptUnprotectDataSnafu)?;
             let c_processes = lpcbneeded as usize / size_of::<u32>();
             lpidprocess.set_len(c_processes);
         };
@@ -171,7 +175,8 @@ impl ImpersonateGuard {
 
     fn get_process_handle(pid: u32) -> Result<HANDLE> {
         let hprocess =
-            unsafe { OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, pid) }?;
+            unsafe { OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, pid) }
+                .context(error::CryptUnprotectDataSnafu)?;
         Ok(hprocess)
     }
 }

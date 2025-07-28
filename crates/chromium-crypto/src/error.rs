@@ -1,64 +1,125 @@
+use snafu::{Location, Snafu};
+
 #[derive(Debug)]
-#[derive(thiserror::Error)]
-#[non_exhaustive]
+#[derive(Snafu)]
+#[snafu(visibility(pub(crate)))]
 #[cfg(target_os = "linux")]
 pub enum CryptoError {
-    #[error(transparent)]
-    GetPass(#[from] secret_service::Error),
-    #[error("Not exists: {0}")]
-    NoPass(String),
-    #[error("Crypt unpad error: {0}")]
-    Unpadding(aes::cipher::block_padding::UnpadError),
+    #[snafu(display("{source}:{location}"))]
+    GetPass {
+        source: secret_service::Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}:{location}"))]
+    Unpadding {
+        source: aes::cipher::block_padding::UnpadError,
+        #[snafu(implicit)]
+        location: Location,
+    },
 }
 
 #[derive(Debug)]
-#[derive(thiserror::Error)]
-#[non_exhaustive]
+#[derive(Snafu)]
+#[snafu(visibility(pub(crate)))]
 #[cfg(target_os = "macos")]
 pub enum CryptoError {
-    #[error(transparent)]
-    Keyring(#[from] keyring::Error),
-    #[error("Crypt unpad error: {0}")]
-    Unpadding(aes::cipher::block_padding::UnpadError),
-    #[error(transparent)]
-    Task(#[from] tokio::task::JoinError),
+    #[snafu(display("{source}:{location}"))]
+    Keyring {
+        source: keyring::Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}:{location}"))]
+    Unpadding {
+        source: aes::cipher::block_padding::UnpadError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}:{location}"))]
+    Task {
+        source: tokio::task::JoinError,
+        #[snafu(implicit)]
+        location: Location,
+    },
 }
 
 #[derive(Debug)]
-#[derive(thiserror::Error)]
-#[non_exhaustive]
+#[derive(Snafu)]
+#[snafu(visibility(pub(crate)))]
 #[cfg(target_os = "windows")]
 pub enum CryptoError {
-    #[error("{source}, path: {path}")]
+    #[snafu(display("{source}, path: {}:{location}",path.display()))]
     IO {
-        path: std::path::PathBuf,
-        #[source]
         source: std::io::Error,
+        path: std::path::PathBuf,
+        #[snafu(implicit)]
+        location: Location,
     },
-    #[error(transparent)]
-    Serde(#[from] serde_json::Error),
-    #[error(transparent)]
-    Base64(#[from] base64::DecodeError),
-    #[error(transparent)]
-    Task(#[from] tokio::task::JoinError),
-    #[error("{0}")]
-    AesGcm(aes_gcm::Error),
-    #[error(transparent)]
-    CryptUnprotectData(#[from] windows::core::Error),
-    #[error("CryptUnprotectData returned a null pointer")]
+    #[snafu(display("{source}:{location}"))]
+    Serde {
+        source: serde_json::Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}:{location}"))]
+    Base64 {
+        source: base64::DecodeError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}:{location}"))]
+    Task {
+        source: tokio::task::JoinError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}:{location}"))]
+    AesGcm {
+        source: aes_gcm::Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}:{location}"))]
+    CryptUnprotectData {
+        source: windows::core::Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("CryptUnprotectData returned a null pointer"))]
     CryptUnprotectDataNull,
-    #[error("{0}")]
-    ChaCha(chacha20poly1305::Error),
-    #[error("{0}")]
-    Context(winnow::error::ContextError),
-    #[error(r#"app_bound_encrypted_key not start with "APPB""#)]
-    Appb,
-    #[error("Get process path failed")]
-    ProcessPath,
-    #[error("Invalid status from RtlAdjustPrivilege")]
-    Privilege,
-    #[error("No such Process lsass.exe or winlogon.exe")]
-    NotFoundProcess,
+    #[snafu(display("{source}:{location}"))]
+    ChaCha {
+        source: chacha20poly1305::Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{render}:{location}"))]
+    Context {
+        render: winnow::error::ContextError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display(r#"app_bound_encrypted_key not start with "APPB":{location}"#))]
+    Appb {
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("Get process path failed:{location}"))]
+    ProcessPath {
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("Invalid status from `RtlAdjustPrivilege`:{location}"))]
+    Privilege {
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("No such Process lsass.exe or winlogon.exe:{location}"))]
+    NotFoundProcess {
+        #[snafu(implicit)]
+        location: Location,
+    },
 }
 
 pub type Result<T> = std::result::Result<T, CryptoError>;

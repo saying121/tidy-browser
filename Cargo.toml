@@ -58,11 +58,13 @@ serde_json = { version = "^1" }
 secret-service = { version = "^5" }
 bytes = { version = "^1" }
 keyring = { version = "^3", default-features = false }
+block-padding = { version = "0.3.3", features = ["std"] }
 aes = { version = "^0.8" }
 cbc = { version = "^0.1" }
 pbkdf2 = { version = "^0.12" }
 sha1 = { version = "^0.10" }
 aes-gcm = { version = "^0.10" }
+aead = { version = "^0.5" }
 base64 = { version = "^0.22" }
 windows = { version = "^0.61" }
 

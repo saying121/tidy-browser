@@ -7,6 +7,7 @@ use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit};
 use base64::{prelude::BASE64_STANDARD, Engine};
 use chacha20poly1305::ChaCha20Poly1305;
 use local_state::LocalState;
+use snafu::ResultExt;
 use tokio::{fs, task::spawn_blocking};
 use windows::{
     core::w,
@@ -25,7 +26,7 @@ use winnow::{
 };
 
 use crate::{
-    error::{CryptoError, Result},
+    error::{self, Result},
     win::impersonate::ImpersonateGuard,
 };
 
@@ -69,13 +70,11 @@ impl Decrypter {
     ) -> Result<(Option<Vec<u8>>, Vec<u8>)> {
         let string_str = fs::read_to_string(&key_path)
             .await
-            .map_err(|e| CryptoError::IO {
-                path: key_path.as_ref().to_owned(),
-                source: e,
-            })?;
+            .context(error::IOSnafu { path: key_path.as_ref().to_owned() })?;
 
         let key = spawn_blocking(move || -> Result<(Option<Vec<u8>>, Vec<u8>)> {
-            let local_state: LocalState = serde_json::from_str(&string_str)?;
+            let local_state: LocalState =
+                serde_json::from_str(&string_str).context(error::SerdeSnafu)?;
             let v10 = Self::pass_v10(&local_state.os_crypt.encrypted_key)?;
             if let Some(encrypted_key_v20) = local_state
                 .os_crypt
@@ -88,22 +87,27 @@ impl Decrypter {
                 Ok((None, v10))
             }
         })
-        .await??;
+        .await
+        .context(error::TaskSnafu)??;
 
         Ok(key)
     }
 
     fn pass_v10(key_v10: &str) -> Result<Vec<u8>> {
-        let encrypted_key = BASE64_STANDARD.decode(key_v10)?;
+        let encrypted_key = BASE64_STANDARD
+            .decode(key_v10)
+            .context(error::Base64Snafu)?;
         let mut key = encrypted_key[Self::K_DPAPIKEY_PREFIX.len()..].to_vec();
         decrypt_with_dpapi(&mut key)
     }
 
     fn pass_v20(encrypted_key_v20: String) -> Result<Vec<u8>> {
-        let mut encrypted_key_v20 = BASE64_STANDARD.decode(encrypted_key_v20)?;
+        let mut encrypted_key_v20 = BASE64_STANDARD
+            .decode(encrypted_key_v20)
+            .context(error::Base64Snafu)?;
 
         if !encrypted_key_v20.starts_with(Self::K_CRYPT_APP_BOUND_KEY_PREFIX) {
-            return Err(CryptoError::Appb);
+            return Err(error::AppbSnafu.build());
         }
 
         let key = &mut encrypted_key_v20[Self::K_CRYPT_APP_BOUND_KEY_PREFIX.len()..];
@@ -113,7 +117,8 @@ impl Decrypter {
             (key, pid, guard.stop_sys_handle()?)
         };
         let key_blob = decrypt_with_dpapi(&mut key)?;
-        let key_data = KeyData::parse(&mut key_blob.as_slice()).map_err(CryptoError::Context)?;
+        let key_data = KeyData::parse(&mut key_blob.as_slice())
+            .map_err(|e| error::ContextSnafu { render: e }.build())?;
         derive_v20_master_key(key_data, Some(pid), Some(sys_handle))
     }
 
@@ -152,7 +157,7 @@ impl Decrypter {
                     String::from_utf8_lossy(&v[32..]).into_owned()
                 })
             })
-            .map_err(CryptoError::AesGcm)
+            .context(error::AesGcmSnafu)
     }
 }
 
@@ -243,7 +248,8 @@ fn decrypt_with_cng(keydpapi: &[u8]) -> Result<Vec<u8>> {
     let mut phprovider = NCRYPT_PROV_HANDLE::default();
     unsafe {
         let pszprovidername = w!("Microsoft Software Key Storage Provider");
-        NCryptOpenStorageProvider(&mut phprovider, pszprovidername, 0)?;
+        NCryptOpenStorageProvider(&mut phprovider, pszprovidername, 0)
+            .context(error::CryptUnprotectDataSnafu)?;
     };
     let mut hkey = NCRYPT_KEY_HANDLE::default();
     unsafe {
@@ -253,7 +259,8 @@ fn decrypt_with_cng(keydpapi: &[u8]) -> Result<Vec<u8>> {
             w!("Google Chromekey1"),
             Cryptography::CERT_KEY_SPEC::default(),
             Cryptography::NCRYPT_FLAGS::default(),
-        )?;
+        )
+        .context(error::CryptUnprotectDataSnafu)?;
     };
 
     let mut output_buffer = vec![0; keydpapi.len()];
@@ -266,12 +273,14 @@ fn decrypt_with_cng(keydpapi: &[u8]) -> Result<Vec<u8>> {
             Some(&mut output_buffer),
             &mut output_len,
             Cryptography::NCRYPT_SILENT_FLAG,
-        )?;
+        )
+        .context(error::CryptUnprotectDataSnafu)?;
     };
 
     unsafe {
-        Cryptography::NCryptFreeObject(hkey.into())?;
-        Cryptography::NCryptFreeObject(phprovider.into())?;
+        Cryptography::NCryptFreeObject(hkey.into()).context(error::CryptUnprotectDataSnafu)?;
+        Cryptography::NCryptFreeObject(phprovider.into())
+            .context(error::CryptUnprotectDataSnafu)?;
     };
     output_buffer.truncate(output_len as usize);
 
@@ -289,14 +298,14 @@ fn derive_v20_master_key(
             let cipher = Aes256Gcm::new(aes_key.into());
             cipher
                 .decrypt(iv.into(), ciphertext)
-                .map_err(CryptoError::AesGcm)
+                .context(error::AesGcmSnafu)
         },
         KeyData::Two { iv, ciphertext } => {
             let chacha_key = b"\xE9\x8F\x37\xD7\xF4\xE1\xFA\x43\x3D\x19\x30\x4D\xC2\x25\x80\x42\x09\x0E\x2D\x1D\x7E\xEA\x76\x70\xD4\x1F\x73\x8D\x08\x72\x96\x60";
             let cipher = ChaCha20Poly1305::new(chacha_key.into());
             cipher
                 .decrypt(iv.into(), ciphertext)
-                .map_err(CryptoError::ChaCha)
+                .context(error::ChaChaSnafu)
         },
         KeyData::Three { enctypted_aes_key, iv, ciphertext } => {
             let xor_key = b"\xCC\xF8\xA1\xCE\xC5\x66\x05\xB8\x51\x75\x52\xBA\x1A\x2D\x06\x1C\x03\xA2\x9E\x90\x27\x4F\xB2\xFC\xF5\x9B\xA4\xB7\x5C\x39\x23\x90";
@@ -314,7 +323,7 @@ fn derive_v20_master_key(
             let cipher = Aes256Gcm::new(plain_aes_key.as_slice().into());
             cipher
                 .decrypt(iv.into(), ciphertext)
-                .map_err(CryptoError::AesGcm)
+                .context(error::AesGcmSnafu)
         },
         KeyData::Plain(key) => Ok(key.to_vec()),
     }
@@ -337,10 +346,11 @@ pub fn decrypt_with_dpapi(ciphertext: &mut [u8]) -> Result<Vec<u8>> {
             Some(ptr::null()),
             0,
             &mut output,
-        )?;
+        )
+        .context(error::CryptUnprotectDataSnafu)?;
     };
     if output.pbData.is_null() {
-        return Err(CryptoError::CryptUnprotectDataNull);
+        return Err(error::CryptUnprotectDataNullSnafu.build());
     }
 
     let decrypted_data =
