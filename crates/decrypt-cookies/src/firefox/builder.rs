@@ -1,5 +1,6 @@
 use std::{fmt::Display, marker::PhantomData, path::PathBuf};
 
+use snafu::{Location, ResultExt, Snafu};
 use tokio::{fs, join};
 
 use crate::{
@@ -9,25 +10,50 @@ use crate::{
 
 // TODO: add browser name in error
 #[derive(Debug)]
-#[derive(thiserror::Error)]
+#[derive(Snafu)]
 pub enum FirefoxBuilderError {
-    #[error(transparent)]
-    Ini(#[from] ini::Error),
-    #[error(transparent)]
-    IniParser(#[from] ini::ParseError),
-    #[error("Profile {0} missing `Name` properties")]
-    ProfilePath(String),
-    #[error("Install {0} missing `Default` properties")]
-    InstallPath(String),
-    #[error(transparent)]
-    Db(#[from] sea_orm::DbErr),
-    #[error("Io: {source}, path: {path}")]
+    #[snafu(display("{source}:{location}"))]
+    Ini {
+        source: ini::Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}:{location}"))]
+    IniParser {
+        source: ini::ParseError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("Profile {profile} missing `Name` properties:{location}"))]
+    ProfilePath {
+        profile: String,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("Install {install} missing `Default` properties:{location}"))]
+    InstallPath {
+        install: String,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}:{location}"))]
+    Db {
+        source: sea_orm::DbErr,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("Io: {source}, path: {} :{location}",path.display()))]
     Io {
         source: std::io::Error,
         path: PathBuf,
+        #[snafu(implicit)]
+        location: Location,
     },
-    #[error("Can not found home dir")]
-    Home,
+    #[snafu(display("Can not found home dir:{location}"))]
+    Home {
+        #[snafu(implicit)]
+        location: Location,
+    },
 }
 
 pub type Result<T> = std::result::Result<T, FirefoxBuilderError>;
@@ -120,27 +146,18 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
             .expect("Get parent dir failed");
         let cd_k = fs::create_dir_all(k_temp_p);
         let (cd_ck, cd_lg, cd_k) = join!(cd_ck, cd_lg, cd_k);
-        cd_ck.map_err(|e| FirefoxBuilderError::Io {
-            source: e,
-            path: ck_temp_p.to_owned(),
-        })?;
-        cd_lg.map_err(|e| FirefoxBuilderError::Io {
-            source: e,
-            path: lg_temp_p.to_owned(),
-        })?;
-        cd_k.map_err(|e| FirefoxBuilderError::Io {
-            source: e,
-            path: k_temp_p.to_owned(),
-        })?;
+        cd_ck.context(IoSnafu { path: ck_temp_p.to_owned() })?;
+        cd_lg.context(IoSnafu { path: lg_temp_p.to_owned() })?;
+        cd_k.context(IoSnafu { path: k_temp_p.to_owned() })?;
 
         let cookies_cp = fs::copy(&cookies, &cookies_temp);
         let login_cp = fs::copy(&login_data, &login_data_temp);
         let key_cp = fs::copy(&key, &key_temp);
 
         let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
-        ck.map_err(|e| FirefoxBuilderError::Io { source: e, path: cookies })?;
-        lg.map_err(|e| FirefoxBuilderError::Io { source: e, path: login_data })?;
-        k.map_err(|e| FirefoxBuilderError::Io { source: e, path: key })?;
+        ck.context(IoSnafu { path: cookies })?;
+        lg.context(IoSnafu { path: login_data })?;
+        k.context(IoSnafu { path: key })?;
 
         Ok(TempPaths {
             cookies_temp,
@@ -159,7 +176,7 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
         else {
             let Some(mut home) = dirs::home_dir()
             else {
-                return Err(FirefoxBuilderError::Home);
+                return Err(HomeSnafu.build());
             };
             home.push(B::BASE);
             home
@@ -168,9 +185,9 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
 
         let ini_str = fs::read_to_string(&ini_path)
             .await
-            .map_err(|e| FirefoxBuilderError::Io { source: e, path: ini_path })?;
+            .context(IoSnafu { path: ini_path })?;
 
-        let ini_file = ini::Ini::load_from_str(&ini_str)?;
+        let ini_file = ini::Ini::load_from_str(&ini_str).context(IniParserSnafu)?;
         for (section, prop) in ini_file {
             let Some(section) = section
             else {
@@ -187,7 +204,7 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
                 if profile_name == profile {
                     let Some(var) = prop.get("Path")
                     else {
-                        return Err(FirefoxBuilderError::ProfilePath(profile_name.to_owned()));
+                        return Err(ProfilePathSnafu { profile: profile_name.to_owned() }.build());
                     };
                     base.push(var);
                     break;
@@ -196,7 +213,7 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
             else if section.starts_with("Install") {
                 let Some(default) = prop.get("Default")
                 else {
-                    return Err(FirefoxBuilderError::InstallPath(section));
+                    return Err(InstallPathSnafu { install: section }.build());
                 };
                 base.push(default);
                 break;
@@ -226,7 +243,9 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
 
         let temp_paths = Self::cache_data(profile_path).await?;
 
-        let query = CookiesQuery::new(temp_paths.cookies_temp).await?;
+        let query = CookiesQuery::new(temp_paths.cookies_temp)
+            .await
+            .context(DbSnafu)?;
 
         Ok(FirefoxGetter {
             cookies_query: query,

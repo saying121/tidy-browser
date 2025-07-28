@@ -747,7 +747,7 @@ dependencies = [
  "rust-ini",
  "sea-orm",
  "serde",
- "thiserror",
+ "snafu",
  "tokio",
  "tracing",
  "tracing-subscriber",

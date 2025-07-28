@@ -6,6 +6,7 @@ use std::marker::PhantomData;
 use chrono::Utc;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition, DbErr};
+use snafu::{Location, ResultExt, Snafu};
 
 pub use self::items::cookie::entities::moz_cookies::{
     Column as MozCookiesCol, ColumnIter as MozCookiesColIter,
@@ -17,10 +18,14 @@ use self::items::{
 use crate::browser::cookies::LeetCodeCookies;
 
 #[derive(Debug)]
-#[derive(thiserror::Error)]
+#[derive(Snafu)]
 pub enum FirefoxError {
-    #[error(transparent)]
-    Db(#[from] DbErr),
+    #[snafu(display("{source}:{location}"))]
+    Db {
+        source: DbErr,
+        #[snafu(implicit)]
+        location: Location,
+    },
 }
 
 type Result<T> = std::result::Result<T, FirefoxError>;
@@ -60,7 +65,8 @@ impl<T: Send + Sync> FirefoxGetter<T> {
         let res = self
             .cookies_query
             .query_cookie_filter(filter)
-            .await?;
+            .await
+            .context(DbSnafu)?;
         let res = res
             .into_par_iter()
             .map(MozCookies::from)
@@ -72,7 +78,8 @@ impl<T: Send + Sync> FirefoxGetter<T> {
         let res = self
             .cookies_query
             .query_all_cookie()
-            .await?;
+            .await
+            .context(DbSnafu)?;
         let res = res
             .into_par_iter()
             .map(MozCookies::from)
@@ -85,7 +92,8 @@ impl<T: Send + Sync> FirefoxGetter<T> {
         let res = self
             .cookies_query
             .query_cookie_by_host(host.as_ref())
-            .await?;
+            .await
+            .context(DbSnafu)?;
         let res = res
             .into_par_iter()
             .map(MozCookies::from)
@@ -106,7 +114,8 @@ impl<T: Send + Sync> FirefoxGetter<T> {
                             .or(MozCookiesCol::Name.eq("LEETCODE_SESSION")),
                     ),
             )
-            .await?;
+            .await
+            .context(DbSnafu)?;
 
         let mut res = LeetCodeCookies::default();
 
