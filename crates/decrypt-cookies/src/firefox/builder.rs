@@ -13,44 +13,44 @@ use crate::{
 #[derive(Snafu)]
 #[snafu(visibility(pub))]
 pub enum FirefoxBuilderError {
-    #[snafu(display("{source}:{location}"))]
+    #[snafu(display("{source}, @:{location}"))]
     Ini {
         source: ini::Error,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}:{location}"))]
+    #[snafu(display("{source}, @:{location}"))]
     IniParser {
         source: ini::ParseError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Profile {profile} missing `Name` properties:{location}"))]
+    #[snafu(display("Profile {profile} missing `Name` properties, @:{location}"))]
     ProfilePath {
         profile: String,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Install {install} missing `Default` properties:{location}"))]
+    #[snafu(display("Install {install} missing `Default` properties, @:{location}"))]
     InstallPath {
         install: String,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}:{location}"))]
+    #[snafu(display("{source}, @:{location}"))]
     Db {
         source: sea_orm::DbErr,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Io: {source}, path: {} :{location}",path.display()))]
+    #[snafu(display("Io: {source}, path: {}, @:{location}",path.display()))]
     Io {
         source: std::io::Error,
         path: PathBuf,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Can not found home dir:{location}"))]
+    #[snafu(display("Can not found home dir, @:{location}"))]
     Home {
         #[snafu(implicit)]
         location: Location,

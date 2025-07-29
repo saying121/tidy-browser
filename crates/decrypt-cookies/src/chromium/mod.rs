@@ -35,19 +35,19 @@ use crate::{
 #[derive(Snafu)]
 #[snafu(visibility(pub))]
 pub enum ChromiumError {
-    #[snafu(display("{source}:{location}"))]
+    #[snafu(display("{source}, @:{location}"))]
     Task {
         source: JoinError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}:{location}"))]
+    #[snafu(display("{source}, @:{location}"))]
     Db {
         source: DbErr,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}:{location}"))]
+    #[snafu(display("{source}, @:{location}"))]
     Decrypt {
         source: chromium_crypto::error::CryptoError,
         #[snafu(implicit)]

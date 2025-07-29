@@ -14,7 +14,7 @@ use crate::{
     decode::{
         binary_cookies::Offsets, cookies::CookiesOffsetInPage, F64ToSafariTime as _, StreamIn,
     },
-    error::{BplistErr, ExpectErr},
+    error::{BadKeySnafu, ExpectErr, MagicSnafu, NotDictSnafu, OneByteIntSnafu},
 };
 
 /// raw file information, with pages
@@ -194,23 +194,23 @@ impl Metadata {
         }
         let bplist = take(8_usize).parse_next(input)?;
         if bplist != b"bplist00" {
-            let ctx_err = ContextError::from_external_error(input, BplistErr::Magic);
+            let ctx_err = ContextError::from_external_error(input, MagicSnafu.build());
             return Err(ErrMode::Cut(ctx_err));
         }
         let dict = be_u8(input)?;
         if dict != 0xD1 {
-            let ctx_err = ContextError::from_external_error(input, BplistErr::NotDict);
+            let ctx_err = ContextError::from_external_error(input, NotDictSnafu.build());
             return Err(ErrMode::Cut(ctx_err));
         }
         let _length = take(5_usize).parse_next(input)?;
         let key = take(24_usize).parse_next(input)?;
         if b"NSHTTPCookieAcceptPolicy" != key {
-            let ctx_err = ContextError::from_external_error(input, BplistErr::BadKey);
+            let ctx_err = ContextError::from_external_error(input, BadKeySnafu.build());
             return Err(ErrMode::Cut(ctx_err));
         }
         let int_flags = be_u8(input)?;
         if int_flags != 0x10 {
-            let ctx_err = ContextError::from_external_error(input, BplistErr::OneByteInt);
+            let ctx_err = ContextError::from_external_error(input, OneByteIntSnafu.build());
             return Err(ErrMode::Cut(ctx_err));
         }
         let int_val = be_u8(input)?;

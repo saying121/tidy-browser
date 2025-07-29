@@ -8,31 +8,31 @@ use winnow::error::ContextError;
 #[derive(Snafu)]
 #[snafu(visibility(pub))]
 pub enum ParseError {
-    #[snafu(display("{render}, at:{location}"))]
+    #[snafu(display("{render}, @:{location}"))]
     WinnowCtx {
         render: ContextError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Time broken: {local_result:?}, at:{location}"))]
+    #[snafu(display("Time broken: {local_result:?}, @:{location}"))]
     Time {
         local_result: LocalResult<chrono::DateTime<chrono::Utc>>,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}, at:{location}"))]
+    #[snafu(display("{source}, @:{location}"))]
     Bplist {
         source: BplistErr,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Read: {source}, at:{location}",))]
+    #[snafu(display("Read: {source}, @:{location}",))]
     Read {
         source: std::io::Error,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("End of binarycookies, can't decode any more data"))]
+    #[snafu(display("End of binarycookies, can't decode any more data, @:{location}"))]
     ParsingCompleted {
         #[snafu(implicit)]
         location: Location,
@@ -50,14 +50,28 @@ impl ParseError {
 #[derive(Snafu)]
 #[snafu(visibility(pub))]
 pub enum BplistErr {
-    #[snafu(display(r#"Not start with b"bplist00""#))]
-    Magic,
-    #[snafu(display(r#"The object not dict, need update decoder"#))]
-    NotDict,
-    #[snafu(display(r#"The dict key not `NSHTTPCookieAcceptPolicy`, need update decoder"#))]
-    BadKey,
-    #[snafu(display(r#"The int not one byte, need update decoder"#))]
-    OneByteInt,
+    #[snafu(display(r#"Not start with b"bplist00", @:{location}"#))]
+    Magic {
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display(r#"The object not dict, need update decoder, @:{location}"#))]
+    NotDict {
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display(
+        r#"The dict key not `NSHTTPCookieAcceptPolicy`, need update decoder, @:{location}"#
+    ))]
+    BadKey {
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display(r#"The int not one byte, need update decoder, @:{location}"#))]
+    OneByteInt {
+        #[snafu(implicit)]
+        location: Location,
+    },
 }
 
 #[derive(Clone, Copy)]

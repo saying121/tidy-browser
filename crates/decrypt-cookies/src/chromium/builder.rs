@@ -21,38 +21,38 @@ use crate::{
 #[derive(Snafu)]
 #[snafu(visibility(pub))]
 pub enum ChromiumBuilderError {
-    #[snafu(display("{source}:{location}"))]
+    #[snafu(display("{source}, @:{location}"))]
     Decrypter {
         source: chromium_crypto::error::CryptoError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}:{location}"))]
+    #[snafu(display("{source}, @:{location}"))]
     Db {
         source: sea_orm::DbErr,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}, path: {}:{location}",path.display()))]
+    #[snafu(display("{source}, path: {}, @:{location}",path.display()))]
     Io {
         source: std::io::Error,
         path: PathBuf,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}:{location}"))]
+    #[snafu(display("{source}, @:{location}"))]
     Rawcopy {
         source: anyhow::Error,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}:{location}"))]
+    #[snafu(display("{source}, @:{location}"))]
     TokioJoin {
         source: tokio::task::JoinError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Can not found home dir:{location}"))]
+    #[snafu(display("Can not found home dir, @:{location}"))]
     Home {
         #[snafu(implicit)]
         location: Location,
