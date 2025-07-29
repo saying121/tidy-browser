@@ -19,6 +19,7 @@ pub use items::{
 };
 use rayon::prelude::*;
 use sea_orm::{sea_query::IntoCondition, ColumnTrait, DbErr};
+use snafu::{Location, ResultExt, Snafu};
 use tokio::task::{self, JoinError};
 
 use crate::{
@@ -31,14 +32,27 @@ use crate::{
 };
 
 #[derive(Debug)]
-#[derive(thiserror::Error)]
+#[derive(Snafu)]
+#[snafu(visibility(pub))]
 pub enum ChromiumError {
-    #[error(transparent)]
-    Task(#[from] JoinError),
-    #[error(transparent)]
-    Db(#[from] DbErr),
-    #[error(transparent)]
-    Decrypt(#[from] chromium_crypto::error::CryptoError),
+    #[snafu(display("{source}, @:{location}"))]
+    Task {
+        source: JoinError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}, @:{location}"))]
+    Db {
+        source: DbErr,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}, @:{location}"))]
+    Decrypt {
+        source: chromium_crypto::error::CryptoError,
+        #[snafu(implicit)]
+        location: Location,
+    },
 }
 
 type Result<T> = std::result::Result<T, ChromiumError>;
@@ -71,7 +85,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
     async fn par_decrypt_logins(&self, raw: Vec<logins::Model>) -> Result<Vec<LoginData>> {
         let crypto = self.crypto.clone();
 
-        let login_data = task::spawn_blocking(move || {
+        task::spawn_blocking(move || {
             raw.into_par_iter()
                 .map(|mut v| {
                     let res = v
@@ -85,8 +99,8 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                 })
                 .collect()
         })
-        .await;
-        Ok(login_data?)
+        .await
+        .context(TaskSnafu)
     }
 
     /// contains passwords
@@ -116,12 +130,14 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         let mut raw_login = self
             .login_data_query
             .query_login_dt_filter(filter.clone())
-            .await?;
+            .await
+            .context(DbSnafu)?;
         if raw_login.is_empty() {
             if let Some(query) = &self.login_data_for_account_query {
                 raw_login = query
                     .query_login_dt_filter(filter)
-                    .await?;
+                    .await
+                    .context(DbSnafu)?;
             }
         }
         self.par_decrypt_logins(raw_login)
@@ -136,12 +152,14 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         let mut raw_login = self
             .login_data_query
             .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host.as_ref()))
-            .await?;
+            .await
+            .context(DbSnafu)?;
         if raw_login.is_empty() {
             if let Some(query) = &self.login_data_for_account_query {
                 raw_login = query
                     .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host.as_ref()))
-                    .await?;
+                    .await
+                    .context(DbSnafu)?;
             }
         }
         self.par_decrypt_logins(raw_login)
@@ -153,10 +171,14 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         let mut raw_login = self
             .login_data_query
             .query_all_login_dt()
-            .await?;
+            .await
+            .context(DbSnafu)?;
         if raw_login.is_empty() {
             if let Some(query) = &self.login_data_for_account_query {
-                raw_login = query.query_all_login_dt().await?;
+                raw_login = query
+                    .query_all_login_dt()
+                    .await
+                    .context(DbSnafu)?;
             }
         }
         self.par_decrypt_logins(raw_login)
@@ -192,7 +214,8 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         let raw_ck = self
             .cookies_query
             .cookies_filter(filter)
-            .await?;
+            .await
+            .context(DbSnafu)?;
         self.par_decrypt_ck(raw_ck).await
     }
 
@@ -204,7 +227,8 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         let raw_ck = self
             .cookies_query
             .cookies_by_host(host.as_ref())
-            .await?;
+            .await
+            .context(DbSnafu)?;
         self.par_decrypt_ck(raw_ck).await
     }
 
@@ -213,7 +237,8 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         let raw_ck = self
             .cookies_query
             .cookies_all()
-            .await?;
+            .await
+            .context(DbSnafu)?;
         self.par_decrypt_ck(raw_ck).await
     }
 
@@ -234,7 +259,8 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                 })
                 .collect()
         })
-        .await?;
+        .await
+        .context(TaskSnafu)?;
         Ok(decrypted_ck)
     }
 
@@ -251,7 +277,8 @@ impl<T: Send + Sync> ChromiumGetter<T> {
                             .or(ChromiumCookieCol::Name.eq("LEETCODE_SESSION")),
                     ),
             )
-            .await?;
+            .await
+            .context(DbSnafu)?;
 
         let mut csrf_token = LeetCodeCookies::default();
         let mut hds = Vec::with_capacity(2);
@@ -311,7 +338,7 @@ impl<T: Send + Sync> ChromiumGetter<T> {
         }
 
         for (handle, flag) in hds {
-            let res = handle.await?;
+            let res = handle.await.context(TaskSnafu)?;
             match flag {
                 CsrfSession::Csrf => csrf_token.csrf = res,
                 CsrfSession::Session => csrf_token.session = res,
@@ -324,6 +351,8 @@ impl<T: Send + Sync> ChromiumGetter<T> {
 impl<T> ChromiumGetter<T> {
     /// The browser's decrypt
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
-        Ok(self.crypto.decrypt(ciphertext)?)
+        self.crypto
+            .decrypt(ciphertext)
+            .context(DecryptSnafu)
     }
 }

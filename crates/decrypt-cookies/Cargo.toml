@@ -23,7 +23,7 @@ reqwest = { workspace = true, default-features = false, features = ["cookies"], 
 rust-ini = { workspace = true }  # firefox
 sea-orm = { workspace = true }
 serde = { workspace = true, optional = true }
-thiserror = { workspace = true }
+snafu = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true, optional = true }
 

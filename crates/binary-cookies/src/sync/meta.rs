@@ -1,9 +1,11 @@
 use std::io::Read;
 
+use snafu::ResultExt;
+
 use crate::{
     cookie::{Checksum, Metadata},
     decode::{meta::MetaFsm, DecodeResult},
-    error::Result,
+    error::{self, Result},
 };
 
 #[derive(Clone, Copy)]
@@ -19,7 +21,8 @@ impl<R: Read> MetaDecoder<R> {
         let mut fsm = MetaFsm::new();
         loop {
             self.rd
-                .read_exact(fsm.buffer.space())?;
+                .read_exact(fsm.buffer.space())
+                .context(error::ReadSnafu)?;
             let count = fsm.buffer.available_space();
             fsm.buffer.fill(count);
             match fsm.process()? {

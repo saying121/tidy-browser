@@ -2,12 +2,13 @@ use std::{path::PathBuf, sync::Arc};
 
 use binary_cookies::{cookie::Cookie, tokio::DecodeBinaryCookie};
 use chrono::{prelude::Utc, DateTime};
+use snafu::{OptionExt, ResultExt};
 
 use super::super::Result;
 use crate::{
     browser::cookies::{CookiesInfo, LeetCodeCookies},
     prelude::cookies::SameSite,
-    safari::SafariError,
+    safari::{self, HomeSnafu},
 };
 
 #[derive(Clone)]
@@ -119,25 +120,34 @@ impl CookiesGetter {
             cookie_path = path.into();
         }
         else {
-            cookie_path = dirs::home_dir().expect("get home dir failed");
+            cookie_path = dirs::home_dir().context(HomeSnafu)?;
             cookie_path.push(Self::COOKIES);
             if !cookie_path.exists() {
-                cookie_path = dirs::home_dir().expect("get home dir failed");
+                cookie_path = dirs::home_dir().context(HomeSnafu)?;
                 cookie_path.push(Self::COOKIES_OLD);
             }
         }
 
         let file = binary_cookies::tokio::RandomAccessFile::open(&cookie_path)
-            .map_err(|e| SafariError::Io { path: cookie_path, source: e })?;
+            .context(safari::IoSnafu { path: cookie_path })?;
         let file = Arc::new(file);
 
-        let bch = file.decode().await?;
+        let bch = file
+            .decode()
+            .await
+            .context(safari::ParseSnafu)?;
         let (pages_handle, _meta_decoder) = bch.into_handles();
         let mut cookies = vec![];
         for mut pd in pages_handle.decoders() {
-            let ch = pd.decode().await?;
+            let ch = pd
+                .decode()
+                .await
+                .context(safari::ParseSnafu)?;
             for mut c in ch.decoders() {
-                let cookie = c.decode().await?;
+                let cookie = c
+                    .decode()
+                    .await
+                    .context(safari::ParseSnafu)?;
                 cookies.push(cookie.into());
             }
         }

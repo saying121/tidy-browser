@@ -1,12 +1,14 @@
 use std::io::Read;
 
+use snafu::ResultExt;
+
 use crate::{
     decode::{
         cookies::CookiesOffset,
         pages::{PageFsm, PagesOffset},
         DecodeResult, OffsetSize,
     },
-    error::Result,
+    error::{self, Result},
     sync::{cookie::CookieHandle, cursor::CookieCursor},
 };
 
@@ -62,7 +64,8 @@ impl<'a, R: Read, F: CookieCursor> PageDecoder<'a, R, F> {
         let mut fsm = PageFsm::new();
         loop {
             self.rd
-                .read_exact(fsm.buffer.space())?;
+                .read_exact(fsm.buffer.space())
+                .context(error::ReadSnafu)?;
             let count = fsm.buffer.available_space();
             fsm.buffer.fill(count);
             match fsm.process()? {

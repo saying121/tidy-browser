@@ -2,8 +2,9 @@ use std::convert::Into;
 
 use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
 use pbkdf2::pbkdf2_hmac;
+use snafu::ResultExt;
 
-use crate::error::{CryptoError, Result};
+use crate::error::{self, Result};
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_mac.mm;l=35
 /// Key size required for 128 bit AES.
@@ -51,13 +52,14 @@ impl Decrypter {
             unsafe { std::mem::transmute::<&str, &'static str>(safe_name) };
 
         let entry = tokio::task::spawn_blocking(|| {
-            keyring::Entry::new(safe_storage, safe_name).map_err(|e| -> CryptoError { e.into() })
+            keyring::Entry::new(safe_storage, safe_name).context(error::KeyringSnafu)
         })
-        .await??;
+        .await
+        .context(error::TaskSnafu)??;
         entry
             .get_password()
             .map(String::into_bytes)
-            .map_err(Into::into)
+            .context(error::KeyringSnafu)
     }
 
     pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
@@ -80,7 +82,7 @@ impl Decrypter {
 
         decrypter
             .decrypt_padded_mut::<block_padding::Pkcs7>(&mut ciphertext[prefix_len..])
-            .map_err(CryptoError::Unpadding)
+            .context(error::UnpaddingSnafu)
             .map(|res| {
                 String::from_utf8(res.to_vec()).unwrap_or_else(|_e| {
                     #[cfg(feature = "tracing")]

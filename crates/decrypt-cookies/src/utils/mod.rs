@@ -10,11 +10,11 @@ pub fn need_sep(path: &Path) -> bool {
 pub fn shadow_copy(from: &Path, to: &Path) -> crate::chromium::builder::Result<()> {
     // shadow copy `to` must is dir
 
-    use crate::chromium::builder::ChromiumBuilderError;
+    use snafu::ResultExt;
+
+    use crate::chromium::builder::{IoSnafu, RawcopySnafu};
     if !to.is_dir() && to.exists() {
-        if let Err(e) = std::fs::remove_file(to) {
-            return Err(ChromiumBuilderError::Io { source: e, path: to.to_owned() });
-        }
+        std::fs::remove_file(to).context(IoSnafu { path: to.to_owned() })?;
     }
 
     let to = if to.is_dir() {
@@ -29,7 +29,8 @@ pub fn shadow_copy(from: &Path, to: &Path) -> crate::chromium::builder::Result<(
             .expect("`from` path to str failed"),
         to.to_str()
             .expect("`to` path to str failed"),
-    )?;
+    )
+    .context(RawcopySnafu)?;
 
     Ok(())
 }

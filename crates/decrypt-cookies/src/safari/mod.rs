@@ -2,23 +2,40 @@ pub mod items;
 
 use std::{fmt::Display, path::PathBuf};
 
+use snafu::{Location, Snafu};
+
 pub use self::items::cookie::CookiesGetter;
 use self::items::cookie::SafariCookie;
 use crate::browser::cookies::LeetCodeCookies;
 
 #[derive(Debug)]
-#[derive(thiserror::Error)]
+#[derive(Snafu)]
+#[snafu(visibility(pub))]
 pub enum SafariError {
-    #[error(transparent)]
-    Parse(#[from] binary_cookies::error::ParseError),
-    #[error("{source}, path: {path}")]
+    #[snafu(display("{source}, @:{location}"))]
+    Parse {
+        source: binary_cookies::error::ParseError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}, path: {}, @:{location}",path.display()))]
     Io {
         path: PathBuf,
-        #[source]
         source: std::io::Error,
+        #[snafu(implicit)]
+        location: Location,
     },
-    #[error(transparent)]
-    Task(#[from] tokio::task::JoinError),
+    #[snafu(display("{source}, @:{location}"))]
+    Task {
+        source: tokio::task::JoinError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("Can not found home dir, @:{location}"))]
+    Home {
+        #[snafu(implicit)]
+        location: Location,
+    },
 }
 
 type Result<T> = std::result::Result<T, SafariError>;

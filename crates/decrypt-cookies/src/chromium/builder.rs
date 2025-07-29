@@ -1,3 +1,5 @@
+#![expect(clippy::exhaustive_structs, reason = "Allow error")]
+
 use std::{
     fmt::{Debug, Display},
     marker::PhantomData,
@@ -5,6 +7,7 @@ use std::{
 };
 
 use chromium_crypto::Decrypter;
+use snafu::{Location, OptionExt, ResultExt, Snafu};
 use tokio::{fs, join};
 
 use super::ChromiumGetter;
@@ -15,23 +18,45 @@ use crate::{
 
 // TODO: add browser name in error
 #[derive(Debug)]
-#[derive(thiserror::Error)]
+#[derive(Snafu)]
+#[snafu(visibility(pub))]
 pub enum ChromiumBuilderError {
-    #[error(transparent)]
-    Decrypter(#[from] chromium_crypto::error::CryptoError),
-    #[error(transparent)]
-    Db(#[from] sea_orm::DbErr),
-    #[error("Io: {source}, path: {path}")]
+    #[snafu(display("{source}, @:{location}"))]
+    Decrypter {
+        source: chromium_crypto::error::CryptoError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}, @:{location}"))]
+    Db {
+        source: sea_orm::DbErr,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}, path: {}, @:{location}",path.display()))]
     Io {
         source: std::io::Error,
         path: PathBuf,
+        #[snafu(implicit)]
+        location: Location,
     },
-    #[error(transparent)]
-    Rawcopy(#[from] anyhow::Error),
-    #[error(transparent)]
-    TokioJoin(#[from] tokio::task::JoinError),
-    #[error("Can not found home dir")]
-    Home,
+    #[snafu(display("{source}, @:{location}"))]
+    Rawcopy {
+        source: anyhow::Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}, @:{location}"))]
+    TokioJoin {
+        source: tokio::task::JoinError,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("Can not found home dir, @:{location}"))]
+    Home {
+        #[snafu(implicit)]
+        location: Location,
+    },
 }
 
 pub type Result<T> = std::result::Result<T, ChromiumBuilderError>;
@@ -94,10 +119,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
             base
         }
         else {
-            let Some(mut base) = dirs::home_dir()
-            else {
-                return Err(ChromiumBuilderError::Home);
-            };
+            let mut base = dirs::home_dir().context(HomeSnafu)?;
 
             base.push(B::BASE);
             base
@@ -112,24 +134,34 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         let temp_paths = Self::cache_data(base).await?;
 
         #[cfg(target_os = "linux")]
-        let crypto = Decrypter::build(B::SAFE_STORAGE, crate::browser::need_safe_storage).await?;
+        let crypto = Decrypter::build(B::SAFE_STORAGE, crate::browser::need_safe_storage)
+            .await
+            .context(DecrypterSnafu)?;
 
         #[cfg(target_os = "macos")]
-        let crypto = Decrypter::build(B::SAFE_STORAGE, B::SAFE_NAME).await?;
+        let crypto = Decrypter::build(B::SAFE_STORAGE, B::SAFE_NAME)
+            .await
+            .context(DecrypterSnafu)?;
 
         #[cfg(target_os = "windows")]
-        let crypto = Decrypter::build(temp_paths.key_temp).await?;
+        let crypto = Decrypter::build(temp_paths.key_temp)
+            .await
+            .context(DecrypterSnafu)?;
 
         let (cookies_query, login_data_query) = (
             CookiesQuery::new(temp_paths.cookies_temp),
             LoginDataQuery::new(temp_paths.login_data_temp),
         );
         let (cookies_query, login_data_query) = join!(cookies_query, login_data_query);
-        let (cookies_query, login_data_query) = (cookies_query?, login_data_query?);
+        let (cookies_query, login_data_query) = (
+            cookies_query.context(DbSnafu)?,
+            login_data_query.context(DbSnafu)?,
+        );
         let login_data_for_account_query =
             if let Some(path) = temp_paths.login_data_for_account_temp {
                 LoginDataQuery::new(path)
-                    .await?
+                    .await
+                    .context(DbSnafu)?
                     .into()
             }
             else {
@@ -147,16 +179,16 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
 
     async fn cache_data(base: PathBuf) -> Result<TempPaths> {
         let cookies = B::cookies(base.clone());
-        let cookies_temp = B::cookies_temp();
+        let cookies_temp = B::cookies_temp().context(HomeSnafu)?;
 
         let login_data = B::login_data(base.clone());
-        let login_data_temp = B::login_data_temp();
+        let login_data_temp = B::login_data_temp().context(HomeSnafu)?;
 
         let login_data_for_account = B::login_data_for_account(base.clone());
-        let login_data_for_account_temp = B::login_data_for_account_temp();
+        let login_data_for_account_temp = B::login_data_for_account_temp().context(HomeSnafu)?;
 
         let key = B::key(base.clone());
-        let key_temp = B::key_temp();
+        let key_temp = B::key_temp().context(HomeSnafu)?;
 
         let ck_temp_p = cookies_temp
             .parent()
@@ -171,18 +203,9 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
             .expect("Get parent dir failed");
         let cd_k = fs::create_dir_all(k_temp_p);
         let (cd_ck, cd_lg, cd_k) = join!(cd_ck, cd_lg, cd_k);
-        cd_ck.map_err(|e| ChromiumBuilderError::Io {
-            source: e,
-            path: ck_temp_p.to_owned(),
-        })?;
-        cd_lg.map_err(|e| ChromiumBuilderError::Io {
-            source: e,
-            path: lg_temp_p.to_owned(),
-        })?;
-        cd_k.map_err(|e| ChromiumBuilderError::Io {
-            source: e,
-            path: k_temp_p.to_owned(),
-        })?;
+        cd_ck.context(IoSnafu { path: ck_temp_p.to_owned() })?;
+        cd_lg.context(IoSnafu { path: lg_temp_p.to_owned() })?;
+        cd_k.context(IoSnafu { path: k_temp_p.to_owned() })?;
 
         #[cfg(target_os = "windows")]
         let (cookies_cp, login_cp, lfac_cp, key_cp) = {
@@ -224,15 +247,15 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         let (ck, lg, lfac, k) = join!(cookies_cp, login_cp, lfac_cp, key_cp);
         #[cfg(target_os = "windows")]
         {
-            ck??;
-            lg??;
-            k??;
+            ck.context(TokioJoinSnafu)??;
+            lg.context(TokioJoinSnafu)??;
+            k.context(TokioJoinSnafu)??;
         };
         #[cfg(not(target_os = "windows"))]
         {
-            ck.map_err(|e| ChromiumBuilderError::Io { source: e, path: cookies })?;
-            lg.map_err(|e| ChromiumBuilderError::Io { source: e, path: login_data })?;
-            k.map_err(|e| ChromiumBuilderError::Io { source: e, path: key })?;
+            ck.context(IoSnafu { path: cookies })?;
+            lg.context(IoSnafu { path: login_data })?;
+            k.context(IoSnafu { path: key })?;
         };
         Ok(TempPaths {
             cookies_temp,

@@ -1,3 +1,4 @@
+use snafu::ResultExt;
 use tokio::io::{AsyncRead, AsyncReadExt};
 
 use super::cursor::CookieCursor;
@@ -7,7 +8,7 @@ use crate::{
         cookies::{CookieFsm, CookiesOffset},
         DecodeResult, OffsetSize,
     },
-    error::Result,
+    error::{self, Result},
 };
 
 #[derive(Clone)]
@@ -64,7 +65,8 @@ impl<R: AsyncRead + Unpin + Send> CookieDecoder<R> {
         loop {
             self.rd
                 .read_exact(fsm.buffer.space())
-                .await?;
+                .await
+                .context(error::ReadSnafu)?;
             let count = fsm.buffer.available_space();
             fsm.buffer.fill(count);
             match fsm.process()? {

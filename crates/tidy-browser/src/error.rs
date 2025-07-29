@@ -12,45 +12,45 @@ use snafu::{Location, Snafu};
 #[derive(Debug)]
 #[snafu(visibility(pub))]
 pub enum Error {
-    #[snafu(display("Build Chromium: {source}{location}"))]
+    #[snafu(display("Build Chromium: {source}, @:{location}"))]
     ChromiumBuilder {
         source: ChromiumBuilderError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Chromium: {source}{location}"))]
+    #[snafu(display("Chromium: {source}, @:{location}"))]
     Chromium {
         source: ChromiumError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Build Firefox: {source}{location}"))]
+    #[snafu(display("Build Firefox: {source}, @:{location}"))]
     FirefoxBuilder {
         source: FirefoxBuilderError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Firefox: {source}{location}"))]
+    #[snafu(display("Firefox: {source}, @:{location}"))]
     Firefox {
         source: FirefoxError,
         #[snafu(implicit)]
         location: Location,
     },
     #[cfg(target_os = "macos")]
-    #[snafu(display("Firefox: {source}{location}"))]
+    #[snafu(display("Firefox: {source}, @:{location}"))]
     Safari {
         source: SafariError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source} path: {}{location}", path.display()))]
+    #[snafu(display("{source} path: {}, @:{location}", path.display()))]
     Io {
         source: std::io::Error,
         path: PathBuf,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}"))]
+    #[snafu(display("{source}, @:{location}"))]
     TokioTask {
         source: tokio::task::JoinError,
         #[snafu(implicit)]

@@ -1,11 +1,12 @@
 //! binarycookies mod
 
+use snafu::ResultExt;
 use tokio::io::AsyncReadExt;
 
 use super::{cursor::CookieCursor, meta::MetaDecoder};
 use crate::{
     decode::{binary_cookies::BinaryCookieFsm, meta::MetaOffset, pages::PagesOffset, DecodeResult},
-    error::Result,
+    error::{self, Result},
     tokio::page::PagesHandle,
 };
 
@@ -28,7 +29,8 @@ where
         let mut rd = self.cursor_at(0);
         loop {
             rd.read_exact(fsm.buffer.space())
-                .await?;
+                .await
+                .context(error::ReadSnafu)?;
             let count = fsm.buffer.available_space();
             fsm.buffer.fill(count);
             match fsm.process()? {

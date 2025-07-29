@@ -1,21 +1,24 @@
 use std::fs::File;
 
-use binary_cookies::{
-    error::Result,
-    sync::{self, DecodeBinaryCookie},
-};
+use binary_cookies::sync::{self, DecodeBinaryCookie};
 use rayon::prelude::{ParallelBridge, ParallelIterator};
+use snafu::{prelude::*, OptionExt, Whatever};
 
 // Unfortunately, parallelism does not always improve performance.
 // In a simple test, it only brought about a 10% improvement when processing a 25MB file.
-fn main() -> Result<()> {
+#[snafu::report]
+fn main() -> Result<(), Whatever> {
     let mut args = std::env::args();
     args.next();
-    let path = args.next().expect("Need a path");
+    let path = args
+        .next()
+        .whatever_context("Need a path")?;
 
-    let file = File::open(path)?;
+    let file = File::open(path).with_whatever_context(|_| "Open file failed")?;
 
-    let a = file.decode()?;
+    let a = file
+        .decode()
+        .with_whatever_context(|_| "Bad file")?;
     let (pages_handle, _meta_decoder) = a.into_handles();
     let a = pages_handle
         .decoders()

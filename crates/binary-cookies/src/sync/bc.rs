@@ -2,6 +2,8 @@
 
 use std::io::Read;
 
+use snafu::ResultExt;
+
 use super::{cursor::CookieCursor, meta::MetaDecoder};
 use crate::{
     decode::{binary_cookies::BinaryCookieFsm, meta::MetaOffset, pages::PagesOffset, DecodeResult},
@@ -25,7 +27,8 @@ where
         let mut fsm = BinaryCookieFsm::new();
         let mut rd = self.cursor_at(0);
         loop {
-            rd.read_exact(fsm.buffer.space())?;
+            rd.read_exact(fsm.buffer.space())
+                .context(crate::error::ReadSnafu)?;
             let count = fsm.buffer.available_space();
             fsm.buffer.fill(count);
             match fsm.process()? {

@@ -288,7 +288,7 @@ dependencies = [
  "rand",
  "rayon",
  "serde",
- "thiserror",
+ "snafu",
  "tokio",
  "winnow",
 ]
@@ -434,9 +434,11 @@ name = "chromium-crypto"
 version = "0.2.0"
 dependencies = [
  "TinyUFO",
+ "aead",
  "aes",
  "aes-gcm",
  "base64",
+ "block-padding",
  "cbc",
  "cfg-if",
  "chacha20poly1305",
@@ -446,7 +448,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha1",
- "thiserror",
+ "snafu",
  "tokio",
  "tracing",
  "windows",
@@ -745,7 +747,7 @@ dependencies = [
  "rust-ini",
  "sea-orm",
  "serde",
- "thiserror",
+ "snafu",
  "tokio",
  "tracing",
  "tracing-subscriber",

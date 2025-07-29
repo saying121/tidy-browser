@@ -1,7 +1,15 @@
 use std::mem;
 
 use oval::Buffer;
+use snafu::ResultExt;
 use tokio::io::{AsyncRead, AsyncReadExt};
+
+#[derive(Clone)]
+#[derive(Debug)]
+pub struct StreamDecoder<R: AsyncRead> {
+    state: State,
+    rd: R,
+}
 
 use crate::{
     decode::{
@@ -12,15 +20,8 @@ use crate::{
         stream::{State, Values},
         DecodeResult,
     },
-    error::{ParseError, Result},
+    error::{self, Result},
 };
-
-#[derive(Clone)]
-#[derive(Debug)]
-pub struct StreamDecoder<R: AsyncRead> {
-    state: State,
-    rd: R,
-}
 
 impl<R: AsyncRead + Unpin + Send> StreamDecoder<R> {
     const BUF_SIZE: usize = 64;
@@ -42,7 +43,8 @@ impl<R: AsyncRead + Unpin + Send> StreamDecoder<R> {
                 let readed = self
                     .rd
                     .read(fsm.buffer.space())
-                    .await?;
+                    .await
+                    .context(error::ReadSnafu)?;
                 fsm.buffer.fill(readed);
 
                 match fsm.process()? {
@@ -63,7 +65,8 @@ impl<R: AsyncRead + Unpin + Send> StreamDecoder<R> {
                 let readed = self
                     .rd
                     .read(fsm.buffer.space())
-                    .await?;
+                    .await
+                    .context(error::ReadSnafu)?;
                 fsm.buffer.fill(readed);
                 match fsm.process()? {
                     DecodeResult::Continue(fsm_) => {
@@ -88,7 +91,8 @@ impl<R: AsyncRead + Unpin + Send> StreamDecoder<R> {
                 let readed = self
                     .rd
                     .read(fsm.buffer.space())
-                    .await?;
+                    .await
+                    .context(error::ReadSnafu)?;
                 fsm.buffer.fill(readed);
 
                 match fsm.process()? {
@@ -122,7 +126,8 @@ impl<R: AsyncRead + Unpin + Send> StreamDecoder<R> {
                 let readed = self
                     .rd
                     .read(fsm.buffer.space())
-                    .await?;
+                    .await
+                    .context(error::ReadSnafu)?;
                 fsm.buffer.fill(readed);
 
                 match fsm.process()? {
@@ -136,7 +141,7 @@ impl<R: AsyncRead + Unpin + Send> StreamDecoder<R> {
                     },
                 }
             },
-            State::Finished => Err(ParseError::ParsingCompleted),
+            State::Finished => Err(error::ParsingCompletedSnafu.build()),
             State::Transition => unreachable!(),
         }
     }
