@@ -157,7 +157,7 @@ impl ChromiumBased {
         output_dir.push(name);
         tokio::fs::create_dir_all(&output_dir)
             .await
-            .context(error::IoSnafu { path: output_dir.clone() })?;
+            .with_context(|_| error::IoSnafu { path: output_dir.clone() })?;
 
         let mut tasks = Vec::with_capacity(cap);
 
@@ -179,7 +179,7 @@ impl ChromiumBased {
                     .create(true)
                     .truncate(true)
                     .open(&out_file)
-                    .context(error::IoSnafu { path: out_file.clone() })?;
+                    .with_context(|_| error::IoSnafu { path: out_file.clone() })?;
 
                 let header = login_csv_header(sep.clone());
 
@@ -197,7 +197,7 @@ impl ChromiumBased {
                     slices.push(IoSlice::new(b"\n"));
                 }
                 write_all_vectored(&mut file, &mut slices)
-                    .context(error::IoSnafu { path: out_file.clone() })?;
+                    .with_context(|_| error::IoSnafu { path: out_file })?;
                 Ok::<(), error::Error>(())
             });
             tasks.push(handle);

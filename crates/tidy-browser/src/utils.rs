@@ -48,7 +48,7 @@ where
             .create(true)
             .truncate(true)
             .open(&out_file)
-            .context(error::IoSnafu { path: out_file.clone() })?;
+            .with_context(|_| error::IoSnafu { path: out_file.clone() })?;
 
         let header = <ChromiumCookie as CookiesInfo>::csv_header(sep.clone());
 
@@ -67,7 +67,7 @@ where
         }
 
         write_all_vectored(&mut file, &mut slices)
-            .context(error::IoSnafu { path: out_file.clone() })?;
+            .with_context(|_| error::IoSnafu { path: out_file })?;
 
         Ok::<(), error::Error>(())
     })

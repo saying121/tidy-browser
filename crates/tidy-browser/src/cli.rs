@@ -4,7 +4,8 @@ use snafu::ResultExt;
 use strum::IntoEnumIterator;
 
 use crate::{
-    args::{self, ChromiumArgs, ChromiumName, FirefoxArgs, FirefoxName},
+    args::{self, BinaryCookiesArgs, ChromiumArgs, ChromiumName, FirefoxArgs, FirefoxName},
+    binary_cookies::BinaryCookiesWriter,
     chromium::ChromiumBased,
     error::{self, Result},
     firefox::FirefoxBased,
@@ -93,6 +94,14 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
                     args.sep,
                 )
                 .await?
+            },
+            args::Core::BinaryCookies(BinaryCookiesArgs { cookies_path, out_file }) => {
+                BinaryCookiesWriter::write_data(
+                    cookies_path,
+                    out_file
+                        .unwrap_or_else(|| PathBuf::from_str(crate::BINARY_COOKIES_FILE).unwrap()),
+                    args.sep,
+                )?;
             },
             #[cfg(target_os = "macos")]
             args::Core::Safari(SafariArgs { values, cookies_path }) => {

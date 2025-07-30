@@ -147,9 +147,9 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
             .expect("Get parent dir failed");
         let cd_k = fs::create_dir_all(k_temp_p);
         let (cd_ck, cd_lg, cd_k) = join!(cd_ck, cd_lg, cd_k);
-        cd_ck.context(IoSnafu { path: ck_temp_p.to_owned() })?;
-        cd_lg.context(IoSnafu { path: lg_temp_p.to_owned() })?;
-        cd_k.context(IoSnafu { path: k_temp_p.to_owned() })?;
+        cd_ck.with_context(|_| IoSnafu { path: ck_temp_p.to_owned() })?;
+        cd_lg.with_context(|_| IoSnafu { path: lg_temp_p.to_owned() })?;
+        cd_k.with_context(|_| IoSnafu { path: k_temp_p.to_owned() })?;
 
         let cookies_cp = fs::copy(&cookies, &cookies_temp);
         let login_cp = fs::copy(&login_data, &login_data_temp);
