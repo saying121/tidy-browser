@@ -13,8 +13,10 @@ categories = { workspace = true }
 exclude = ["CHANGELOG.md", "examples", "tests/"]
 
 [dependencies]
+binary-cookies = { workspace = true, features = ["csv", "sync"] }
 clap = { workspace = true, features = ["derive"] }
 decrypt-cookies = { workspace = true }
+rayon = { workspace = true }
 snafu = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "tracing"] }

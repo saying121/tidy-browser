@@ -11,6 +11,7 @@
 		"decrypt-cookies/tracing",
 		"binary-cookies/serde",
 		"binary-cookies/tokio",
+		"binary-cookies/csv",
 		"binary-cookies/sync"
 	]
 }

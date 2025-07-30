@@ -14,7 +14,7 @@ pub fn shadow_copy(from: &Path, to: &Path) -> crate::chromium::builder::Result<(
 
     use crate::chromium::builder::{IoSnafu, RawcopySnafu};
     if !to.is_dir() && to.exists() {
-        std::fs::remove_file(to).context(IoSnafu { path: to.to_owned() })?;
+        std::fs::remove_file(to).with_context(|_| IoSnafu { path: to.to_owned() })?;
     }
 
     let to = if to.is_dir() {

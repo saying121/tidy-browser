@@ -50,7 +50,7 @@ pub enum CryptoError {
 #[cfg(target_os = "windows")]
 pub enum CryptoError {
     #[snafu(display("{source}, path: {}, @:{location}",path.display()))]
-    IO {
+    Io {
         source: std::io::Error,
         path: std::path::PathBuf,
         #[snafu(implicit)]

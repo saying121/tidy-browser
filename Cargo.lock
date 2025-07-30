@@ -2993,8 +2993,10 @@ dependencies = [
 name = "tidy-browser"
 version = "0.2.0"
 dependencies = [
+ "binary-cookies",
  "clap",
  "decrypt-cookies",
+ "rayon",
  "snafu",
  "strum 0.27.2",
  "tokio",

@@ -35,6 +35,7 @@ serde = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"] }
 
 [features]
+csv = []
 serde = ["bstr/serde", "chrono/serde", "dep:serde"]
 sync = []
 tokio = ["dep:tokio"]

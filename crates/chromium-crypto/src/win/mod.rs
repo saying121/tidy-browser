@@ -70,7 +70,7 @@ impl Decrypter {
     ) -> Result<(Option<Vec<u8>>, Vec<u8>)> {
         let string_str = fs::read_to_string(&key_path)
             .await
-            .context(error::IOSnafu { path: key_path.as_ref().to_owned() })?;
+            .with_context(|_| error::IoSnafu { path: key_path.as_ref().to_owned() })?;
 
         let key = spawn_blocking(move || -> Result<(Option<Vec<u8>>, Vec<u8>)> {
             let local_state: LocalState =

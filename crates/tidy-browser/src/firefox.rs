@@ -124,7 +124,7 @@ impl FirefoxBased {
         output_dir.push(name);
         tokio::fs::create_dir_all(&output_dir)
             .await
-            .context(error::IoSnafu { path: output_dir.clone() })?;
+            .with_context(|_| error::IoSnafu { path: output_dir.clone() })?;
 
         if let Some(ff) = ff {
             let cookies = ff
