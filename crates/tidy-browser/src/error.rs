@@ -12,6 +12,12 @@ use snafu::{Location, Snafu};
 #[derive(Debug)]
 #[snafu(visibility(pub))]
 pub enum Error {
+    #[snafu(display("{source}, @:{location}"))]
+    BinaryCookies {
+        source: binary_cookies::error::ParseError,
+        #[snafu(implicit)]
+        location: Location,
+    },
     #[snafu(display("Build Chromium: {source}, @:{location}"))]
     ChromiumBuilder {
         source: ChromiumBuilderError,

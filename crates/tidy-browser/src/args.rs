@@ -35,6 +35,8 @@ pub enum Core {
     Chromium(ChromiumArgs),
     /// Firefox based
     Firefox(FirefoxArgs),
+    /// Parse BinaryCookies
+    BinaryCookies(BinaryCookiesArgs),
     #[cfg(target_os = "macos")]
     /// Safari
     Safari(SafariArgs),
@@ -58,13 +60,7 @@ pub enum Value {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(clap::Args)]
 pub struct SafariArgs {
-    #[arg(
-        short,
-        long,
-        value_delimiter(','),
-        action(ArgAction::Append),
-        required(true)
-    )]
+    #[arg(short, long, value_delimiter(','), action(ArgAction::Append))]
     /// Only support cookie
     pub values: Vec<Value>,
 
@@ -166,4 +162,15 @@ pub enum FirefoxName {
     Firefox,
     Librewolf,
     Floorp,
+}
+
+#[derive(Clone)]
+#[derive(Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(clap::Args)]
+pub struct BinaryCookiesArgs {
+    #[arg(short('i'), long)]
+    pub cookies_path: PathBuf,
+    #[arg(short, long)]
+    pub out_file: Option<PathBuf>,
 }

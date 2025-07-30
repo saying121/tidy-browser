@@ -392,6 +392,27 @@ pub struct Cookie {
     pub is_http_only: bool,
 }
 
+#[cfg(feature = "csv")]
+impl Cookie {
+    pub fn csv_header<D: std::fmt::Display>(sep: D) -> String {
+        format!("domain{sep}name{sep}path{sep}value{sep}creation{sep}expires{sep}is_secure{sep}is_http_only")
+    }
+
+    pub fn to_csv<D: std::fmt::Display>(&self, sep: D) -> String {
+        format!(
+            "{}{sep}{}{sep}{}{sep}{}{sep}{}{sep}{}{sep}{}{sep}{}",
+            self.domain,
+            self.name,
+            self.path,
+            self.value,
+            self.creation.unwrap_or_default(),
+            self.expires.unwrap_or_default(),
+            self.is_secure,
+            self.is_http_only,
+        )
+    }
+}
+
 #[rustfmt::skip]
 impl Cookie {
     pub const IS_SECURE:     u32 = 0b000001;
