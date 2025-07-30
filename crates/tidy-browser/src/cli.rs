@@ -4,7 +4,7 @@ use snafu::ResultExt;
 use strum::IntoEnumIterator;
 
 use crate::{
-    args::{self, BinaryCookiesArgs, ChromiumArgs, ChromiumName, FirefoxArgs, FirefoxName},
+    args::{self, BinaryCookiesArgs, ChromiumArgs, ChromiumName, FirefoxArgs, FirefoxName, Format},
     binary_cookies::BinaryCookiesWriter,
     chromium::ChromiumBased,
     error::{self, Result},
@@ -120,11 +120,10 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
                 BinaryCookiesWriter::write_data(
                     cookies_path,
                     out_file.unwrap_or_else(|| match args.out_format {
-                        args::Format::Csv => {
-                            PathBuf::from_str(crate::BINARY_COOKIES_FILE_CSV).unwrap()
-                        },
-                        args::Format::Json => {
-                            PathBuf::from_str(crate::BINARY_COOKIES_FILE_JSON).unwrap()
+                        Format::Csv => PathBuf::from_str(crate::BINARY_COOKIES_FILE_CSV).unwrap(),
+                        Format::Json => PathBuf::from_str(crate::BINARY_COOKIES_FILE_JSON).unwrap(),
+                        Format::JsonLines => {
+                            PathBuf::from_str(crate::BINARY_COOKIES_FILE_JSONL).unwrap()
                         },
                     }),
                     args.sep,

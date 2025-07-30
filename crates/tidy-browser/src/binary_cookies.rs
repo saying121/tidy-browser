@@ -42,13 +42,14 @@ impl BinaryCookiesWriter {
             .context(BinaryCookiesSnafu)?;
         let (pages_handle, _meta_decoder) = a.into_handles();
 
+        let tmp = pages_handle
+            .decoders()
+            .par_bridge()
+            .filter_map(|mut v| v.decode().ok())
+            .map(sync::CookieHandle::into_decoders);
         match format {
             Format::Csv => {
-                let csvs: Vec<_> = pages_handle
-                    .decoders()
-                    .par_bridge()
-                    .filter_map(|mut v| v.decode().ok())
-                    .map(sync::CookieHandle::into_decoders)
+                let csvs: Vec<_> = tmp
                     .flat_map(|v| {
                         v.par_bridge().filter_map(|mut v| {
                             v.decode()
@@ -72,11 +73,7 @@ impl BinaryCookiesWriter {
                     .with_context(|_| IoSnafu { path: out_path.to_owned() })
             },
             Format::Json => {
-                let cookies = pages_handle
-                    .decoders()
-                    .par_bridge()
-                    .filter_map(|mut v| v.decode().ok())
-                    .map(sync::CookieHandle::into_decoders)
+                let cookies = tmp
                     .map(|v| {
                         v.par_bridge()
                             .filter_map(|mut v| v.decode().ok())
@@ -84,6 +81,17 @@ impl BinaryCookiesWriter {
                     })
                     .collect::<Vec<_>>();
                 serde_json::to_writer(out, &cookies).context(JsonSnafu)
+            },
+            Format::JsonLines => {
+                let cookies = tmp
+                    .flat_map(|v| {
+                        v.par_bridge()
+                            .filter_map(|mut v| v.decode().ok())
+                            .collect::<Vec<_>>()
+                    })
+                    .collect::<Vec<_>>();
+                serde_jsonlines::write_json_lines(out_path, cookies)
+                    .with_context(|_| IoSnafu { path: out_path.to_owned() })
             },
         }
     }

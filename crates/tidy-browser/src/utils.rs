@@ -12,7 +12,7 @@ use tokio::task::{self, JoinHandle};
 
 use crate::{
     args::Format,
-    error::{self, JsonSnafu},
+    error::{self, IoSnafu, JsonSnafu},
 };
 
 /// Copy from nightly [`Write::write_all_vectored`]
@@ -77,6 +77,8 @@ where
                     .with_context(|_| error::IoSnafu { path: out_file })
             },
             Format::Json => serde_json::to_writer(file, &cookies).context(JsonSnafu),
+            Format::JsonLines => serde_jsonlines::write_json_lines(&out_file, &cookies)
+                .context(IoSnafu { path: out_file }),
         }
     })
 }

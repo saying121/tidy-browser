@@ -37,11 +37,24 @@ pub struct Args {
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
-#[derive(clap::ValueEnum)]
 pub enum Format {
     #[default]
     Csv,
     Json,
+    JsonLines,
+}
+
+impl clap::ValueEnum for Format {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[Self::Csv, Self::Json, Self::JsonLines]
+    }
+    fn to_possible_value<'a>(&self) -> ::std::option::Option<clap::builder::PossibleValue> {
+        match self {
+            Self::Csv => Some(clap::builder::PossibleValue::new("csv")),
+            Self::Json => Some(clap::builder::PossibleValue::new("json")),
+            Self::JsonLines => Some(clap::builder::PossibleValue::new("jsonl")),
+        }
+    }
 }
 
 impl IntoResettable<OsStr> for Format {
@@ -49,6 +62,7 @@ impl IntoResettable<OsStr> for Format {
         Resettable::Value(match self {
             Format::Csv => "csv".into(),
             Format::Json => "json".into(),
+            Format::JsonLines => "jsonl".into(),
         })
     }
 }

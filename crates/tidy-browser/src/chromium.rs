@@ -7,7 +7,7 @@ use tokio::task;
 
 use crate::{
     args::{ChromiumName, Format, Value},
-    error::{self, JsonSnafu, Result},
+    error::{self, IoSnafu, JsonSnafu, Result},
     utils::{self, write_all_vectored},
 };
 
@@ -168,6 +168,7 @@ impl ChromiumBased {
                 match format {
                     Format::Csv => crate::COOKIES_FILE_CSV,
                     Format::Json => crate::COOKIES_FILE_JSON,
+                    Format::JsonLines => crate::COOKIES_FILE_JSONL,
                 }
             });
             let sep = sep.clone();
@@ -183,6 +184,7 @@ impl ChromiumBased {
                 let out_file = output_dir.join(match format {
                     Format::Csv => crate::LOGINS_FILE_CSV,
                     Format::Json => crate::LOGINS_FILE_JSON,
+                    Format::JsonLines => crate::LOGINS_FILE_JSONL,
                 });
 
                 let mut file = File::options()
@@ -213,6 +215,8 @@ impl ChromiumBased {
                             .with_context(|_| error::IoSnafu { path: out_file })
                     },
                     Format::Json => serde_json::to_writer(file, &logins).context(JsonSnafu),
+                    Format::JsonLines => serde_jsonlines::write_json_lines(&out_file, &logins)
+                        .context(IoSnafu { path: out_file }),
                 }
             });
             tasks.push(handle);
