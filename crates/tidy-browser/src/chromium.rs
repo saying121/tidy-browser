@@ -6,8 +6,8 @@ use strum::IntoEnumIterator;
 use tokio::task;
 
 use crate::{
-    args::{ChromiumName, Value},
-    error::{self, Result},
+    args::{ChromiumName, Format, Value},
+    error::{self, JsonSnafu, Result},
     utils::{self, write_all_vectored},
 };
 
@@ -27,6 +27,7 @@ impl ChromiumBased {
         output_dir: PathBuf,
         sep: String,
         host: H,
+        format: Format,
     ) -> Result<()>
     where
         H: Into<Option<String>>,
@@ -39,7 +40,7 @@ impl ChromiumBased {
             let values = HashSet::from_iter(Value::iter());
 
             tokio::task::spawn(async move {
-                Self::write_data(name, None, host, values, output_dir, sep).await
+                Self::write_data(name, None, host, values, output_dir, sep, format).await
             })
         }) {
             task.await
@@ -56,6 +57,7 @@ impl ChromiumBased {
         values: HashSet<Value>,
         mut output_dir: PathBuf,
         sep: S,
+        format: Format,
     ) -> Result<()>
     where
         D: Into<Option<PathBuf>>,
@@ -162,18 +164,27 @@ impl ChromiumBased {
         let mut tasks = Vec::with_capacity(cap);
 
         if let Some(cookies) = cookies {
-            let out_file = output_dir.join(crate::COOKIES_FILE);
+            let out_file = output_dir.join({
+                match format {
+                    Format::Csv => crate::COOKIES_FILE_CSV,
+                    Format::Json => crate::COOKIES_FILE_JSON,
+                }
+            });
             let sep = sep.clone();
 
-            let handle = utils::write_cookies(out_file, cookies, sep);
+            let handle = utils::write_cookies(out_file, cookies, sep, format);
             tasks.push(handle);
         }
 
         if let Some(logins) = logins {
-            let out_file = output_dir.join(crate::LOGINS_FILE);
             let sep = sep.clone();
 
             let handle = task::spawn_blocking(move || {
+                let out_file = output_dir.join(match format {
+                    Format::Csv => crate::LOGINS_FILE_CSV,
+                    Format::Json => crate::LOGINS_FILE_JSON,
+                });
+
                 let mut file = File::options()
                     .write(true)
                     .create(true)
@@ -181,24 +192,28 @@ impl ChromiumBased {
                     .open(&out_file)
                     .with_context(|_| error::IoSnafu { path: out_file.clone() })?;
 
-                let header = login_csv_header(sep.clone());
+                match format {
+                    Format::Csv => {
+                        let mut slices = Vec::with_capacity(2 + logins.len() * 2);
 
-                let mut slices = Vec::with_capacity(2 + logins.len() * 2);
-                slices.push(IoSlice::new(header.as_bytes()));
-                slices.push(IoSlice::new(b"\n"));
+                        let header = login_csv_header(sep.clone());
+                        slices.push(IoSlice::new(header.as_bytes()));
+                        slices.push(IoSlice::new(b"\n"));
 
-                let csvs: Vec<_> = logins
-                    .into_iter()
-                    .map(|v| v.to_csv(sep.clone()))
-                    .collect();
+                        let csvs: Vec<_> = logins
+                            .into_iter()
+                            .map(|v| v.to_csv(sep.clone()))
+                            .collect();
 
-                for csv in &csvs {
-                    slices.push(IoSlice::new(csv.as_bytes()));
-                    slices.push(IoSlice::new(b"\n"));
+                        for csv in &csvs {
+                            slices.push(IoSlice::new(csv.as_bytes()));
+                            slices.push(IoSlice::new(b"\n"));
+                        }
+                        write_all_vectored(&mut file, &mut slices)
+                            .with_context(|_| error::IoSnafu { path: out_file })
+                    },
+                    Format::Json => serde_json::to_writer(file, &logins).context(JsonSnafu),
                 }
-                write_all_vectored(&mut file, &mut slices)
-                    .with_context(|_| error::IoSnafu { path: out_file })?;
-                Ok::<(), error::Error>(())
             });
             tasks.push(handle);
         }

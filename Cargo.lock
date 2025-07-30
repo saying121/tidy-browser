@@ -2997,6 +2997,8 @@ dependencies = [
  "clap",
  "decrypt-cookies",
  "rayon",
+ "serde",
+ "serde_json",
  "snafu",
  "strum 0.27.2",
  "tokio",

@@ -6,7 +6,7 @@ use strum::IntoEnumIterator;
 use tokio::task;
 
 use crate::{
-    args::{FirefoxName, Value},
+    args::{FirefoxName, Format, Value},
     error::{self, Result},
     utils::{self},
 };
@@ -23,6 +23,7 @@ impl FirefoxBased {
         output_dir: PathBuf,
         sep: String,
         host: H,
+        format: Format,
     ) -> Result<()>
     where
         H: Into<Option<String>>,
@@ -35,7 +36,10 @@ impl FirefoxBased {
             let values = HashSet::from_iter(Value::iter());
 
             tokio::task::spawn(async move {
-                Self::write_data(name, None, None, None, host, values, output_dir, sep).await
+                Self::write_data(
+                    name, None, None, None, host, values, output_dir, sep, format,
+                )
+                .await
             })
         }) {
             task.await
@@ -55,6 +59,7 @@ impl FirefoxBased {
         values: HashSet<Value>,
         mut output_dir: PathBuf,
         sep: S,
+        format: Format,
     ) -> Result<()>
     where
         B: Into<Option<PathBuf>>,
@@ -130,10 +135,10 @@ impl FirefoxBased {
             let cookies = ff
                 .await
                 .context(error::TokioTaskSnafu)??;
-            let out_file = output_dir.join(crate::COOKIES_FILE);
+            let out_file = output_dir.join(crate::COOKIES_FILE_CSV);
             let sep = sep.clone();
 
-            utils::write_cookies(out_file, cookies, sep)
+            utils::write_cookies(out_file, cookies, sep, format)
                 .await
                 .context(error::TokioTaskSnafu)??;
         }

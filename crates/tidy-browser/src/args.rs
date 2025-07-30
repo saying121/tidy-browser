@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
-use clap::ArgAction;
+use clap::{
+    builder::{IntoResettable, OsStr, Resettable},
+    ArgAction,
+};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -24,6 +27,30 @@ pub struct Args {
     #[arg(long)]
     /// Filter by host/domain
     pub host: Option<String>,
+
+    #[arg(long, default_value(Format::Csv))]
+    /// Out format
+    pub out_format: Format,
+}
+
+#[derive(Clone, Copy)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(clap::ValueEnum)]
+pub enum Format {
+    #[default]
+    Csv,
+    Json,
+}
+
+impl IntoResettable<OsStr> for Format {
+    fn into_resettable(self) -> clap::builder::Resettable<OsStr> {
+        Resettable::Value(match self {
+            Format::Csv => "csv".into(),
+            Format::Json => "json".into(),
+        })
+    }
 }
 
 #[derive(Clone)]

@@ -13,10 +13,12 @@ categories = { workspace = true }
 exclude = ["CHANGELOG.md", "examples", "tests/"]
 
 [dependencies]
-binary-cookies = { workspace = true, features = ["csv", "sync"] }
+binary-cookies = { workspace = true, features = ["csv", "serde", "sync"] }
 clap = { workspace = true, features = ["derive"] }
-decrypt-cookies = { workspace = true }
+decrypt-cookies = { workspace = true, features = ["serde"] }
 rayon = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 snafu = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "tracing"] }
