@@ -6,10 +6,14 @@ use std::{
 };
 
 use decrypt_cookies::{chromium::ChromiumCookie, prelude::cookies::CookiesInfo};
+use serde::Serialize;
 use snafu::ResultExt;
 use tokio::task::{self, JoinHandle};
 
-use crate::error;
+use crate::{
+    args::Format,
+    error::{self, IoSnafu, JsonSnafu},
+};
 
 /// Copy from nightly [`Write::write_all_vectored`]
 /// TODO: Use std method
@@ -36,8 +40,9 @@ pub(crate) fn write_all_vectored(
 
 pub(crate) fn write_cookies<S>(
     out_file: PathBuf,
-    cookies: Vec<impl CookiesInfo + Send + 'static>,
+    cookies: Vec<impl CookiesInfo + Send + Serialize + 'static>,
     sep: S,
+    format: Format,
 ) -> JoinHandle<Result<(), error::Error>>
 where
     S: Display + Send + Clone + 'static,
@@ -50,25 +55,30 @@ where
             .open(&out_file)
             .with_context(|_| error::IoSnafu { path: out_file.clone() })?;
 
-        let header = <ChromiumCookie as CookiesInfo>::csv_header(sep.clone());
+        match format {
+            Format::Csv => {
+                let mut slices = Vec::with_capacity(2 + cookies.len() * 2);
 
-        let mut slices = Vec::with_capacity(2 + cookies.len() * 2);
-        slices.push(IoSlice::new(header.as_bytes()));
-        slices.push(IoSlice::new(b"\n"));
+                let header = <ChromiumCookie as CookiesInfo>::csv_header(sep.clone());
+                slices.push(IoSlice::new(header.as_bytes()));
+                slices.push(IoSlice::new(b"\n"));
 
-        let csvs: Vec<_> = cookies
-            .into_iter()
-            .map(|v| v.to_csv(sep.clone()))
-            .collect();
+                let csvs: Vec<_> = cookies
+                    .into_iter()
+                    .map(|v| v.to_csv(sep.clone()))
+                    .collect();
 
-        for csv in &csvs {
-            slices.push(IoSlice::new(csv.as_bytes()));
-            slices.push(IoSlice::new(b"\n"));
+                for csv in &csvs {
+                    slices.push(IoSlice::new(csv.as_bytes()));
+                    slices.push(IoSlice::new(b"\n"));
+                }
+
+                write_all_vectored(&mut file, &mut slices)
+                    .with_context(|_| error::IoSnafu { path: out_file })
+            },
+            Format::Json => serde_json::to_writer(file, &cookies).context(JsonSnafu),
+            Format::JsonLines => serde_jsonlines::write_json_lines(&out_file, &cookies)
+                .context(IoSnafu { path: out_file }),
         }
-
-        write_all_vectored(&mut file, &mut slices)
-            .with_context(|_| error::IoSnafu { path: out_file })?;
-
-        Ok::<(), error::Error>(())
     })
 }

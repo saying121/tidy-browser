@@ -8,7 +8,8 @@ use rayon::{iter::ParallelIterator, prelude::ParallelBridge};
 use snafu::ResultExt;
 
 use crate::{
-    error::{BinaryCookiesSnafu, IoSnafu, Result},
+    args::Format,
+    error::{BinaryCookiesSnafu, IoSnafu, JsonSnafu, Result},
     utils,
 };
 
@@ -19,7 +20,7 @@ use crate::{
 pub struct BinaryCookiesWriter;
 
 impl BinaryCookiesWriter {
-    pub fn write_data<A, B, S>(path: A, out: B, sep: S) -> Result<()>
+    pub fn write_data<A, B, S>(path: A, out: B, sep: S, format: Format) -> Result<()>
     where
         A: AsRef<Path>,
         B: AsRef<Path>,
@@ -40,31 +41,58 @@ impl BinaryCookiesWriter {
             .decode()
             .context(BinaryCookiesSnafu)?;
         let (pages_handle, _meta_decoder) = a.into_handles();
-        let csvs: Vec<_> = pages_handle
+
+        let tmp = pages_handle
             .decoders()
             .par_bridge()
             .filter_map(|mut v| v.decode().ok())
-            .map(sync::CookieHandle::into_decoders)
-            .flat_map(|v| {
-                v.par_bridge().filter_map(|mut v| {
-                    v.decode()
-                        .map(|v| v.to_csv(sep.clone()))
-                        .ok()
-                })
-            })
-            .collect();
+            .map(sync::CookieHandle::into_decoders);
+        match format {
+            Format::Csv => {
+                let csvs: Vec<_> = tmp
+                    .flat_map(|v| {
+                        v.par_bridge().filter_map(|mut v| {
+                            v.decode()
+                                .map(|v| v.to_csv(sep.clone()))
+                                .ok()
+                        })
+                    })
+                    .collect();
 
-        let mut slices = Vec::with_capacity(2 + csvs.len() * 2);
+                let mut slices = Vec::with_capacity(2 + csvs.len() * 2);
 
-        let header = Cookie::csv_header(sep.clone());
-        slices.push(IoSlice::new(header.as_bytes()));
-        slices.push(IoSlice::new(b"\n"));
+                let header = Cookie::csv_header(sep.clone());
+                slices.push(IoSlice::new(header.as_bytes()));
+                slices.push(IoSlice::new(b"\n"));
 
-        for cookie in &csvs {
-            slices.push(IoSlice::new(cookie.as_bytes()));
-            slices.push(IoSlice::new(b"\n"));
+                for cookie in &csvs {
+                    slices.push(IoSlice::new(cookie.as_bytes()));
+                    slices.push(IoSlice::new(b"\n"));
+                }
+                utils::write_all_vectored(&mut out, &mut slices)
+                    .with_context(|_| IoSnafu { path: out_path.to_owned() })
+            },
+            Format::Json => {
+                let cookies = tmp
+                    .map(|v| {
+                        v.par_bridge()
+                            .filter_map(|mut v| v.decode().ok())
+                            .collect::<Vec<_>>()
+                    })
+                    .collect::<Vec<_>>();
+                serde_json::to_writer(out, &cookies).context(JsonSnafu)
+            },
+            Format::JsonLines => {
+                let cookies = tmp
+                    .flat_map(|v| {
+                        v.par_bridge()
+                            .filter_map(|mut v| v.decode().ok())
+                            .collect::<Vec<_>>()
+                    })
+                    .collect::<Vec<_>>();
+                serde_jsonlines::write_json_lines(out_path, cookies)
+                    .with_context(|_| IoSnafu { path: out_path.to_owned() })
+            },
         }
-        utils::write_all_vectored(&mut out, &mut slices)
-            .with_context(|_| IoSnafu { path: out_path.to_owned() })
     }
 }

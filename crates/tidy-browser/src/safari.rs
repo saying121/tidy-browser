@@ -4,7 +4,7 @@ use decrypt_cookies::prelude::{SafariBuilder, SafariGetter};
 use snafu::ResultExt;
 
 use crate::{
-    args::Value,
+    args::{Format, Value},
     error::{self, Result},
     utils,
 };
@@ -22,6 +22,7 @@ impl SafariBased {
         host: H,
         sep: S,
         mut output_dir: PathBuf,
+        format: Format,
     ) -> Result<()>
     where
         C: Into<Option<PathBuf>>,
@@ -58,9 +59,9 @@ impl SafariBased {
                 .await
                 .with_context(|_| error::IoSnafu { path: output_dir.clone() })?;
 
-            output_dir.push(crate::COOKIES_FILE);
+            output_dir.push(crate::COOKIES_FILE_CSV);
 
-            utils::write_cookies(output_dir, cookies, sep)
+            utils::write_cookies(output_dir, cookies, sep, format)
                 .await
                 .context(error::TokioTaskSnafu)??;
         }

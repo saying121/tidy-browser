@@ -13,6 +13,12 @@ use snafu::{Location, Snafu};
 #[snafu(visibility(pub))]
 pub enum Error {
     #[snafu(display("{source}, @:{location}"))]
+    Json {
+        source: serde_json::Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}, @:{location}"))]
     BinaryCookies {
         source: binary_cookies::error::ParseError,
         #[snafu(implicit)]

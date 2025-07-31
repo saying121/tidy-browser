@@ -53,6 +53,7 @@ anyhow = "^1"
 
 serde = { version = "^1", default-features = false, features = ["derive"] }
 serde_json = { version = "^1" }
+serde-jsonlines = "0.7.0"
 
 secret-service = { version = "^5" }
 bytes = { version = "^1" }

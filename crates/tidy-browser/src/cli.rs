@@ -4,7 +4,7 @@ use snafu::ResultExt;
 use strum::IntoEnumIterator;
 
 use crate::{
-    args::{self, BinaryCookiesArgs, ChromiumArgs, ChromiumName, FirefoxArgs, FirefoxName},
+    args::{self, BinaryCookiesArgs, ChromiumArgs, ChromiumName, FirefoxArgs, FirefoxName, Format},
     binary_cookies::BinaryCookiesWriter,
     chromium::ChromiumBased,
     error::{self, Result},
@@ -17,23 +17,39 @@ use crate::{
 };
 
 pub async fn run_cli(args: crate::args::Args) -> Result<()> {
-    let output_dir = args
-        .output_dir
-        .unwrap_or_else(|| PathBuf::from_str("results").unwrap());
+    let output_dir = args.output_dir;
 
     if args.all_browsers {
         let chromium = tokio::spawn({
             let output_dir = output_dir.clone();
             let sep = args.sep.clone();
             let host = args.host.clone();
-            async move { ChromiumBased::multi_data(ChromiumName::iter(), output_dir, sep, host).await }
+            async move {
+                ChromiumBased::multi_data(
+                    ChromiumName::iter(),
+                    output_dir,
+                    sep,
+                    host,
+                    args.out_format,
+                )
+                .await
+            }
         });
 
         let firefox = tokio::spawn({
             let host = args.host.clone();
             let output_dir = output_dir.clone();
             let sep = args.sep.clone();
-            async move { FirefoxBased::multi_data(FirefoxName::iter(), output_dir, sep, host).await }
+            async move {
+                FirefoxBased::multi_data(
+                    FirefoxName::iter(),
+                    output_dir,
+                    sep,
+                    host,
+                    args.out_format,
+                )
+                .await
+            }
         });
 
         #[cfg(target_os = "macos")]
@@ -46,6 +62,7 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
                     host,
                     args.sep,
                     output_dir,
+                    args.out_format,
                 )
                 .await
             }
@@ -73,6 +90,7 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
                     HashSet::from_iter(values.into_iter()),
                     output_dir,
                     args.sep,
+                    args.out_format,
                 )
                 .await?;
             },
@@ -92,15 +110,22 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
                     HashSet::from_iter(values.into_iter()),
                     output_dir,
                     args.sep,
+                    args.out_format,
                 )
                 .await?
             },
             args::Core::BinaryCookies(BinaryCookiesArgs { cookies_path, out_file }) => {
                 BinaryCookiesWriter::write_data(
                     cookies_path,
-                    out_file
-                        .unwrap_or_else(|| PathBuf::from_str(crate::BINARY_COOKIES_FILE).unwrap()),
+                    out_file.unwrap_or_else(|| match args.out_format {
+                        Format::Csv => PathBuf::from_str(crate::BINARY_COOKIES_FILE_CSV).unwrap(),
+                        Format::Json => PathBuf::from_str(crate::BINARY_COOKIES_FILE_JSON).unwrap(),
+                        Format::JsonLines => {
+                            PathBuf::from_str(crate::BINARY_COOKIES_FILE_JSONL).unwrap()
+                        },
+                    }),
                     args.sep,
+                    args.out_format,
                 )?;
             },
             #[cfg(target_os = "macos")]
@@ -111,6 +136,7 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
                     args.host,
                     args.sep,
                     output_dir,
+                    args.out_format,
                 )
                 .await?
             },

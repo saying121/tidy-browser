@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
-use clap::ArgAction;
+use clap::{
+    builder::{IntoResettable, OsStr, Resettable},
+    ArgAction,
+};
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -10,8 +13,10 @@ pub struct Args {
     #[command(subcommand)]
     pub core: Option<Core>,
 
-    #[arg(short, long)]
-    pub output_dir: Option<PathBuf>,
+    #[arg(short, long, default_value("results"), verbatim_doc_comment)]
+    /// Specify output dir
+    /// binary-cookies ignore the arg
+    pub output_dir: PathBuf,
 
     #[arg(short, long)]
     /// All browsers data
@@ -24,6 +29,44 @@ pub struct Args {
     #[arg(long)]
     /// Filter by host/domain
     pub host: Option<String>,
+
+    #[arg(long, default_value(Format::Csv))]
+    /// Out format
+    pub out_format: Format,
+}
+
+#[derive(Clone, Copy)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub enum Format {
+    #[default]
+    Csv,
+    Json,
+    JsonLines,
+}
+
+impl clap::ValueEnum for Format {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[Self::Csv, Self::Json, Self::JsonLines]
+    }
+    fn to_possible_value<'a>(&self) -> ::std::option::Option<clap::builder::PossibleValue> {
+        match self {
+            Self::Csv => Some(clap::builder::PossibleValue::new("csv")),
+            Self::Json => Some(clap::builder::PossibleValue::new("json")),
+            Self::JsonLines => Some(clap::builder::PossibleValue::new("jsonl")),
+        }
+    }
+}
+
+impl IntoResettable<OsStr> for Format {
+    fn into_resettable(self) -> clap::builder::Resettable<OsStr> {
+        Resettable::Value(match self {
+            Format::Csv => "csv".into(),
+            Format::Json => "json".into(),
+            Format::JsonLines => "jsonl".into(),
+        })
+    }
 }
 
 #[derive(Clone)]
@@ -76,8 +119,7 @@ pub struct ChromiumArgs {
     #[arg(short, long)]
     pub name: ChromiumName,
 
-    #[arg(long, id("DIR"))]
-    #[arg(verbatim_doc_comment)]
+    #[arg(long, id("DIR"), verbatim_doc_comment)]
     /// When browser is started with `--user-data-dir=DIR   Specify the directory that user data (your "profile") is kept in.`
     #[cfg_attr(target_os = "linux", doc = "[default value: ~/.config/google-chrome]")]
     #[cfg_attr(

@@ -2549,6 +2549,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-jsonlines"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "013e069239d98648ea43a9c01845b381445e88de08b5a895ef9302e3bffde03d"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+ "pin-project-lite",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "serde_derive"
 version = "1.0.219"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2997,6 +3011,9 @@ dependencies = [
  "clap",
  "decrypt-cookies",
  "rayon",
+ "serde",
+ "serde-jsonlines",
+ "serde_json",
  "snafu",
  "strum 0.27.2",
  "tokio",
