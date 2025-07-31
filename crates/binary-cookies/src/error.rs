@@ -8,31 +8,31 @@ use winnow::error::ContextError;
 #[derive(Snafu)]
 #[snafu(visibility(pub))]
 pub enum ParseError {
-    #[snafu(display("{render}, @:{location}"))]
+    #[snafu(display("{render}\n@:{location}"))]
     WinnowCtx {
         render: ContextError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Time broken: {local_result:?}, @:{location}"))]
+    #[snafu(display("Time broken: {local_result:?}\n@:{location}"))]
     Time {
         local_result: LocalResult<chrono::DateTime<chrono::Utc>>,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}, @:{location}"))]
+    #[snafu(display("{source}\n@:{location}"))]
     Bplist {
         source: BplistErr,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Read: {source}, @:{location}",))]
+    #[snafu(display("Read: {source}\n@:{location}",))]
     Read {
         source: std::io::Error,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("End of binarycookies, can't decode any more data, @:{location}"))]
+    #[snafu(display("End of binarycookies, can't decode any more data\n@:{location}"))]
     ParsingCompleted {
         #[snafu(implicit)]
         location: Location,
@@ -50,24 +50,27 @@ impl ParseError {
 #[derive(Snafu)]
 #[snafu(visibility(pub))]
 pub enum BplistErr {
-    #[snafu(display(r#"Not start with b"bplist00", @:{location}"#))]
+    #[snafu(display(
+        r#"Not start with b"bplist00"
+@:{location}"#
+    ))]
     Magic {
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display(r#"The object not dict, need update decoder, @:{location}"#))]
+    #[snafu(display("The object not dict, need update decoder\n@:{location}"))]
     NotDict {
         #[snafu(implicit)]
         location: Location,
     },
     #[snafu(display(
-        r#"The dict key not `NSHTTPCookieAcceptPolicy`, need update decoder, @:{location}"#
+        "The dict key not `NSHTTPCookieAcceptPolicy`, need update decoder\n@:{location}"
     ))]
     BadKey {
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display(r#"The int not one byte, need update decoder, @:{location}"#))]
+    #[snafu(display("The int not one byte, need update decoder\n@:{location}"))]
     OneByteInt {
         #[snafu(implicit)]
         location: Location,

@@ -1,6 +1,6 @@
 use std::{collections::HashSet, fmt::Display, path::PathBuf};
 
-use decrypt_cookies::prelude::*;
+use decrypt_cookies::{firefox::builder::FirefoxBuilderError, prelude::*};
 use snafu::ResultExt;
 use strum::IntoEnumIterator;
 use tokio::task;
@@ -42,13 +42,31 @@ impl FirefoxBased {
                 .await
             })
         }) {
-            task.await
-                .context(error::TokioTaskSnafu)??;
+            if let Err(e) = task
+                .await
+                .context(error::TokioTaskSnafu)?
+            {
+                match e {
+                    error::Error::FirefoxBuilder {
+                        source: FirefoxBuilderError::NotFoundBase { path, .. },
+                        ..
+                    } => {
+                        tracing::info!(
+                            r#"Not found {},
+The browser is not installed or started with `-P`/`-profile` arg."#,
+                            path.display()
+                        );
+                        todo!()
+                    },
+                    e => tracing::error!("{e}"),
+                }
+            }
         }
 
         Ok(())
     }
 
+    #[tracing::instrument(skip_all, fields(name), level = "info")]
     #[expect(clippy::too_many_arguments, reason = "bin not lib")]
     pub async fn write_data<B, P, PP, H, S>(
         name: FirefoxName,
