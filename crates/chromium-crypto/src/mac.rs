@@ -86,7 +86,7 @@ impl Decrypter {
             .map(|res| {
                 String::from_utf8(res.to_vec()).unwrap_or_else(|_e| {
                     #[cfg(feature = "tracing")]
-                    tracing::info!("Decoding for chromium >= 130.x: {_e}");
+                    tracing::trace!("Decoding for chromium >= 130.x: {_e}");
                     String::from_utf8_lossy(&res[32..]).to_string()
                 })
             })
