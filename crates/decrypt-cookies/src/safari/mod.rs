@@ -12,26 +12,26 @@ use crate::browser::cookies::LeetCodeCookies;
 #[derive(Snafu)]
 #[snafu(visibility(pub))]
 pub enum SafariError {
-    #[snafu(display("{source}, @:{location}"))]
+    #[snafu(display("{source}\n@:{location}"))]
     Parse {
         source: binary_cookies::error::ParseError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}, path: {}, @:{location}",path.display()))]
+    #[snafu(display("{source}, path: {}\n@:{location}",path.display()))]
     Io {
         path: PathBuf,
         source: std::io::Error,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}, @:{location}"))]
+    #[snafu(display("{source}\n@:{location}"))]
     Task {
         source: tokio::task::JoinError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Can not found home dir, @:{location}"))]
+    #[snafu(display("Can not found home dir\n@:{location}"))]
     Home {
         #[snafu(implicit)]
         location: Location,

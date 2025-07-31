@@ -1,9 +1,25 @@
 use std::path::Path;
 
+use sea_orm::{ConnectOptions, Database, DatabaseConnection, DbErr};
+
 pub fn need_sep(path: &Path) -> bool {
     let buf = path.as_os_str().as_encoded_bytes();
     buf.last()
         .is_some_and(|&c| char::from(c) != std::path::MAIN_SEPARATOR)
+}
+
+pub async fn connect_db<P: AsRef<Path> + Send>(
+    path: P,
+) -> std::result::Result<DatabaseConnection, DbErr> {
+    let db_url = format!("sqlite:{}?mode=ro", path.as_ref().display());
+    let mut opt = ConnectOptions::new(db_url);
+    opt.sqlx_logging_level(
+        "trace"
+            .parse()
+            .expect("Should not failed"),
+    );
+
+    Database::connect(opt).await
 }
 
 #[cfg(target_os = "windows")]

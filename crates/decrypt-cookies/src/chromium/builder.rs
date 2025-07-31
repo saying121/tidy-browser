@@ -21,38 +21,46 @@ use crate::{
 #[derive(Snafu)]
 #[snafu(visibility(pub))]
 pub enum ChromiumBuilderError {
-    #[snafu(display("{source}, @:{location}"))]
+    #[snafu(display(r#"Not found {}
+The browser is not installed or started with `--user-data-dir` arg
+@:{location}"#, path.display()))]
+    NotFoundBase {
+        path: PathBuf,
+        #[snafu(implicit)]
+        location: Location,
+    },
+    #[snafu(display("{source}\n@:{location}"))]
     Decrypter {
         source: chromium_crypto::error::CryptoError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}, @:{location}"))]
+    #[snafu(display("{source}\n@:{location}"))]
     Db {
         source: sea_orm::DbErr,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}, path: {}, @:{location}",path.display()))]
+    #[snafu(display("{source}, path: {}\n@:{location}",path.display()))]
     Io {
         source: std::io::Error,
         path: PathBuf,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}, @:{location}"))]
+    #[snafu(display("{source}\n@:{location}"))]
     Rawcopy {
         source: anyhow::Error,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("{source}, @:{location}"))]
+    #[snafu(display("{source}\n@:{location}"))]
     TokioJoin {
         source: tokio::task::JoinError,
         #[snafu(implicit)]
         location: Location,
     },
-    #[snafu(display("Can not found home dir, @:{location}"))]
+    #[snafu(display("Can not found home dir\n@:{location}"))]
     Home {
         #[snafu(implicit)]
         location: Location,
@@ -130,6 +138,10 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
             tracing::Span::current().record("browser", B::NAME);
             tracing::debug!(base = %base.display());
         };
+
+        if !base.exists() {
+            return Err(NotFoundBaseSnafu { path: base }.build());
+        }
 
         let temp_paths = Self::cache_data(base).await?;
 

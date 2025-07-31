@@ -1,14 +1,14 @@
 use std::path::Path;
 
 use sea_orm::{
-    sea_query::IntoCondition, ColumnTrait, Database, DatabaseConnection, DbErr, EntityTrait,
-    QueryFilter,
+    sea_query::IntoCondition, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter,
 };
 
 use super::entities::{
     moz_cookies::{self, Model},
     prelude::*,
 };
+use crate::utils::connect_db;
 
 type Result<T> = std::result::Result<T, DbErr>;
 
@@ -25,9 +25,7 @@ impl CookiesQuery {
     where
         P: AsRef<Path> + Send,
     {
-        let db_url = format!("sqlite:{}?mode=ro", path.as_ref().to_string_lossy());
-
-        let db = Database::connect(db_url).await?;
+        let db = connect_db(path).await?;
         Ok(Self { conn: db })
     }
 

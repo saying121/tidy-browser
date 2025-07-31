@@ -153,7 +153,7 @@ impl Decrypter {
             .map(|v| {
                 String::from_utf8(v.clone()).unwrap_or_else(|_e| {
                     #[cfg(feature = "tracing")]
-                    tracing::info!("Decoding for chromium >=130.x: {_e}");
+                    tracing::trace!("Decoding for chromium >=130.x: {_e}");
                     String::from_utf8_lossy(&v[32..]).into_owned()
                 })
             })

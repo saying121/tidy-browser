@@ -1,6 +1,6 @@
 use std::{collections::HashSet, fmt::Display, fs::File, io::IoSlice, path::PathBuf};
 
-use decrypt_cookies::prelude::*;
+use decrypt_cookies::{chromium::builder::ChromiumBuilderError, prelude::*};
 use snafu::ResultExt;
 use strum::IntoEnumIterator;
 use tokio::task;
@@ -43,8 +43,26 @@ impl ChromiumBased {
                 Self::write_data(name, None, host, values, output_dir, sep, format).await
             })
         }) {
-            task.await
-                .context(error::TokioTaskSnafu)??;
+            if let Err(e) = task
+                .await
+                .context(error::TokioTaskSnafu)?
+            {
+                match e {
+                    error::Error::ChromiumBuilder {
+                        source: source @ ChromiumBuilderError::NotFoundBase { .. },
+                        ..
+                    } => {
+                        #[cfg(not(target_os = "windows"))]
+                        tracing::info!(r#"{source}"#,);
+                        #[cfg(target_os = "windows")]
+                        tracing::info!(
+                            r#"{source}
+When you use scoop on Windows, the data path is located at `~\scoop\persisst\<name>\<xxx>`"#,
+                        );
+                    },
+                    e => tracing::error!("{e}"),
+                }
+            }
         }
 
         Ok(())
@@ -72,6 +90,7 @@ impl ChromiumBased {
                 match name {
                     $(
                     ChromiumName::$browser => {
+            tracing::Span::current().record("browser", $browser::NAME);
                         let chromium = if let Some(dir) = data_dir {
                             ChromiumBuilder::<$browser>::with_user_data_dir(dir)
                         }
