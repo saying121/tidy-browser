@@ -13,8 +13,10 @@ pub struct Args {
     #[command(subcommand)]
     pub core: Option<Core>,
 
-    #[arg(short, long)]
-    pub output_dir: Option<PathBuf>,
+    #[arg(short, long, default_value("results"), verbatim_doc_comment)]
+    /// Specify output dir
+    /// binary-cookies ignore the arg
+    pub output_dir: PathBuf,
 
     #[arg(short, long)]
     /// All browsers data
@@ -117,8 +119,7 @@ pub struct ChromiumArgs {
     #[arg(short, long)]
     pub name: ChromiumName,
 
-    #[arg(long, id("DIR"))]
-    #[arg(verbatim_doc_comment)]
+    #[arg(long, id("DIR"), verbatim_doc_comment)]
     /// When browser is started with `--user-data-dir=DIR   Specify the directory that user data (your "profile") is kept in.`
     #[cfg_attr(target_os = "linux", doc = "[default value: ~/.config/google-chrome]")]
     #[cfg_attr(

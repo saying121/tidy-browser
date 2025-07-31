@@ -17,9 +17,7 @@ use crate::{
 };
 
 pub async fn run_cli(args: crate::args::Args) -> Result<()> {
-    let output_dir = args
-        .output_dir
-        .unwrap_or_else(|| PathBuf::from_str("results").unwrap());
+    let output_dir = args.output_dir;
 
     if args.all_browsers {
         let chromium = tokio::spawn({

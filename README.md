@@ -13,8 +13,16 @@
 ```bash
 cargo install tidy-browser
 
+# Get data for all available browsers
 tidy-browser -a
 cd results
+
+# Filter by host/domain
+tidy-browser -a --host github.com
+cd results
+
+# Available data formats: csv, json, jsonl(jsonlines)
+tidy-browser --out-format json -a
 
 # Parse BinaryCookies
 tidy-browser binary-cookies -i ~/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies
