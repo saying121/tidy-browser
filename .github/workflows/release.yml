@@ -69,6 +69,7 @@ jobs:
 
   build:
     needs: [create-release]
+    if: startsWith(github.event.ref, 'refs/tags/tidy-browser')
     strategy:
       fail-fast: false
       matrix:
@@ -148,7 +149,7 @@ jobs:
           # build-tool: ${{ matrix.build-tool }}
           target: ${{ matrix.target }}
           # include: attribution
-          archive: $bin-$tag-$target
+          archive: $tag-$target
           token: ${{ secrets.GITHUB_TOKEN }}
           # ref: refs/tags/${{ needs.get-version.outputs.tag_version }}
           checksum: sha256
