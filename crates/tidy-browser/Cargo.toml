@@ -15,6 +15,7 @@ exclude = ["CHANGELOG.md", "examples", "tests/"]
 [dependencies]
 binary-cookies = { workspace = true, features = ["csv", "serde", "sync"] }
 clap = { workspace = true, features = ["derive"] }
+clap_complete_command = { workspace = true }
 decrypt-cookies = { workspace = true, features = ["serde"] }
 rayon = { workspace = true }
 serde = { workspace = true }

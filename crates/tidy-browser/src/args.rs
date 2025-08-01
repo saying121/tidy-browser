@@ -2,18 +2,23 @@ use std::path::PathBuf;
 
 use clap::{
     builder::{IntoResettable, OsStr, Resettable},
-    ArgAction,
+    ArgAction, ValueHint,
 };
 
 #[derive(Clone)]
 #[derive(Debug)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(clap::Parser)]
 pub struct Args {
     #[command(subcommand)]
-    pub core: Option<Core>,
+    pub cmd: Option<SubCmd>,
 
-    #[arg(short, long, default_value("results"), verbatim_doc_comment)]
+    #[arg(
+        short,
+        long,
+        default_value("results"),
+        verbatim_doc_comment,
+        value_hint(ValueHint::DirPath)
+    )]
     /// Specify output dir
     /// binary-cookies ignore the arg
     pub output_dir: PathBuf,
@@ -22,11 +27,11 @@ pub struct Args {
     /// All browsers data
     pub all_browsers: bool,
 
-    #[arg(long, default_value(","))]
+    #[arg(long, default_value(","), value_hint(ValueHint::Other))]
     /// Csv separator
     pub sep: String,
 
-    #[arg(long)]
+    #[arg(long, id("domain"), value_hint(ValueHint::Url))]
     /// Filter by host/domain
     pub host: Option<String>,
 
@@ -38,7 +43,6 @@ pub struct Args {
 #[derive(Clone, Copy)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum Format {
     #[default]
     Csv,
@@ -71,9 +75,8 @@ impl IntoResettable<OsStr> for Format {
 
 #[derive(Clone)]
 #[derive(Debug)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(clap::Subcommand)]
-pub enum Core {
+pub enum SubCmd {
     /// Chromium based
     Chromium(ChromiumArgs),
     /// Firefox based
@@ -83,6 +86,10 @@ pub enum Core {
     #[cfg(target_os = "macos")]
     /// Safari
     Safari(SafariArgs),
+    /// Generates completions for the specified SHELL, sends them to `stdout` and exits.
+    Completions {
+        shell: clap_complete_command::Shell,
+    },
 }
 
 #[derive(Clone, Copy)]
@@ -107,7 +114,7 @@ pub struct SafariArgs {
     /// Only support cookie
     pub values: Vec<Value>,
 
-    #[arg(long)]
+    #[arg(long, value_hint(ValueHint::FilePath))]
     pub cookies_path: Option<PathBuf>,
 }
 
@@ -119,20 +126,20 @@ pub struct ChromiumArgs {
     #[arg(short, long)]
     pub name: ChromiumName,
 
-    #[arg(long, id("DIR"), verbatim_doc_comment)]
+    #[arg(long, id("DIR"), verbatim_doc_comment, value_hint(ValueHint::DirPath))]
     /// When browser is started with `--user-data-dir=DIR   Specify the directory that user data (your "profile") is kept in.`
-    #[cfg_attr(target_os = "linux", doc = "[default value: ~/.config/google-chrome]")]
+    #[cfg_attr(target_os = "linux", doc = "[example value: ~/.config/google-chrome]")]
     #[cfg_attr(
         target_os = "macos",
-        doc = "[default value: ~/Library/Application Support/Google/Chrome]"
+        doc = "[example value: ~/Library/Application Support/Google/Chrome]"
     )]
     #[cfg_attr(
         target_os = "windows",
-        doc = r"[default value: ~\AppData\Local\Google\Chrome\User Data]"
+        doc = r"[example value: ~\AppData\Local\Google\Chrome\User Data]"
     )]
     pub user_data_dir: Option<PathBuf>,
 
-    #[arg(short, long, value_delimiter(','))]
+    #[arg(short, long, value_delimiter(','), action(ArgAction::Append))]
     pub values: Vec<Value>,
 }
 
@@ -166,20 +173,20 @@ pub struct FirefoxArgs {
     #[arg(short, long)]
     pub name: FirefoxName,
 
-    #[arg(long, id("DIR"))]
+    #[arg(long, id("DIR"), value_hint(ValueHint::DirPath))]
     /// Browser data dir.
-    #[cfg_attr(target_os = "linux", doc = "[default value: ~/.mozilla/firefox]")]
+    #[cfg_attr(target_os = "linux", doc = "[example value: ~/.mozilla/firefox]")]
     #[cfg_attr(
         target_os = "macos",
-        doc = "[default value: ~/Library/Application Support/Firefox]"
+        doc = "[example value: ~/Library/Application Support/Firefox]"
     )]
     #[cfg_attr(
         target_os = "windows",
-        doc = r"[default value: ~\AppData\Roaming\Mozilla\Firefox]"
+        doc = r"[example value: ~\AppData\Roaming\Mozilla\Firefox]"
     )]
     pub base: Option<PathBuf>,
 
-    #[arg(short('P'), id("profile"))]
+    #[arg(short('P'), id("profile"), value_hint(ValueHint::Other))]
     /// When browser is started with `-P <profile>       Start with <profile>.`
     pub profile: Option<String>,
 
@@ -189,7 +196,7 @@ pub struct FirefoxArgs {
     /// When the arg is used, other args (such as `--base`, `-P`) are ignore.
     pub profile_path: Option<PathBuf>,
 
-    #[arg(short, long, value_delimiter(','))]
+    #[arg(short, long, value_delimiter(','), action(ArgAction::Append))]
     /// Only support cookie
     pub values: Vec<Value>,
 }
@@ -211,8 +218,8 @@ pub enum FirefoxName {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[derive(clap::Args)]
 pub struct BinaryCookiesArgs {
-    #[arg(short('i'), long)]
+    #[arg(short('i'), long, value_hint(ValueHint::FilePath))]
     pub cookies_path: PathBuf,
-    #[arg(short, long)]
+    #[arg(short, long, value_hint(ValueHint::FilePath))]
     pub out_file: Option<PathBuf>,
 }
