@@ -1,10 +1,13 @@
-use std::{collections::HashSet, path::PathBuf, str::FromStr};
+use std::{collections::HashSet, io, path::PathBuf, str::FromStr};
 
+use clap::CommandFactory;
 use snafu::ResultExt;
 use strum::IntoEnumIterator;
 
 use crate::{
-    args::{self, BinaryCookiesArgs, ChromiumArgs, ChromiumName, FirefoxArgs, FirefoxName, Format},
+    args::{
+        self, Args, BinaryCookiesArgs, ChromiumArgs, ChromiumName, FirefoxArgs, FirefoxName, Format,
+    },
     binary_cookies::BinaryCookiesWriter,
     chromium::ChromiumBased,
     error::{self, Result},
@@ -83,9 +86,13 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
 
         return Ok(());
     }
-    if let Some(core) = args.core {
+
+    if let Some(core) = args.cmd {
         match core {
-            args::Core::Chromium(ChromiumArgs { name, user_data_dir, values }) => {
+            args::SubCmd::Completions { shell } => {
+                shell.generate(&mut Args::command(), &mut io::stdout())
+            },
+            args::SubCmd::Chromium(ChromiumArgs { name, user_data_dir, values }) => {
                 ChromiumBased::write_data(
                     name,
                     user_data_dir,
@@ -97,7 +104,7 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
                 )
                 .await?;
             },
-            args::Core::Firefox(FirefoxArgs {
+            args::SubCmd::Firefox(FirefoxArgs {
                 name,
                 base,
                 profile,
@@ -117,7 +124,7 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
                 )
                 .await?
             },
-            args::Core::BinaryCookies(BinaryCookiesArgs { cookies_path, out_file }) => {
+            args::SubCmd::BinaryCookies(BinaryCookiesArgs { cookies_path, out_file }) => {
                 BinaryCookiesWriter::write_data(
                     cookies_path,
                     out_file.unwrap_or_else(|| match args.out_format {
@@ -132,7 +139,7 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
                 )?;
             },
             #[cfg(target_os = "macos")]
-            args::Core::Safari(SafariArgs { values, cookies_path }) => {
+            args::SubCmd::Safari(SafariArgs { values, cookies_path }) => {
                 SafariBased::write_data(
                     HashSet::from_iter(values.into_iter()),
                     cookies_path,

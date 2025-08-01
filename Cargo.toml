@@ -75,6 +75,7 @@ rust-ini = { version = "^0.21" }
 which = "8"
 duct = "1"
 clap = "^4"
+clap_complete_command = "0.6.1"
 strum = "0.27"
 
 decrypt-cookies = { path = "./crates/decrypt-cookies", version = "0.8.0" }
