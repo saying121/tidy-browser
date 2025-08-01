@@ -276,7 +276,7 @@ checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "binary-cookies"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "bstr",
  "chrono",
@@ -431,7 +431,7 @@ dependencies = [
 
 [[package]]
 name = "chromium-crypto"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "TinyUFO",
  "aead",
@@ -763,7 +763,7 @@ dependencies = [
 
 [[package]]
 name = "decrypt-cookies"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "binary-cookies",
@@ -3035,7 +3035,7 @@ dependencies = [
 
 [[package]]
 name = "tidy-browser"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "binary-cookies",
  "clap",

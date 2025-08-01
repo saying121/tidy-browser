@@ -78,9 +78,9 @@ clap = "^4"
 clap_complete_command = "0.6.1"
 strum = "0.27"
 
-decrypt-cookies = { path = "./crates/decrypt-cookies", version = "0.8.0" }
-chromium-crypto = { path = "./crates/chromium-crypto", version = "0.2.0" }
-binary-cookies = { path = "./crates/binary-cookies", version = "0.2" }
+decrypt-cookies = { path = "./crates/decrypt-cookies", version = "0.9.0" }
+chromium-crypto = { path = "./crates/chromium-crypto", version = "0.3.0" }
+binary-cookies = { path = "./crates/binary-cookies", version = "0.3" }
 
 [workspace.lints.rust]
 temporary_cstring_as_ptr = "deny"
