@@ -10,8 +10,10 @@
 
 ## Install And Usage
 
+Using [cargo-binstall](https://github.com/cargo-bins/cargo-binstall)
+
 ```bash
-cargo install tidy-browser
+cargo binstall tidy-browser
 
 # Get data for all available browsers
 tidy-browser -a
