@@ -4,16 +4,10 @@ permissions:
   contents: write
 
 on:
-  # release:
-  #   types:
-  #     - published
-  #     - prereleased
   push:
     tags:
-      - "*-v[0-9]+.[0-9]+.[0-9]+"
-      - "*-v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
-      - "*-v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
-      - "*-v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+      - "*-v[0-9]+.[0-9]+.[0-9]+*"
+      # - "*"
 
 env:
   BIN_NAME: tidy-browser
@@ -134,7 +128,7 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
         with:
-          version: "0.10.0"
+          version: "v0.10.0"
 
       - name: Install cross-compilation tools
         if: ${{ matrix.cross }}
