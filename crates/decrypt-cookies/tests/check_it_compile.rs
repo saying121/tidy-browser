@@ -68,5 +68,5 @@ async fn can_compile() {
             )*
         };
     }
-    test_ff_compile!(Firefox, Librewolf);
+    test_ff_compile!(Firefox, Librewolf, Floorp);
 }

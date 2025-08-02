@@ -44,8 +44,8 @@ eval $(tidy-browser completions <your shell>)
 
 ## Core crate
 
-[decrypt-cookies](./crates/decrypt-cookies)
+[decrypt-cookies](https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies)
 
 ## Status
 
-[status](./crates/decrypt-cookies/README.md#test-status)
+[status](https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies/README.md#test-status)
