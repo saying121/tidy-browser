@@ -6,7 +6,6 @@ use chrono::{DateTime, Utc};
 #[derive(Debug)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[non_exhaustive]
 pub struct LeetCodeCookies {
     pub csrf: String,
     pub session: String,

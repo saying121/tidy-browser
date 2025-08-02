@@ -1,16 +1,18 @@
+#[cfg(any(feature = "chromium", feature = "firefox"))]
 use std::path::Path;
 
-use sea_orm::{ConnectOptions, Database, DatabaseConnection, DbErr};
-
+#[cfg(any(feature = "chromium", feature = "firefox"))]
 pub fn need_sep(path: &Path) -> bool {
     let buf = path.as_os_str().as_encoded_bytes();
     buf.last()
         .is_some_and(|&c| char::from(c) != std::path::MAIN_SEPARATOR)
 }
 
-pub async fn connect_db<P: AsRef<Path> + Send>(
-    path: P,
-) -> std::result::Result<DatabaseConnection, DbErr> {
+#[cfg(any(feature = "chromium", feature = "firefox"))]
+pub fn connect_db<P: AsRef<Path>>(
+    path: &P,
+) -> impl std::future::Future<Output = Result<sea_orm::DatabaseConnection, sea_orm::DbErr>> {
+    use sea_orm::{ConnectOptions, Database};
     let db_url = format!("sqlite:{}?mode=ro", path.as_ref().display());
     let mut opt = ConnectOptions::new(db_url);
     opt.sqlx_logging_level(
@@ -19,16 +21,18 @@ pub async fn connect_db<P: AsRef<Path> + Send>(
             .expect("Should not failed"),
     );
 
-    Database::connect(opt).await
+    Database::connect(opt)
 }
 
-#[cfg(target_os = "windows")]
+/// `to` must have parent
+#[cfg(all(target_os = "windows", feature = "chromium"))]
 pub fn shadow_copy(from: &Path, to: &Path) -> crate::chromium::builder::Result<()> {
     // shadow copy `to` must is dir
 
     use snafu::ResultExt;
 
     use crate::chromium::builder::{IoSnafu, RawcopySnafu};
+
     if !to.is_dir() && to.exists() {
         std::fs::remove_file(to).with_context(|_| IoSnafu { path: to.to_owned() })?;
     }
