@@ -142,7 +142,7 @@ The browser is not installed or started with `-P`/`-profile` arg."#,
             };
         }
 
-        let (ff, name) = firefoxes![Firefox, Librewolf, Floorp,];
+        let (ff, name) = firefoxes![Firefox, Librewolf, Floorp, Zen,];
 
         output_dir.push(name);
         tokio::fs::create_dir_all(&output_dir)
