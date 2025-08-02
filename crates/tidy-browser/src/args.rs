@@ -8,6 +8,7 @@ use clap::{
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(clap::Parser)]
+#[command(version, about, long_about)]
 pub struct Args {
     #[command(subcommand)]
     pub cmd: Option<SubCmd>,
