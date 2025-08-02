@@ -104,10 +104,11 @@ jobs:
             target: x86_64-pc-windows-msvc
             cross: false
             # build-tool: cargo
-          - os: windows-latest
-            target: x86_64-pc-windows-gnu
-            cross: true
-            # build-tool: cargo
+          # not support rust 1.82
+          # - os: windows-latest
+          #   target: x86_64-pc-windows-gnu
+          #   cross: true
+          #   # build-tool: cargo
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             cross: false
