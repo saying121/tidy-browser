@@ -88,12 +88,6 @@ pub struct ChromiumBuilder<T> {
     pub(crate) __browser: PhantomData<T>,
 }
 
-impl<B: ChromiumPath> Display for ChromiumGetter<B> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(B::NAME)
-    }
-}
-
 impl<B: ChromiumPath> Display for ChromiumBuilder<B> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{}Builder", B::NAME))

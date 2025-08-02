@@ -1,7 +1,7 @@
 pub mod builder;
 pub mod items;
 
-use std::marker::PhantomData;
+use std::{fmt::Display, marker::PhantomData};
 
 use chrono::Utc;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
@@ -15,7 +15,7 @@ use self::items::{
     cookie::{dao::CookiesQuery, MozCookies},
     I64ToMozTime,
 };
-use crate::browser::cookies::LeetCodeCookies;
+use crate::browser::{cookies::LeetCodeCookies, FirefoxPath};
 
 #[derive(Debug)]
 #[derive(Snafu)]
@@ -153,5 +153,11 @@ impl<T: Send + Sync> FirefoxGetter<T> {
             }
         }
         Ok(res)
+    }
+}
+
+impl<B: FirefoxPath> Display for FirefoxGetter<B> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(B::NAME)
     }
 }

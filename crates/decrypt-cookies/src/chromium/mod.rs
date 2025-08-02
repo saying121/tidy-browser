@@ -1,6 +1,6 @@
 pub mod builder;
 pub(crate) mod items;
-use std::marker::PhantomData;
+use std::{fmt::Display, marker::PhantomData};
 
 use chromium_crypto::Decrypter;
 use chrono::prelude::Utc;
@@ -23,7 +23,7 @@ use snafu::{Location, ResultExt, Snafu};
 use tokio::task::{self, JoinError};
 
 use crate::{
-    browser::cookies::LeetCodeCookies,
+    browser::{cookies::LeetCodeCookies, ChromiumPath},
     chromium::items::{
         cookie::cookie_dao::CookiesQuery,
         passwd::{login_data_dao::LoginDataQuery, login_data_entities::logins},
@@ -354,5 +354,11 @@ impl<T> ChromiumGetter<T> {
         self.crypto
             .decrypt(ciphertext)
             .context(DecryptSnafu)
+    }
+}
+
+impl<B: ChromiumPath> Display for ChromiumGetter<B> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(B::NAME)
     }
 }
