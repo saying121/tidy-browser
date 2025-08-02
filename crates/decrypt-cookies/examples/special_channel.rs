@@ -1,9 +1,9 @@
 #[cfg(target_os = "linux")]
 #[snafu::report]
 #[tokio::main]
-async fn main() -> Result<(), Whatever> {
+async fn main() -> Result<(), snafu::Whatever> {
     use decrypt_cookies::prelude::*;
-    use snafu::{OptionExt, ResultExt, Whatever};
+    use snafu::{OptionExt, ResultExt};
 
     let mut p = dirs::config_dir().whatever_context("get config dir failed")?;
     p.push("google-chrome-beta");
