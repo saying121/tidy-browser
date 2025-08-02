@@ -20,6 +20,7 @@ use crate::{
 #[derive(Debug)]
 #[derive(Snafu)]
 #[snafu(visibility(pub))]
+#[non_exhaustive]
 pub enum ChromiumBuilderError {
     #[snafu(display(r#"Not found {}
 The browser is not installed or started with `--user-data-dir` arg
@@ -48,6 +49,7 @@ The browser is not installed or started with `--user-data-dir` arg
         #[snafu(implicit)]
         location: Location,
     },
+    #[cfg(target_os = "windows")]
     #[snafu(display("{source}\n@:{location}"))]
     Rawcopy {
         source: anyhow::Error,

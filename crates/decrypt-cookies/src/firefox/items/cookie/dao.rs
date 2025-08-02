@@ -25,7 +25,7 @@ impl CookiesQuery {
     where
         P: AsRef<Path> + Send,
     {
-        let db = connect_db(path).await?;
+        let db = connect_db(&path).await?;
         Ok(Self { conn: db })
     }
 
