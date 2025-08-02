@@ -3,7 +3,7 @@
 use std::{
     fmt::{Debug, Display},
     marker::PhantomData,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use chromium_crypto::Decrypter;
@@ -68,6 +68,36 @@ The browser is not installed or started with `--user-data-dir` arg
 }
 
 pub type Result<T> = std::result::Result<T, ChromiumBuilderError>;
+
+/// The `to` must have parent dir
+async fn copy<A, A0>(from: A, to: A0) -> Result<()>
+where
+    A: AsRef<Path> + Send,
+    A0: AsRef<Path> + Send,
+{
+    let parent = to
+        .as_ref()
+        .parent()
+        .expect("Get parent dir failed");
+    fs::create_dir_all(parent)
+        .await
+        .with_context(|_| IoSnafu { path: parent.to_owned() })?;
+
+    #[cfg(not(target_os = "windows"))]
+    fs::copy(from.as_ref(), to.as_ref())
+        .await
+        .with_context(|_| IoSnafu { path: from.as_ref().to_owned() })?;
+    #[cfg(target_os = "windows")]
+    {
+        let from_ = from.as_ref().to_owned();
+        let to = to.as_ref().to_owned();
+        tokio::task::spawn_blocking(move || crate::utils::shadow_copy(&from_, &to))
+            .await
+            .context(TokioJoinSnafu)??;
+    };
+
+    Ok(())
+}
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -196,73 +226,19 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         let key = B::key(base.clone());
         let key_temp = B::key_temp().context(HomeSnafu)?;
 
-        let ck_temp_p = cookies_temp
-            .parent()
-            .expect("Get parent dir failed");
-        let cd_ck = fs::create_dir_all(ck_temp_p);
-        let lg_temp_p = login_data_temp
-            .parent()
-            .expect("Get parent dir failed");
-        let cd_lg = fs::create_dir_all(lg_temp_p);
-        let k_temp_p = key_temp
-            .parent()
-            .expect("Get parent dir failed");
-        let cd_k = fs::create_dir_all(k_temp_p);
-        let (cd_ck, cd_lg, cd_k) = join!(cd_ck, cd_lg, cd_k);
-        cd_ck.with_context(|_| IoSnafu { path: ck_temp_p.to_owned() })?;
-        cd_lg.with_context(|_| IoSnafu { path: lg_temp_p.to_owned() })?;
-        cd_k.with_context(|_| IoSnafu { path: k_temp_p.to_owned() })?;
-
-        #[cfg(target_os = "windows")]
-        let (cookies_cp, login_cp, lfac_cp, key_cp) = {
-            let cookies = cookies.clone();
-            let cookies_temp = cookies_temp.clone();
-            let cc = tokio::task::spawn_blocking(move || {
-                crate::utils::shadow_copy(&cookies, &cookies_temp)
-            });
-
-            let login = login_data.clone();
-            let login_temp = login_data_temp.clone();
-            let lc =
-                tokio::task::spawn_blocking(move || crate::utils::shadow_copy(&login, &login_temp));
-
-            let login_for_account = login_data_for_account.clone();
-            let login_for_account_temp = login_data_for_account_temp.clone();
-            let lfac = tokio::task::spawn_blocking(move || {
-                crate::utils::shadow_copy(&login_for_account, &login_for_account_temp)
-            });
-
-            let key = key.clone();
-            let key_temp = key_temp.clone();
-            let kc =
-                tokio::task::spawn_blocking(move || crate::utils::shadow_copy(&key, &key_temp));
-
-            (cc, lc, lfac, kc)
-        };
-
-        #[cfg(not(target_os = "windows"))]
         let (cookies_cp, login_cp, lfac_cp, key_cp) = {
             (
-                fs::copy(&cookies, &cookies_temp),
-                fs::copy(&login_data, &login_data_temp),
-                fs::copy(&login_data_for_account, &login_data_for_account_temp),
-                fs::copy(&key, &key_temp),
+                copy(&cookies, &cookies_temp),
+                copy(&login_data, &login_data_temp),
+                copy(&login_data_for_account, &login_data_for_account_temp),
+                copy(&key, &key_temp),
             )
         };
 
         let (ck, lg, lfac, k) = join!(cookies_cp, login_cp, lfac_cp, key_cp);
-        #[cfg(target_os = "windows")]
-        {
-            ck.context(TokioJoinSnafu)??;
-            lg.context(TokioJoinSnafu)??;
-            k.context(TokioJoinSnafu)??;
-        };
-        #[cfg(not(target_os = "windows"))]
-        {
-            ck.context(IoSnafu { path: cookies })?;
-            lg.context(IoSnafu { path: login_data })?;
-            k.context(IoSnafu { path: key })?;
-        };
+        ck?;
+        lg?;
+        k?;
         Ok(TempPaths {
             cookies_temp,
             login_data_temp,

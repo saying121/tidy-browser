@@ -1,4 +1,8 @@
-use std::{fmt::Display, marker::PhantomData, path::PathBuf};
+use std::{
+    fmt::Display,
+    marker::PhantomData,
+    path::{Path, PathBuf},
+};
 
 use snafu::{Location, OptionExt, ResultExt, Snafu};
 use tokio::{fs, join};
@@ -66,6 +70,28 @@ The browser is not installed or started with `-P`/`-profile` arg
 }
 
 pub type Result<T> = std::result::Result<T, FirefoxBuilderError>;
+
+/// The `to` must have parent dir
+async fn copy<A, A0>(from: A, to: A0) -> Result<()>
+where
+    A: AsRef<Path> + Send,
+    A0: AsRef<Path> + Send,
+{
+    let parent = to
+        .as_ref()
+        .parent()
+        .expect("Get parent dir failed");
+    fs::create_dir_all(parent)
+        .await
+        .with_context(|_| IoSnafu { path: parent.to_owned() })?;
+
+    let from = from.as_ref();
+    fs::copy(from, to.as_ref())
+        .await
+        .with_context(|_| IoSnafu { path: from.to_owned() })?;
+
+    Ok(())
+}
 
 #[derive(Clone)]
 #[derive(Debug)]
@@ -136,31 +162,14 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
         let key = B::key(profile_path.clone());
         let key_temp = B::key_temp().context(HomeSnafu)?;
 
-        let ck_temp_p = cookies_temp
-            .parent()
-            .expect("Get parent dir failed");
-        let cd_ck = fs::create_dir_all(ck_temp_p);
-        let lg_temp_p = login_data_temp
-            .parent()
-            .expect("Get parent dir failed");
-        let cd_lg = fs::create_dir_all(lg_temp_p);
-        let k_temp_p = key_temp
-            .parent()
-            .expect("Get parent dir failed");
-        let cd_k = fs::create_dir_all(k_temp_p);
-        let (cd_ck, cd_lg, cd_k) = join!(cd_ck, cd_lg, cd_k);
-        cd_ck.with_context(|_| IoSnafu { path: ck_temp_p.to_owned() })?;
-        cd_lg.with_context(|_| IoSnafu { path: lg_temp_p.to_owned() })?;
-        cd_k.with_context(|_| IoSnafu { path: k_temp_p.to_owned() })?;
-
-        let cookies_cp = fs::copy(&cookies, &cookies_temp);
-        let login_cp = fs::copy(&login_data, &login_data_temp);
-        let key_cp = fs::copy(&key, &key_temp);
-
-        let (ck, lg, k) = join!(cookies_cp, login_cp, key_cp);
-        ck.context(IoSnafu { path: cookies })?;
-        lg.context(IoSnafu { path: login_data })?;
-        k.context(IoSnafu { path: key })?;
+        let (ck, lg, k) = join!(
+            copy(&cookies, &cookies_temp),
+            copy(&login_data, &login_data_temp),
+            copy(&key, &key_temp)
+        );
+        ck?;
+        lg?;
+        k?;
 
         Ok(TempPaths {
             cookies_temp,
