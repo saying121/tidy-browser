@@ -211,6 +211,7 @@ pub enum FirefoxName {
     Firefox,
     Librewolf,
     Floorp,
+    Zen,
 }
 
 #[derive(Clone)]
