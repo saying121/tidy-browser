@@ -90,5 +90,5 @@ async fn ff_cookies_test() {
         }
     }
 
-    test_browser!(Firefox, Librewolf, Floorp);
+    test_browser!(Firefox, Librewolf, Floorp, Zen);
 }
