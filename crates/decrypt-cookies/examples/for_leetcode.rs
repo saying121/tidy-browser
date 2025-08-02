@@ -1,27 +1,26 @@
 use std::io::Write;
 
-use anyhow::Result;
 use decrypt_cookies::prelude::*;
+use snafu::{ResultExt, Whatever};
 
+#[snafu::report]
 #[tokio::main]
-async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::WARN)
-        .with_test_writer()
-        .init();
-
+async fn main() -> Result<(), Whatever> {
     let stdout = std::io::stdout();
-    let mut lock = stdout.lock();
 
     let leetcode_cn = "leetcode.cn";
 
     let getter = ChromiumBuilder::<Chrome>::new()
         .build()
-        .await?;
+        .await
+        .whatever_context("Chrome build failed")?;
     let ck = getter
         .get_session_csrf(leetcode_cn)
-        .await?;
-    writeln!(lock, "{:#?}", ck)?;
+        .await
+        .whatever_context("Chrome get session csrf failed")?;
+
+    let mut lock = stdout.lock();
+    writeln!(lock, "{:#?}", ck).whatever_context("Write stdout failed")?;
 
     Ok(())
 }

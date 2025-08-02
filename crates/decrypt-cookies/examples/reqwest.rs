@@ -10,11 +10,11 @@ async fn main() -> Result<(), Whatever> {
     let chromium = ChromiumBuilder::<Chrome>::new()
         .build()
         .await
-        .whatever_context("Chromium build failed")?;
+        .whatever_context("Chrome build failed")?;
     let all_cookies: Jar = chromium
         .cookies_all()
         .await
-        .whatever_context("Get cookies failed")?
+        .whatever_context("Chrome get all cookies failed")?
         .into_iter()
         .collect();
 
