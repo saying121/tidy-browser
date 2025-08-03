@@ -13,15 +13,14 @@ categories = { workspace = true }
 exclude = ["./CHANGELOG.md", "examples", "tests/"]
 
 [dependencies]
-anyhow = { workspace = true }
 binary-cookies = { workspace = true, features = ["tokio"], optional = true }
 chromium-crypto = { workspace = true }
 chrono = { workspace = true }
 dirs = { workspace = true }
-rayon = { workspace = true }
+rayon = { workspace = true, optional = true }
 reqwest = { workspace = true, default-features = false, features = ["cookies"], optional = true }
-rust-ini = { workspace = true }  # firefox
-sea-orm = { workspace = true }
+rust-ini = { workspace = true, optional = true }
+sea-orm = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 snafu = { workspace = true }
 tokio = { workspace = true }
@@ -38,11 +37,14 @@ tracing-subscriber = { workspace = true }
 const_format = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-rawcopy-rs-next = { workspace = true }
+anyhow = { workspace = true, optional = true }
+rawcopy-rs-next = { workspace = true, optional = true }
 
 [features]
 Safari = ["dep:binary-cookies"]  # `binary_cookies` does not depend on Macos
-default = ["reqwest", "serde", "tracing"]
+chromium = ["anyhow", "rawcopy-rs-next", "rayon", "rust-ini", "sea-orm"]
+default = ["chromium", "firefox", "reqwest", "serde", "tracing"]
+firefox = ["rayon", "rust-ini", "sea-orm"]
 reqwest = ["dep:reqwest"]
 serde = ["chrono/serde", "dep:serde"]
 tracing = ["chromium-crypto/tracing", "dep:tracing"]

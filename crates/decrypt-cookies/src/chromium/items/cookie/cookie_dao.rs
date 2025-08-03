@@ -21,7 +21,7 @@ pub struct CookiesQuery {
 
 impl CookiesQuery {
     pub async fn new<P: AsRef<Path> + Send>(path: P) -> Result<Self> {
-        let db = connect_db(path).await?;
+        let db = connect_db(&path).await?;
         Ok(Self { conn: db })
     }
 
