@@ -131,7 +131,7 @@ When you use scoop on Windows, the data path is located at `~\scoop\persisst\<na
                                     chromium.logins_by_host(host).await
                                 }
                                 else {
-                                    chromium.all_logins().await
+                                    chromium.logins_all().await
                                 }
                                 .context(error::ChromiumSnafu)?;
                                 Ok::<_, error::Error>(logins)

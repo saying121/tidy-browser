@@ -16,7 +16,7 @@ async fn passwd_browsers() {
                         return;
                     },
                 };
-                let res = match getter.all_logins().await {
+                let res = match getter.logins_all().await {
                     Ok(v) => v,
                     Err(e) => {
                         eprintln!("{e}");

@@ -320,7 +320,7 @@ pub trait GetLogins: SealedCrypto + SealedLogins {
         }
     }
 
-    fn all_logins(&self) -> impl std::future::Future<Output = Result<Vec<LoginData>>> + Send
+    fn logins_all(&self) -> impl std::future::Future<Output = Result<Vec<LoginData>>> + Send
     where
         Self: Sync,
     {

@@ -11,7 +11,7 @@ async fn can_compile() {
                 else {
                     return;
                 };
-                let res = match getter.all_logins().await {
+                let res = match getter.logins_all().await {
                     Ok(v) => v,
                     Err(e) => {
                         eprintln!("{e}");
