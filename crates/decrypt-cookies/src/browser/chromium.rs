@@ -17,6 +17,7 @@ pub trait ChromiumPath {
     const LOGIN_DATA: &str = "Default/Login Data";
     /// Another login data (sqlite3)
     const LOGIN_DATA_FOR_ACCOUNT: &str = "Default/Login Data For Account";
+    #[cfg(target_os = "windows")]
     /// Suffix for decryption key path (json)
     const KEY: &str = "Local State";
     #[cfg(not(target_os = "windows"))]
@@ -26,12 +27,14 @@ pub trait ChromiumPath {
     /// Safe keyring name
     const SAFE_NAME: &str;
 
+    #[cfg(target_os = "windows")]
     /// Decryption key path (json)
     fn key(mut base: PathBuf) -> PathBuf {
         push_exact!(base, Self::KEY);
 
         base
     }
+    #[cfg(target_os = "windows")]
     /// Copy the decryption key file to a location to avoid conflicts with the browser over access to it.
     fn key_temp() -> Option<PathBuf> {
         push_temp!(cache, Self::KEY);

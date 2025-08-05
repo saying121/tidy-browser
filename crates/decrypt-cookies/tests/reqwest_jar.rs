@@ -1,5 +1,6 @@
 use decrypt_cookies::{
     browser::{cookies::CookiesInfo, Edge},
+    chromium::GetCookies,
     prelude::*,
 };
 use reqwest::{cookie::CookieStore, Url};

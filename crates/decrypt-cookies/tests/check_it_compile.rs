@@ -1,4 +1,4 @@
-use decrypt_cookies::prelude::*;
+use decrypt_cookies::{chromium::GetLogins, prelude::*};
 
 #[tokio::test]
 async fn can_compile() {

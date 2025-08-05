@@ -1,5 +1,6 @@
 use decrypt_cookies::{
     browser::{Chrome, Firefox},
+    chromium::GetCookies,
     prelude::*,
 };
 

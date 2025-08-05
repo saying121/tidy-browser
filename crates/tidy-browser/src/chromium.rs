@@ -1,6 +1,9 @@
 use std::{collections::HashSet, fmt::Display, fs::File, io::IoSlice, path::PathBuf};
 
-use decrypt_cookies::{chromium::builder::ChromiumBuilderError, prelude::*};
+use decrypt_cookies::{
+    chromium::{builder::ChromiumBuilderError, GetCookies, GetLogins},
+    prelude::*,
+};
 use snafu::ResultExt;
 use strum::IntoEnumIterator;
 use tokio::task;
@@ -90,7 +93,6 @@ When you use scoop on Windows, the data path is located at `~\scoop\persisst\<na
                 match name {
                     $(
                     ChromiumName::$browser => {
-            tracing::Span::current().record("browser", $browser::NAME);
                         let chromium = if let Some(dir) = data_dir {
                             ChromiumBuilder::<$browser>::with_user_data_dir(dir)
                         }

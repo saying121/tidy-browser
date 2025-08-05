@@ -1,4 +1,4 @@
-use decrypt_cookies::prelude::*;
+use decrypt_cookies::{chromium::GetLogins, prelude::*};
 
 #[ignore = "need realy environment"]
 #[tokio::test]

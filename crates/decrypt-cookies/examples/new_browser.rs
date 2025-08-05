@@ -1,4 +1,4 @@
-use decrypt_cookies::prelude::*;
+use decrypt_cookies::{chromium::GetCookies, prelude::*};
 use snafu::{ResultExt, Whatever};
 
 #[expect(clippy::exhaustive_structs, reason = "example")]

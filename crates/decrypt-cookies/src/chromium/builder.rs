@@ -7,10 +7,10 @@ use std::{
 };
 
 use chromium_crypto::Decrypter;
-use snafu::{Location, OptionExt, ResultExt, Snafu};
+use snafu::{ensure, Location, OptionExt, ResultExt, Snafu};
 use tokio::{fs, join};
 
-use super::ChromiumGetter;
+use super::{ChromiumCookieGetter, ChromiumGetter, ChromiumLoginGetter};
 use crate::{
     browser::ChromiumPath,
     chromium::items::{cookie::cookie_dao::CookiesQuery, passwd::login_data_dao::LoginDataQuery},
@@ -104,16 +104,6 @@ where
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct TempPaths {
-    pub(crate) cookies_temp: PathBuf,
-    pub(crate) login_data_temp: PathBuf,
-    pub(crate) login_data_for_account_temp: Option<PathBuf>,
-    pub(crate) key_temp: PathBuf,
-}
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
 #[derive(PartialEq, Eq)]
 pub struct ChromiumBuilder<T> {
     pub(crate) base: Option<PathBuf>,
@@ -144,11 +134,7 @@ impl<B: ChromiumPath> ChromiumBuilder<B> {
 }
 
 impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(name = "Chromium build", skip(self), fields(browser), level = "debug")
-    )]
-    pub async fn build(self) -> Result<ChromiumGetter<B>> {
+    fn ensure_base(self) -> Result<PathBuf> {
         let base = if let Some(base) = self.base {
             base
         }
@@ -159,95 +145,173 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
             base
         };
 
+        ensure!(base.exists(), NotFoundBaseSnafu { path: base });
+
+        Ok(base)
+    }
+
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Chromium build", skip(self), fields(browser), level = "debug")
+    )]
+    pub async fn build(self) -> Result<ChromiumGetter<B>> {
+        let __browser = self.__browser;
+        let base = self.ensure_base()?;
+
         #[cfg(feature = "tracing")]
         {
             tracing::Span::current().record("browser", B::NAME);
             tracing::debug!(base = %base.display());
         };
 
-        if !base.exists() {
-            return Err(NotFoundBaseSnafu { path: base }.build());
-        }
+        let crypto = Self::gen_crypto(&base);
 
-        let temp_paths = Self::cache_data(base).await?;
-
-        #[cfg(target_os = "linux")]
-        let crypto = Decrypter::build(B::SAFE_STORAGE, crate::browser::need_safe_storage)
-            .await
-            .context(DecrypterSnafu)?;
-
-        #[cfg(target_os = "macos")]
-        let crypto = Decrypter::build(B::SAFE_STORAGE, B::SAFE_NAME)
-            .await
-            .context(DecrypterSnafu)?;
-
-        #[cfg(target_os = "windows")]
-        let crypto = Decrypter::build(temp_paths.key_temp)
-            .await
-            .context(DecrypterSnafu)?;
-
-        let (cookies_query, login_data_query) = (
-            CookiesQuery::new(temp_paths.cookies_temp),
-            LoginDataQuery::new(temp_paths.login_data_temp),
+        let (crypto, cookies_query, logins) = join!(
+            crypto,
+            Self::cache_cookies(base.clone()),
+            Self::cache_login(base.clone())
         );
-        let (cookies_query, login_data_query) = join!(cookies_query, login_data_query);
-        let (cookies_query, login_data_query) = (
-            cookies_query.context(DbSnafu)?,
-            login_data_query.context(DbSnafu)?,
-        );
-        let login_data_for_account_query =
-            if let Some(path) = temp_paths.login_data_for_account_temp {
-                LoginDataQuery::new(path)
-                    .await
-                    .context(DbSnafu)?
-                    .into()
-            }
-            else {
-                None
-            };
+
+        let (login_data_query, lfa) = logins?;
 
         Ok(ChromiumGetter {
-            cookies_query,
+            cookies_query: cookies_query?,
             login_data_query,
-            login_data_for_account_query,
-            crypto,
-            __browser: self.__browser,
+            login_data_for_account_query: lfa,
+            crypto: crypto?,
+            __browser,
         })
     }
 
-    async fn cache_data(base: PathBuf) -> Result<TempPaths> {
-        let cookies = B::cookies(base.clone());
-        let cookies_temp = B::cookies_temp().context(HomeSnafu)?;
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            name = "Chromium Login build",
+            skip(self),
+            fields(browser),
+            level = "debug"
+        )
+    )]
+    pub async fn build_login(self) -> Result<ChromiumLoginGetter<B>> {
+        let __browser = self.__browser;
+        let base = self.ensure_base()?;
 
+        #[cfg(feature = "tracing")]
+        {
+            tracing::Span::current().record("browser", B::NAME);
+            tracing::debug!(base = %base.display());
+        };
+
+        let (crypto, logins) = join!(Self::gen_crypto(&base), Self::cache_login(base.clone()));
+
+        let (login_data_query, lfa) = logins?;
+
+        Ok(ChromiumLoginGetter {
+            login_data_query,
+            login_data_for_account_query: lfa,
+            crypto: crypto?,
+            __browser,
+        })
+    }
+
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            name = "Chromium Cookie build",
+            skip(self),
+            fields(browser),
+            level = "debug"
+        )
+    )]
+    pub async fn build_cookie(self) -> Result<ChromiumCookieGetter<B>> {
+        let __browser = self.__browser;
+        let base = self.ensure_base()?;
+
+        #[cfg(feature = "tracing")]
+        {
+            tracing::Span::current().record("browser", B::NAME);
+            tracing::debug!(base = %base.display());
+        };
+
+        let crypto = Self::gen_crypto(&base);
+
+        let (crypto, cookies_query) = join!(crypto, Self::cache_cookies(base.clone()));
+
+        Ok(ChromiumCookieGetter {
+            cookies_query: cookies_query?,
+            crypto: crypto?,
+            __browser,
+        })
+    }
+
+    #[cfg_attr(
+        not(target_os = "windows"),
+        expect(unused_variables, reason = "for windows")
+    )]
+    async fn gen_crypto(base: &Path) -> Result<Decrypter> {
+        #[cfg(target_os = "linux")]
+        let crypto = Decrypter::build(B::SAFE_STORAGE, crate::browser::need_safe_storage);
+
+        #[cfg(target_os = "macos")]
+        let crypto = Decrypter::build(B::SAFE_STORAGE, B::SAFE_NAME);
+
+        #[cfg(target_os = "windows")]
+        let crypto = {
+            let key_path = Self::cache_key(base.to_owned()).await?;
+            Decrypter::build(key_path)
+        };
+
+        crypto
+            .await
+            .context(DecrypterSnafu)
+    }
+
+    /// return login and login for account
+    async fn cache_login(base: PathBuf) -> Result<(LoginDataQuery, Option<LoginDataQuery>)> {
         let login_data = B::login_data(base.clone());
         let login_data_temp = B::login_data_temp().context(HomeSnafu)?;
 
         let login_data_for_account = B::login_data_for_account(base.clone());
         let login_data_for_account_temp = B::login_data_for_account_temp().context(HomeSnafu)?;
 
+        let (lg, lfac) = join!(
+            copy(&login_data, &login_data_temp),
+            copy(&login_data_for_account, &login_data_for_account_temp)
+        );
+        lg?;
+
+        Ok((
+            LoginDataQuery::new(login_data_temp)
+                .await
+                .context(DbSnafu)?,
+            if lfac.is_ok() {
+                LoginDataQuery::new(login_data_for_account_temp)
+                    .await
+                    .ok()
+            }
+            else {
+                None
+            },
+        ))
+    }
+
+    async fn cache_cookies(base: PathBuf) -> Result<CookiesQuery> {
+        let cookies = B::cookies(base.clone());
+        let cookies_temp = B::cookies_temp().context(HomeSnafu)?;
+
+        copy(&cookies, &cookies_temp).await?;
+        CookiesQuery::new(cookies_temp)
+            .await
+            .context(DbSnafu)
+    }
+
+    #[cfg(target_os = "windows")]
+    async fn cache_key(base: PathBuf) -> Result<PathBuf> {
         let key = B::key(base.clone());
         let key_temp = B::key_temp().context(HomeSnafu)?;
 
-        let (cookies_cp, login_cp, lfac_cp, key_cp) = {
-            (
-                copy(&cookies, &cookies_temp),
-                copy(&login_data, &login_data_temp),
-                copy(&login_data_for_account, &login_data_for_account_temp),
-                copy(&key, &key_temp),
-            )
-        };
+        copy(&key, &key_temp).await?;
 
-        let (ck, lg, lfac, k) = join!(cookies_cp, login_cp, lfac_cp, key_cp);
-        ck?;
-        lg?;
-        k?;
-        Ok(TempPaths {
-            cookies_temp,
-            login_data_temp,
-            login_data_for_account_temp: lfac
-                .map(|_| login_data_for_account_temp)
-                .ok(),
-            key_temp,
-        })
+        Ok(key_temp)
     }
 }

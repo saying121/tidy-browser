@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use anyhow::Result;
-use decrypt_cookies::prelude::*;
+use decrypt_cookies::{chromium::GetCookies, prelude::*};
 
 #[ignore = "need realy environment"]
 #[tokio::test(flavor = "multi_thread", worker_threads = 10)]
