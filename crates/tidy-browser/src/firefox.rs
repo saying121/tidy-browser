@@ -1,6 +1,9 @@
 use std::{collections::HashSet, fmt::Display, path::PathBuf};
 
-use decrypt_cookies::{firefox::builder::FirefoxBuilderError, prelude::*};
+use decrypt_cookies::{
+    firefox::{builder::FirefoxBuilderError, GetCookies as _},
+    prelude::*,
+};
 use snafu::ResultExt;
 use strum::IntoEnumIterator;
 use tokio::task;

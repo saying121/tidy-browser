@@ -1,4 +1,4 @@
-use decrypt_cookies::{chromium::GetCookies, prelude::*};
+use decrypt_cookies::{chromium::GetCookies, firefox::GetCookies as _, prelude::*};
 use snafu::{ResultExt, Whatever};
 
 #[snafu::report]
