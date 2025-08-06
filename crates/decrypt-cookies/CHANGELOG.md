@@ -11,6 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Split cookies and logins
+
+## [0.9.2]
+
+### Added
+
+- Add feature control
+
+## [0.9.1]
+
+### Added
+
+- Support Zen
+
+### Changed
+
+## [0.9.0]
+
+### Changed
+
 - Better error handle
 
 ## [0.8.0] - 2025-07-27

@@ -1,4 +1,4 @@
-use decrypt_cookies::prelude::*;
+use decrypt_cookies::{chromium::GetLogins, prelude::*};
 
 #[ignore = "need realy environment"]
 #[tokio::test]
@@ -16,7 +16,7 @@ async fn passwd_browsers() {
                         return;
                     },
                 };
-                let res = match getter.all_logins().await {
+                let res = match getter.logins_all().await {
                     Ok(v) => v,
                     Err(e) => {
                         eprintln!("{e}");

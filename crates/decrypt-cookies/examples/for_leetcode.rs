@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use decrypt_cookies::prelude::*;
+use decrypt_cookies::{chromium::GetCookies, prelude::*};
 use snafu::{ResultExt, Whatever};
 
 #[snafu::report]

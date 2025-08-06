@@ -5,8 +5,9 @@ use std::{
 };
 
 use snafu::{Location, OptionExt, ResultExt, Snafu};
-use tokio::{fs, join};
+use tokio::fs;
 
+use super::FirefoxCookieGetter;
 use crate::{
     firefox::{items::cookie::dao::CookiesQuery, FirefoxGetter},
     prelude::FirefoxPath,
@@ -96,16 +97,6 @@ where
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct TempPaths {
-    pub(crate) cookies_temp: PathBuf,
-    pub(crate) login_data_temp: PathBuf,
-    pub(crate) key_temp: PathBuf,
-}
-
-#[derive(Clone)]
-#[derive(Debug)]
-#[derive(Default)]
 pub struct FirefoxBuilder<'a, T> {
     pub(crate) base: Option<PathBuf>,
     pub(crate) profile: Option<&'a str>,
@@ -152,30 +143,40 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
         self
     }
 
-    async fn cache_data(profile_path: PathBuf) -> Result<TempPaths> {
+    // async fn cache_data(profile_path: PathBuf) -> Result<TempPaths> {
+    //     let cookies = B::cookies(profile_path.clone());
+    //     let cookies_temp = B::cookies_temp().context(HomeSnafu)?;
+    //
+    //     let login_data = B::login_data(profile_path.clone());
+    //     let login_data_temp = B::login_data_temp().context(HomeSnafu)?;
+    //
+    //     let key = B::key(profile_path.clone());
+    //     let key_temp = B::key_temp().context(HomeSnafu)?;
+    //
+    //     let (ck, lg, k) = join!(
+    //         copy(&cookies, &cookies_temp),
+    //         copy(&login_data, &login_data_temp),
+    //         copy(&key, &key_temp)
+    //     );
+    //     ck?;
+    //     lg?;
+    //     k?;
+    //
+    //     Ok(TempPaths {
+    //         cookies_temp,
+    //         login_data_temp,
+    //         key_temp,
+    //     })
+    // }
+
+    async fn cache_cookies(profile_path: PathBuf) -> Result<CookiesQuery> {
         let cookies = B::cookies(profile_path.clone());
         let cookies_temp = B::cookies_temp().context(HomeSnafu)?;
 
-        let login_data = B::login_data(profile_path.clone());
-        let login_data_temp = B::login_data_temp().context(HomeSnafu)?;
-
-        let key = B::key(profile_path.clone());
-        let key_temp = B::key_temp().context(HomeSnafu)?;
-
-        let (ck, lg, k) = join!(
-            copy(&cookies, &cookies_temp),
-            copy(&login_data, &login_data_temp),
-            copy(&key, &key_temp)
-        );
-        ck?;
-        lg?;
-        k?;
-
-        Ok(TempPaths {
-            cookies_temp,
-            login_data_temp,
-            key_temp,
-        })
+        copy(&cookies, &cookies_temp).await?;
+        CookiesQuery::new(cookies_temp)
+            .await
+            .context(DbSnafu)
     }
 }
 
@@ -250,14 +251,41 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
             tracing::debug!(profile_path = %profile_path.display());
         };
 
-        let temp_paths = Self::cache_data(profile_path).await?;
-
-        let query = CookiesQuery::new(temp_paths.cookies_temp)
-            .await
-            .context(DbSnafu)?;
+        let cookies_query = Self::cache_cookies(profile_path).await?;
 
         Ok(FirefoxGetter {
-            cookies_query: query,
+            cookies_query,
+            __browser: core::marker::PhantomData::<B>,
+        })
+    }
+
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            name = "Firefox Cookie build",
+            skip(self),
+            fields(browser),
+            level = "debug"
+        )
+    )]
+    pub async fn build_cookies(self) -> Result<FirefoxCookieGetter<B>> {
+        let profile_path = if let Some(path) = self.profile_path {
+            path
+        }
+        else {
+            self.get_profile_path().await?
+        };
+
+        #[cfg(feature = "tracing")]
+        {
+            tracing::Span::current().record("browser", B::NAME);
+            tracing::debug!(profile_path = %profile_path.display());
+        };
+
+        let cookies_query = Self::cache_cookies(profile_path).await?;
+
+        Ok(FirefoxCookieGetter {
+            cookies_query,
             __browser: core::marker::PhantomData::<B>,
         })
     }
