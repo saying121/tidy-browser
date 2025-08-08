@@ -19,7 +19,7 @@ See: [reqwest](./examples/reqwest.rs)
 ```rust
 use std::sync::Arc;
 
-use decrypt_cookies::prelude::*;
+use decrypt_cookies::{chromium::GetCookies, prelude::*};
 use reqwest::cookie::Jar;
 use snafu::{ResultExt, Whatever};
 
