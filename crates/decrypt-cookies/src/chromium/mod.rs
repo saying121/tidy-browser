@@ -5,7 +5,7 @@ use std::{
     marker::{PhantomData, Sync},
 };
 
-use chromium_crypto::Decrypter;
+use chromium_crypto::{Decrypter, Which};
 use chrono::prelude::Utc;
 use items::cookie::cookie_entities::cookies;
 pub use items::{
@@ -190,7 +190,11 @@ trait SealedCrypto {
                         let res = v
                             .password_value
                             .as_mut()
-                            .and_then(|v| crypto.decrypt(v).ok());
+                            .and_then(|v| {
+                                crypto
+                                    .decrypt(v, Which::Login)
+                                    .ok()
+                            });
 
                         let mut login_data = LoginData::from(v);
                         login_data.password_value = res;
@@ -219,7 +223,7 @@ trait SealedCrypto {
                 raw.into_par_iter()
                     .map(|mut v| {
                         let res = crypto
-                            .decrypt(&mut v.encrypted_value)
+                            .decrypt(&mut v.encrypted_value, Which::Cookie)
                             .ok();
                         let mut cookies = ChromiumCookie::from(v);
                         cookies.decrypted_value = res;
@@ -468,7 +472,7 @@ pub trait GetCookies: SealedCrypto + SealedCookies {
                     }
 
                     let csrf_hd = task::spawn_blocking(move || {
-                        cy.decrypt(&mut cookie.encrypted_value)
+                        cy.decrypt(&mut cookie.encrypted_value, Which::Cookie)
                             .inspect_err(|_e| {
                                 #[cfg(feature = "tracing")]
                                 tracing::warn!("decrypt csrf failed: {_e}");
@@ -489,7 +493,7 @@ pub trait GetCookies: SealedCrypto + SealedCookies {
                     }
 
                     let session_hd = task::spawn_blocking(move || {
-                        cy.decrypt(&mut cookie.encrypted_value)
+                        cy.decrypt(&mut cookie.encrypted_value, Which::Cookie)
                             .inspect_err(|_e| {
                                 #[cfg(feature = "tracing")]
                                 tracing::warn!("decrypt session failed: {_e}");

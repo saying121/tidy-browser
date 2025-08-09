@@ -26,8 +26,9 @@ use winnow::{
 };
 
 use crate::{
-    error::{self, Result},
+    error::{self, Result, Utf8Snafu},
     win::impersonate::ImpersonateGuard,
+    Which,
 };
 
 #[derive(Clone)]
@@ -123,7 +124,7 @@ impl Decrypter {
     }
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=213
-    pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
+    pub fn decrypt(&self, ciphertext: &mut [u8], which: Which) -> Result<String> {
         let (pass, prefix_len) =
             if ciphertext.starts_with(Self::K_APP_BOUND_DATA_PREFIX) && self.pass_v20.is_some() {
                 #[expect(clippy::unwrap_used, reason = "Must be Some, TODO: use let-chains")]
@@ -150,14 +151,19 @@ impl Decrypter {
 
         cipher
             .decrypt(nonce.into(), raw_ciphertext)
-            .map(|v| {
-                String::from_utf8(v.clone()).unwrap_or_else(|_e| {
-                    #[cfg(feature = "tracing")]
-                    tracing::trace!("Decoding for chromium >=130.x: {_e}");
-                    String::from_utf8_lossy(&v[32..]).into_owned()
-                })
-            })
             .context(error::AesGcmSnafu)
+            .map(|res| match which {
+                Which::Cookie => {
+                    if res.len() > 32 {
+                        String::from_utf8(res[32..].to_vec())
+                    }
+                    else {
+                        crate::from_utf8_cold(res)
+                    }
+                },
+                Which::Login => String::from_utf8(res),
+            })?
+            .context(Utf8Snafu)
     }
 }
 

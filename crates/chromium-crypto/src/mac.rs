@@ -4,7 +4,10 @@ use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
 use pbkdf2::pbkdf2_hmac;
 use snafu::ResultExt;
 
-use crate::error::{self, Result};
+use crate::{
+    error::{self, Result, Utf8Snafu},
+    Which,
+};
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_mac.mm;l=35
 /// Key size required for 128 bit AES.
@@ -62,7 +65,7 @@ impl Decrypter {
             .context(error::KeyringSnafu)
     }
 
-    pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
+    pub fn decrypt(&self, ciphertext: &mut [u8], which: Which) -> Result<String> {
         if !ciphertext.starts_with(Self::K_ENCRYPTION_VERSION_PREFIX) {
             return Ok(String::from_utf8_lossy(ciphertext).to_string());
         }
@@ -83,12 +86,17 @@ impl Decrypter {
         decrypter
             .decrypt_padded_mut::<block_padding::Pkcs7>(&mut ciphertext[prefix_len..])
             .context(error::UnpaddingSnafu)
-            .map(|res| {
-                String::from_utf8(res.to_vec()).unwrap_or_else(|_e| {
-                    #[cfg(feature = "tracing")]
-                    tracing::trace!("Decoding for chromium >= 130.x: {_e}");
-                    String::from_utf8_lossy(&res[32..]).to_string()
-                })
-            })
+            .map(|res| match which {
+                Which::Cookie => {
+                    if res.len() > 32 {
+                        String::from_utf8(res[32..].to_vec())
+                    }
+                    else {
+                        crate::from_utf8_cold(res)
+                    }
+                },
+                Which::Login => String::from_utf8(res.to_vec()),
+            })?
+            .context(Utf8Snafu)
     }
 }
