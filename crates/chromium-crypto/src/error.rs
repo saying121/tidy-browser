@@ -1,3 +1,5 @@
+use std::string::FromUtf8Error;
+
 use snafu::{Location, Snafu};
 
 #[derive(Debug)]
@@ -5,6 +7,12 @@ use snafu::{Location, Snafu};
 #[snafu(visibility(pub))]
 #[cfg(target_os = "linux")]
 pub enum CryptoError {
+    #[snafu(display("{source}\n@:{location}"))]
+    Utf8 {
+        source: FromUtf8Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
     #[snafu(display("{source}\n@:{location}"))]
     GetPass {
         source: secret_service::Error,
@@ -24,6 +32,12 @@ pub enum CryptoError {
 #[snafu(visibility(pub))]
 #[cfg(target_os = "macos")]
 pub enum CryptoError {
+    #[snafu(display("{source}\n@:{location}"))]
+    Utf8 {
+        source: FromUtf8Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
     #[snafu(display("{source}\n@:{location}"))]
     Keyring {
         source: keyring::Error,
@@ -49,6 +63,12 @@ pub enum CryptoError {
 #[snafu(visibility(pub))]
 #[cfg(target_os = "windows")]
 pub enum CryptoError {
+    #[snafu(display("{source}\n@:{location}"))]
+    Utf8 {
+        source: FromUtf8Error,
+        #[snafu(implicit)]
+        location: Location,
+    },
     #[snafu(display("{source}, path: {}\n@:{location}",path.display()))]
     Io {
         source: std::io::Error,

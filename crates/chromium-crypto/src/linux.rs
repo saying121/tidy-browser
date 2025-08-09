@@ -6,7 +6,10 @@ use secret_service::{EncryptionType, SecretService};
 use snafu::ResultExt;
 use tinyufo::TinyUfo;
 
-use crate::error::{self, Result};
+use crate::{
+    error::{self, Result, Utf8Snafu},
+    Which,
+};
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=32
 /// Key size required for 128 bit AES.
@@ -116,19 +119,9 @@ impl Decrypter {
 
         Ok(Self::PASSWORD_V10)
     }
-    // pub fn decrypt_yandex_password(&self, ciphertext: &mut [u8]) -> Result<String> {
-    //     use aes_gcm::{
-    //         aead::{generic_array::GenericArray, Aead},
-    //         Aes256Gcm, KeyInit,
-    //     };
-    //
-    //     let cipher = Aes256Gcm::new(GenericArray::from_slice(Self::PASSWORD_V10));
-    //
-    //     miette::bail!("decrypt failed")
-    // }
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=72
-    pub fn decrypt(&self, ciphertext: &mut [u8]) -> Result<String> {
+    pub fn decrypt(&self, ciphertext: &mut [u8], which: Which) -> Result<String> {
         let (pass, prefix_len) = if ciphertext.starts_with(Self::K_OBFUSCATION_PREFIX_V11) {
             (self.pass_v11, Self::K_OBFUSCATION_PREFIX_V11.len())
         }
@@ -147,14 +140,19 @@ impl Decrypter {
 
         decrypter
             .decrypt_padded_mut::<block_padding::Pkcs7>(&mut ciphertext[prefix_len..])
-            .map(|res| {
-                String::from_utf8(res.to_vec()).unwrap_or_else(|_e| {
-                    #[cfg(feature = "tracing")]
-                    tracing::trace!("Decoding for chromium >= 130.x: {_e}");
-                    String::from_utf8_lossy(&res[32..]).to_string()
-                })
-            })
             .context(error::UnpaddingSnafu)
+            .map(|res| match which {
+                Which::Cookie => {
+                    if res.len() > 32 {
+                        String::from_utf8(res[32..].to_vec())
+                    }
+                    else {
+                        crate::from_utf8_cold(res)
+                    }
+                },
+                Which::Login => String::from_utf8(res.to_vec()),
+            })?
+            .context(Utf8Snafu)
     }
 }
 
@@ -184,46 +182,3 @@ impl Decrypter {
     /// Constant for Symmetric key derivation.
     const K_ENCRYPTION_ITERATIONS: u32 = 1;
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use std::path::PathBuf;
-//
-//     use base64::{engine::general_purpose, Engine};
-//     use tokio::fs::read_to_string;
-//
-//     use super::*;
-//     use crate::chromium::local_state::YandexLocalState;
-//     async fn yandex_passwd(path: PathBuf) -> Result<Vec<u8>> {
-//         let string_str = read_to_string(path)
-//             .await
-//             ?;
-//         let local_state: YandexLocalState = serde_json::from_str(&string_str)?;
-//         let encrypted_key = general_purpose::STANDARD
-//             .decode(
-//                 local_state
-//                     .os_crypt
-//                     .checker_state
-//                     .encrypted_data,
-//             )
-//             ?;
-//         Ok(encrypted_key)
-//     }
-//     #[ignore = "need realy environment"]
-//     #[tokio::test]
-//     async fn yandex_passwd_work() {
-//         use crate::{browser::info::ChromiumInfo, ChromiumBuilder};
-//         let yandex_getter = ChromiumBuilder::new(Browser::Yandex)
-//             .build()
-//             .await
-//             .unwrap();
-//         let mut pss = yandex_passwd(yandex_getter.info().local_state())
-//             .await
-//             .unwrap();
-//         let pass = yandex_getter
-//             .decrypt(&mut pss)
-//             .unwrap();
-//
-//         assert_eq!(&pass, "0");
-//     }
-// }
