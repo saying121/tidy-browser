@@ -58,9 +58,9 @@ async fn main() -> Result<(), Whatever> {
 
 ## To add a new browser
 
-`BASE`: A browser all data location relative to home dir.
-`COOKIES`, `LOGIN_DATA`, `KEY`: Relative to `BASE` path.
-`NAME`: browser name
+- `BASE`: A browser all data location relative to home dir.
+- `COOKIES`, `LOGIN_DATA`, `KEY`: Relative to `BASE` path.
+- `NAME`: browser name
 
 Implement [`ChromiumInfo`, `FirefoxPath`](./src/browser/mod.rs) trait.
 
