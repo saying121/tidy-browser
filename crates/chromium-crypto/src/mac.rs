@@ -90,6 +90,7 @@ impl Decrypter {
                 Which::Cookie => {
                     if res.len() > 32 {
                         String::from_utf8(res[32..].to_vec())
+                            .or_else(|_| crate::from_utf8_cold(res))
                     }
                     else {
                         crate::from_utf8_cold(res)
