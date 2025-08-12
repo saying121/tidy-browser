@@ -1,6 +1,6 @@
 [package]
 name = "binary-cookies"
-version = "0.3.0"
+version = "0.3.1"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -36,6 +36,7 @@ tokio = { workspace = true, features = ["fs", "io-util", "rt-multi-thread"] }
 
 [features]
 csv = []
+default = ["sync"]
 serde = ["bstr/serde", "chrono/serde", "dep:serde"]
 sync = []
 tokio = ["dep:tokio"]
