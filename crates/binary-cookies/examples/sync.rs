@@ -11,11 +11,11 @@ fn main() -> Result<(), Whatever> {
         .next()
         .whatever_context("Need a path")?;
 
-    let file = File::open(path).with_whatever_context(|_e| "Open file failed")?;
+    let file = File::open(path).whatever_context("Open file failed")?;
 
     let a = file
         .decode()
-        .with_whatever_context(|_| "Bad file")?;
+        .whatever_context("Bad file")?;
     let (pages_handle, _meta_decoder) = a.into_handles();
     let a = pages_handle
         .decoders()

@@ -13,24 +13,24 @@ async fn main() -> Result<(), Whatever> {
         .next()
         .whatever_context("Need a path")?;
 
-    let file = Arc::new(RandomAccessFile::open(path).with_whatever_context(|_| "Open file")?);
+    let file = Arc::new(RandomAccessFile::open(path).whatever_context("Open file")?);
 
     let a = file
         .decode()
         .await
-        .with_whatever_context(|_| "Bad file")?;
+        .whatever_context("Bad file")?;
     let (pages_handle, _meta_decoder) = a.into_handles();
     let mut var = vec![];
     for mut pd in pages_handle.decoders() {
         let ch = pd
             .decode()
             .await
-            .with_whatever_context(|e| e.to_string())?;
+            .whatever_context("Decode page failed")?;
         for mut c in ch.decoders() {
             var.push(
                 c.decode()
                     .await
-                    .with_whatever_context(|e| e.to_string())?,
+                    .whatever_context("Decode cookie failed")?,
             );
         }
     }
