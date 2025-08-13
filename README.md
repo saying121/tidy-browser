@@ -15,6 +15,7 @@
 - Filter by host/domain.
 - Support Windows, Linux, Macos.
 - Support Chromium, Firefox and Safari.
+- Parse BinaryCookies
 
 ## Install And Usage
 
