@@ -769,7 +769,7 @@ dependencies = [
 
 [[package]]
 name = "decrypt-cookies"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "anyhow",
  "binary-cookies",
