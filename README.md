@@ -8,9 +8,20 @@
   - [Status](#status)
   <!--toc:end-->
 
+## Features
+
+- Get browsers cookies and logins(password, now Chromium only).
+- Output csv, json, jsonl.
+- Filter by host/domain.
+- Support Windows, Linux, Macos.
+- Support Chromium, Firefox and Safari.
+
 ## Install And Usage
 
 Using [cargo-binstall](https://github.com/cargo-bins/cargo-binstall)
+
+> [!NOTE]
+> Windows require Administrator
 
 ```bash
 cargo binstall tidy-browser
@@ -43,6 +54,8 @@ eval $(tidy-browser completions <your shell>)
 ```
 
 ## Core crate
+
+Easily make a request using the authorization data from your browser.
 
 [decrypt-cookies](https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies)
 
