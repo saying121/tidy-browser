@@ -1,29 +1,15 @@
-use decrypt_cookies::{chromium::GetCookies, firefox::GetCookies as _, prelude::*};
+use decrypt_cookies::{
+    chromium, chromium::GetCookies, firefox, firefox::GetCookies as _, prelude::*,
+};
 use snafu::{ResultExt, Whatever};
 
-#[expect(clippy::exhaustive_structs, reason = "example")]
-pub struct NewBrowserBasedChromium;
+chromium!("linux",   NewBrowserBasedChromium, base: ".config/chromiumbased", safe_name: "Chromiumbased");
+chromium!("macos",   NewBrowserBasedChromium, base: "Library/Application Support/chromiumbased", safe_name: "Chromiumbased");
+chromium!("windows", NewBrowserBasedChromium, base: r"AppData\Local\Google\chromiumbased\User Data");
 
-impl ChromiumPath for NewBrowserBasedChromium {
-    const BASE: &'static str = ".config/NewBrowserBasedChromium"; // See `../src/browser/mod.rs`
-
-    const NAME: &'static str = "NewBrowserBasedChromium";
-
-    #[cfg(not(target_os = "windows"))]
-    const SAFE_STORAGE: &str = "New Safe Storage";
-
-    #[cfg(target_os = "macos")]
-    const SAFE_NAME: &str = "New";
-}
-
-#[expect(clippy::exhaustive_structs, reason = "example")]
-pub struct NewBrowserBasedFirefox;
-
-impl FirefoxPath for NewBrowserBasedFirefox {
-    const BASE: &'static str = ".config/NewBrowserBasedFirefox"; // See `../src/browser/mod.rs`
-
-    const NAME: &'static str = "NewBrowserBasedFirefox";
-}
+firefox!("linux",   NewBrowserBasedFirefox, base: ".NewBrowserBasedFirefox");
+firefox!("macos",   NewBrowserBasedFirefox, base: "Library/Application Support/NewBrowserBasedFirefox");
+firefox!("windows", NewBrowserBasedFirefox, base: r"AppData\Roaming\Mozilla\NewBrowserBasedFirefox");
 
 #[snafu::report]
 #[tokio::main]

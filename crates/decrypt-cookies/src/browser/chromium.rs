@@ -80,6 +80,43 @@ pub trait ChromiumPath {
     }
 }
 
+/// Register a Chromium based browser info
+///
+/// It accept
+/// - `platform`
+/// - `browser`: Generate a struct
+/// - `base: <path>`: A browser all data location relative to home dir.
+/// - `cookies: <path>`, `login_data: <path>`, `login_data_fa: <path>`: Relative to base dir. (optional)
+/// - `key: <path>`: Relative to profile dir. Require on windows.
+/// - `safe_name: <name>`: Require on linux and macos
+///
+/// # Example:
+///
+/// ```rust, no_run
+/// chromium!(
+///     "linux",
+///     Chrome,
+///     base: ".config/google-chrome",
+///     cookies: "Default/Cookies",
+///     login_data: "Default/Login Data",
+///     login_data_fa: "Default/Login Data For Account",
+///     safe_name: "Chrome",
+/// );
+/// chromium!(
+///     "windows",
+///     Chrome,
+///     base: r"AppData\Local\Google\Chrome\User Data",
+///     cookies: r"Default\Network\Cookies",
+///     login_data: r"Default\Login Data",
+///     login_data_fa: r"Default\Login Data For Account",
+///     key: "Local State",
+/// );
+/// // or omit use default value
+/// chromium!("linux", Chrome, base: ".config/google-chrome", safe_name: "Chrome");
+/// chromium!("macos", Chrome, base: "Library/Application Support/Google/Chrome", safe_name: "Chrome");
+/// chromium!("windows", Chrome, base: r"AppData\Local\Google\Chrome\User Data");
+/// ```
+#[macro_export]
 macro_rules! chromium {
     (
         $platform:literal,

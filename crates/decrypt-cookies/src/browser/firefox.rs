@@ -54,11 +54,36 @@ pub trait FirefoxPath {
     }
 }
 
+/// Register a Firefox based browser info
+///
+/// It accept
+/// - `platform`
+/// - `browser`: Generate a struct
+/// - `base: <path>`: A browser all data location relative to home dir.
+/// - `cookies: <path>`, `login_data: <path>`, `key: <path>`: Relative to profile dir. (optional)
+///
+/// # Example:
+///
+/// ```rust, no_run
+/// firefox!(
+///     "linux",
+///     Firefox,
+///     base: ".mozilla/firefox",
+///     cookies: "cookies.sqlite",
+///     login_data: "logins.json",
+///     key: "key4.db"
+/// );
+/// // or omit use default value
+/// firefox!("linux", Firefox, base: ".mozilla/firefox");
+/// firefox!("macos", Firefox, base: "Library/Application Support/Firefox");
+/// firefox!("windows", Firefox, base: r"AppData\Roaming\Mozilla\Firefox");
+/// ```
+#[macro_export]
 macro_rules! firefox {
     (
         $platform:literal,
-        $browser:ident,base:
-        $base:literal
+        $browser:ident,
+        base: $base:literal
         $(, cookies: $cookies:literal)?
         $(, login_data: $login_data:literal)?
         $(, key = $key:literal)?
