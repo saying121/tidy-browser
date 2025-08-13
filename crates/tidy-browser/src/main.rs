@@ -3,7 +3,7 @@ use tidy_browser::args::{self};
 use tracing_subscriber::EnvFilter;
 
 #[snafu::report]
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> tidy_browser::error::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
