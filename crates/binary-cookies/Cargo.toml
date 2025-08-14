@@ -11,7 +11,7 @@ repository.workspace = true
 license.workspace = true
 keywords = ["BinaryCookies", "binary-cookies", "binarycookies", "cookies"]
 categories = ["asynchronous", "authentication", "encoding"]
-exclude = ["./CHANGELOG.md", "examples/", "test-resource/", "tests/"]
+include = ["Cargo.toml", "README.md", "src"]
 
 [dependencies]
 # TODO: better error display?

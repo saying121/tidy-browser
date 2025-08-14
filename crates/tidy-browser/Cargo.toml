@@ -10,7 +10,7 @@ repository = { workspace = true }
 license = { workspace = true }
 keywords = { workspace = true }
 categories = { workspace = true }
-exclude = ["CHANGELOG.md", "examples", "tests/"]
+include = ["Cargo.toml", "README.md", "src"]
 
 [dependencies]
 binary-cookies = { workspace = true, features = ["csv", "serde", "sync"] }
