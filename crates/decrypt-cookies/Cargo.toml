@@ -42,7 +42,7 @@ rawcopy-rs-next = { workspace = true, optional = true }
 
 [features]
 Safari = ["dep:binary-cookies"]  # `binary_cookies` does not depend on Macos
-chromium = ["anyhow", "rawcopy-rs-next", "rayon", "rust-ini", "sea-orm"]
+chromium = ["anyhow", "rawcopy-rs-next", "rayon", "sea-orm"]
 default = ["chromium", "firefox", "reqwest", "serde", "tracing"]
 firefox = ["rayon", "rust-ini", "sea-orm"]
 reqwest = ["dep:reqwest"]
