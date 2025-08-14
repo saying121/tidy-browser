@@ -389,6 +389,7 @@ pub trait GetCookies: SealedCrypto + SealedCookies {
     }
 
     /// Filter by host
+    #[doc(alias = "cookies_by_domain", alias = "cookies_by_url")]
     fn cookies_by_host<H>(
         &self,
         host: H,

@@ -140,6 +140,7 @@ pub trait GetCookies: SealedCookies {
     }
 
     /// Filter cookies by host
+    #[doc(alias = "cookies_by_domain", alias = "cookies_by_url")]
     fn cookies_by_host<H>(&self, host: H) -> impl Future<Output = Result<Vec<MozCookies>>> + Send
     where
         Self: Sync,
