@@ -408,7 +408,7 @@ pub trait GetCookies: SealedCrypto + SealedCookies {
         }
     }
 
-    /// return all cookies
+    /// Return all cookies
     fn cookies_all(&self) -> impl std::future::Future<Output = Result<Vec<ChromiumCookie>>> + Send
     where
         Self: Sync,

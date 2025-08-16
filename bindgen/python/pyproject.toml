@@ -1,0 +1,24 @@
+[project]
+name = "decrypt-cookies-py"
+requires-python = ">=3.8"
+license = "LGPL-3.0-or-later"
+authors = [{ name = "saying121", email = "sayin121@outlook.com" }]
+keywords = ["Chromium", "Firefox", "Safari", "cookies", "decrypt"]
+classifiers = [
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Programming Language :: Rust",
+]
+dynamic = ["version"]
+
+[project.urls]
+# documentation = "https://github.com/saying121/tidy-browser"
+homepage = "https://github.com/saying121/tidy-browser"
+repository = "https://github.com/saying121/tidy-browser"
+
+[build-system]
+requires = ["maturin>=1.9,<2.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]

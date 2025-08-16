@@ -9,7 +9,7 @@ keywords = ["cookies", "decrypt", "Chromium", "Firefox", "Safari"]
 categories = ["asynchronous", "authentication", "cryptography", "encoding"]
 
 [workspace]
-members = ["crates/*"]
+members = ["crates/*", "./bindgen/*"]
 resolver = "2"
 exclude = [".github", "sample/"]
 
@@ -22,6 +22,10 @@ panic = "abort"
 
 
 [workspace.dependencies]
+pyo3 = "0.25"
+pyo3-async-runtimes = "0.25"
+pyo3-stub-gen = "0.12"
+
 snafu = "0.8"
 owo-colors = "4.2"
 positioned-io = { version = "0.3", default-features = false }
@@ -79,6 +83,7 @@ clap_complete_command = "0.6.1"
 strum = "0.27"
 
 decrypt-cookies = { path = "./crates/decrypt-cookies", version = "0.10" }
+decrypt-cookies-rs = { package = "decrypt-cookies", path = "./crates/decrypt-cookies", version = "0.10", default-features = false } # alias for bindgen
 chromium-crypto = { path = "./crates/chromium-crypto", version = "0.4" }
 binary-cookies = { path = "./crates/binary-cookies", version = "0.3" }
 
