@@ -12,13 +12,11 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition, DbErr};
 use snafu::{Location, ResultExt, Snafu};
 
-pub use self::items::cookie::entities::moz_cookies::{
-    Column as MozCookiesCol, ColumnIter as MozCookiesColIter,
+pub use self::items::cookie::{
+    entities::moz_cookies::{Column as MozCookiesCol, ColumnIter as MozCookiesColIter},
+    MozCookie,
 };
-use self::items::{
-    cookie::{dao::CookiesQuery, MozCookies},
-    I64ToMozTime,
-};
+use self::items::{cookie::dao::CookiesQuery, I64ToMozTime};
 use crate::browser::{cookies::LeetCodeCookies, FirefoxPath};
 
 #[derive(Debug)]
@@ -102,7 +100,7 @@ pub trait GetCookies: SealedCookies {
     ///         .unwrap_or_default();
     /// }
     /// ```
-    fn cookies_filter<F>(&self, filter: F) -> impl Future<Output = Result<Vec<MozCookies>>> + Send
+    fn cookies_filter<F>(&self, filter: F) -> impl Future<Output = Result<Vec<MozCookie>>> + Send
     where
         F: IntoCondition + Send,
         Self: Sync,
@@ -115,13 +113,13 @@ pub trait GetCookies: SealedCookies {
                 .context(DbSnafu)?;
             let res = res
                 .into_par_iter()
-                .map(MozCookies::from)
+                .map(MozCookie::from)
                 .collect();
             Ok(res)
         }
     }
 
-    fn cookies_all(&self) -> impl Future<Output = Result<Vec<MozCookies>>> + Send
+    fn cookies_all(&self) -> impl Future<Output = Result<Vec<MozCookie>>> + Send
     where
         Self: Sync,
     {
@@ -133,7 +131,7 @@ pub trait GetCookies: SealedCookies {
                 .context(DbSnafu)?;
             let res = res
                 .into_par_iter()
-                .map(MozCookies::from)
+                .map(MozCookie::from)
                 .collect();
             Ok(res)
         }
@@ -141,7 +139,7 @@ pub trait GetCookies: SealedCookies {
 
     /// Filter cookies by host
     #[doc(alias = "cookies_by_domain", alias = "cookies_by_url")]
-    fn cookies_by_host<H>(&self, host: H) -> impl Future<Output = Result<Vec<MozCookies>>> + Send
+    fn cookies_by_host<H>(&self, host: H) -> impl Future<Output = Result<Vec<MozCookie>>> + Send
     where
         Self: Sync,
         H: AsRef<str> + Send + Sync,
@@ -154,7 +152,7 @@ pub trait GetCookies: SealedCookies {
                 .context(DbSnafu)?;
             let res = res
                 .into_par_iter()
-                .map(MozCookies::from)
+                .map(MozCookie::from)
                 .collect();
             Ok(res)
         }
