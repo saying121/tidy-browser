@@ -28,7 +28,8 @@ decrypt-cookies-rs = { workspace = true, default-features = false, features = [
   "serde",
   "tracing",
 ] }
-pyo3 = { workspace = true, features = ["chrono"] }
+pastey = { workspace = true }
+pyo3 = { workspace = true, features = ["chrono", "multiple-pymethods"] }
 pyo3-async-runtimes = { workspace = true, features = [
   "attributes",
   "tokio-runtime",
