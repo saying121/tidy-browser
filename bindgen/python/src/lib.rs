@@ -33,7 +33,7 @@ impl From<SameSiteRs> for SameSite {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-pub fn decrypt_cookies_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
+pub fn decrypt_cookies(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<SameSite>()?;
 
     macro_rules! browsers {
