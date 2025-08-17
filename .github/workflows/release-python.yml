@@ -3,7 +3,7 @@
 #
 #    maturin generate-ci github -m ./bindgen/python/Cargo.toml -o ./.github/workflows/release-python.yml -v
 #
-name: CI
+name: Python
 
 on:
   push:
@@ -20,6 +20,9 @@ permissions:
 
 jobs:
   linux:
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -38,6 +41,12 @@ jobs:
             target: ppc64le
     steps:
       - uses: actions/checkout@v4
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.9
+        with:
+          version: "v0.10.0"
+
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -55,6 +64,9 @@ jobs:
           path: dist
 
   musllinux:
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -69,6 +81,11 @@ jobs:
             target: armv7
     steps:
       - uses: actions/checkout@v4
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.9
+        with:
+          version: "v0.10.0"
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -86,6 +103,9 @@ jobs:
           path: dist
 
   windows:
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -96,6 +116,11 @@ jobs:
             target: x86
     steps:
       - uses: actions/checkout@v4
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.9
+        with:
+          version: "v0.10.0"
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -113,6 +138,9 @@ jobs:
           path: dist
 
   macos:
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -123,6 +151,11 @@ jobs:
             target: aarch64
     steps:
       - uses: actions/checkout@v4
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.9
+        with:
+          version: "v0.10.0"
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
