@@ -3,7 +3,7 @@
 #
 #    maturin generate-ci github -m ./bindgen/python/Cargo.toml -o ./.github/workflows/release-python.yml -v
 #
-name: CI
+name: Python
 
 on:
   push:
