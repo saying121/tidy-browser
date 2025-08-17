@@ -5,7 +5,9 @@ use decrypt_cookies_rs::{
     chromium::{
         ChromiumCookie as ChromiumCookieRs, GetCookies, GetLogins, LoginData as LoginDataRs,
     },
-    prelude::{ChromiumGetter as ChromiumGetterRs, *},
+    prelude::{
+        ChromiumCookieGetter as ChromiumCookieGetterRs, ChromiumGetter as ChromiumGetterRs, *,
+    },
 };
 use pyo3::{exceptions::PyValueError, prelude::*};
 use pyo3_async_runtimes::tokio::future_into_py;
@@ -122,6 +124,79 @@ macro_rules! chromiums {
                                 .map_err(|e| PyValueError::new_err(e.to_string()))?;
                             #[expect(clippy::transmute_undefined_repr, reason = "already repr(C)")]
                             let all = unsafe { mem::transmute::<Vec<LoginDataRs>, Vec<LoginData>>(all) };
+                            Ok(all)
+                        })
+                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                    }
+                }
+
+                #[gen_stub_pyclass]
+                #[pyclass(frozen, str)]
+                #[derive(Clone)]
+                #[derive(Debug)]
+                #[derive(Default)]
+                pub struct [<$browser CookieGetter>](ChromiumCookieGetterRs<$browser>);
+
+                impl Display for [<$browser CookieGetter>] {
+                    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                        self.0.fmt(f)
+                    }
+                }
+
+                #[gen_stub_pymethods]
+                #[pymethods]
+                impl [<$browser CookieGetter>] {
+                    /// base: When browser start with `--user-data-dir=DIR` or special other channel
+                    #[new]
+                    #[pyo3(signature = (base=None))]
+                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[ChromiumCookieGetter]", imports=("typing")))]
+                    pub fn new(py: Python<'_>, base: Option<PathBuf>) -> PyResult<Bound<'_, Self>> {
+                        let b = base.map_or_else(
+                            ChromiumBuilder::<$browser>::new,
+                            ChromiumBuilder::<$browser>::with_user_data_dir,
+                        );
+                        future_into_py(py, async move {
+                            b.build_cookie()
+                                .await
+                                .map([<$browser CookieGetter>])
+                                .map_err(|e| PyValueError::new_err(e.to_string()))
+                        })
+                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                    }
+
+                    /// Return all cookies
+                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
+                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'_, Vec<ChromiumCookie>>> {
+                        let self_ = self.clone();
+                        future_into_py(py, async move {
+                            let all = self_
+                                .0
+                                .cookies_all()
+                                .await
+                                .map_err(|e| PyValueError::new_err(e.to_string()))?;
+                            #[expect(clippy::transmute_undefined_repr, reason = "already repr(C)")]
+                            let all = unsafe { mem::transmute::<Vec<ChromiumCookieRs>, Vec<ChromiumCookie>>(all) };
+                            Ok(all)
+                        })
+                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                    }
+
+                    /// Filter by host
+                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
+                    pub fn cookies_by_host<'a>(
+                        &'a self,
+                        py: Python<'a>,
+                        host: String,
+                    ) -> PyResult<Bound<'_, Vec<ChromiumCookie>>> {
+                        let self_ = self.clone();
+                        future_into_py(py, async move {
+                            let all = self_
+                                .0
+                                .cookies_by_host(host)
+                                .await
+                                .map_err(|e| PyValueError::new_err(e.to_string()))?;
+                            #[expect(clippy::transmute_undefined_repr, reason = "already repr(C)")]
+                            let all = unsafe { mem::transmute::<Vec<ChromiumCookieRs>, Vec<ChromiumCookie>>(all) };
                             Ok(all)
                         })
                         .map(|v| unsafe { v.downcast_into_unchecked() })

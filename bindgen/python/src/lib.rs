@@ -41,6 +41,7 @@ pub fn decrypt_cookies_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
             pastey::paste! {
                 $(
                     m.add_class::<[<$browser Getter>]>()?;
+                    m.add_class::<[<$browser CookieGetter>]>()?;
                 )*
             }
         };

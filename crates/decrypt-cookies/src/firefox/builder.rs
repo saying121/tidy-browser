@@ -268,7 +268,7 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
             level = "debug"
         )
     )]
-    pub async fn build_cookies(self) -> Result<FirefoxCookieGetter<B>> {
+    pub async fn build_cookie(self) -> Result<FirefoxCookieGetter<B>> {
         let profile_path = if let Some(path) = self.profile_path {
             path
         }
@@ -288,5 +288,10 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
             cookies_query,
             __browser: core::marker::PhantomData::<B>,
         })
+    }
+
+    #[deprecated(note = "use build_cookie")]
+    pub async fn build_cookies(self) -> Result<FirefoxCookieGetter<B>> {
+        self.build_cookie().await
     }
 }

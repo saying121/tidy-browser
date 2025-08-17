@@ -26,6 +26,11 @@ fn main() -> Result<(), Whatever> {
 
         if ele.contains("__new__") && !last_class_name.is_empty() {
             let new = ele.replace("ChromiumGetter", last_class_name);
+            let new = new.replace("FirefoxGetter", last_class_name);
+
+            let new = new.replace("FirefoxCookieGetter", last_class_name);
+            let new = new.replace("ChromiumCookieGetter", last_class_name);
+
             res.push_str(&new);
             res.push('\n');
             continue;
