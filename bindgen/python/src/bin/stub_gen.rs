@@ -41,11 +41,8 @@ fn main() -> Result<(), Whatever> {
     }
 
     fs::write(pyi_path, res).whatever_context("Write failed")?;
-    fs::rename(
-        pyi_path,
-        "./python/decrypt_cookies/decrypt_cookies.pyi",
-    )
-    .whatever_context("Move file")?;
+    fs::rename(pyi_path, "./python/decrypt_cookies/decrypt_cookies.pyi")
+        .whatever_context("Move file")?;
 
     Ok(())
 }
