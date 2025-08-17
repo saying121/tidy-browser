@@ -2,10 +2,7 @@ use decrypt_cookies_rs::browser::cookies::SameSite as SameSiteRs;
 use pyo3::prelude::*;
 use pyo3_stub_gen::{define_stub_info_gatherer, derive::gen_stub_pyclass_enum};
 
-use self::{
-    chromium::*,
-    firefox::{FirefoxGetter, MozCookie},
-};
+use self::{chromium::*, firefox::*};
 
 mod chromium;
 mod firefox;
@@ -39,7 +36,7 @@ impl From<SameSiteRs> for SameSite {
 pub fn decrypt_cookies_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<SameSite>()?;
 
-    macro_rules! chromiums {
+    macro_rules! browsers {
         ($($browser:ident),* $(,)?) => {
             pastey::paste! {
                 $(
@@ -49,15 +46,15 @@ pub fn decrypt_cookies_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
         };
     }
 
-    #[cfg(target_os = "linux")]
-    chromiums![Chrome, Edge, Chromium, Brave, Vivaldi, Yandex, Opera];
+    browsers![
+        Chrome, Edge, Chromium, Brave, Vivaldi, Yandex, Opera, Firefox, Librewolf, Floorp, Zen
+    ];
     #[cfg(not(target_os = "linux"))]
-    chromiums![Chrome, Edge, Chromium, Brave, Vivaldi, Yandex, Opera, Arc, OperaGX, CocCoc];
+    browsers![Arc, OperaGX, CocCoc];
 
     m.add_class::<ChromiumCookie>()?;
     m.add_class::<LoginData>()?;
 
-    m.add_class::<FirefoxGetter>()?;
     m.add_class::<MozCookie>()?;
 
     Ok(())
