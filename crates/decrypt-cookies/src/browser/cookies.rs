@@ -94,9 +94,9 @@ pub trait CookiesInfo {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SameSite {
     #[default]
-    None,
-    Lax,
-    Strict,
+    None = 0,
+    Lax = 1,
+    Strict = 2,
 }
 
 impl From<i32> for SameSite {

@@ -1,0 +1,43 @@
+[package]
+name = "decrypt-cookies-py"
+version = "0.1.0"
+authors = { workspace = true }
+edition = { workspace = true }
+rust-version = { workspace = true }
+description = "A decrypt browser package"
+homepage = "https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies"
+repository = { workspace = true }
+license = { workspace = true }
+keywords = { workspace = true }
+categories = { workspace = true }
+exclude = ["./CHANGELOG.md", "examples", "tests/"]
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "decrypt_cookies_py"
+
+[dependencies]
+chrono = { workspace = true }
+decrypt-cookies-rs = { workspace = true, default-features = false, features = [
+  "Safari",
+  "chromium",
+  "ffi",
+  "firefox",
+  "serde",
+  "tracing",
+] }
+pastey = { workspace = true }
+pyo3 = { workspace = true, features = ["chrono", "multiple-pymethods"] }
+pyo3-async-runtimes = { workspace = true, features = [
+  "attributes",
+  "tokio-runtime",
+] }
+pyo3-stub-gen = { workspace = true }
+serde = { workspace = true }
+snafu = { workspace = true }
+tokio = { workspace = true }
+
+[lints]
+workspace = true

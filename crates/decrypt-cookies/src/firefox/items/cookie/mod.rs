@@ -9,10 +9,11 @@ pub mod entities;
 
 #[derive(Clone)]
 #[derive(Debug)]
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 #[non_exhaustive]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct MozCookies {
+#[cfg_attr(feature = "ffi", repr(C))]
+pub struct MozCookie {
     pub id: i32,
     pub origin_attributes: String,
     pub name: String,
@@ -31,16 +32,16 @@ pub struct MozCookies {
     pub scheme_map: i32,
 }
 #[cfg(feature = "reqwest")]
-impl TryFrom<MozCookies> for reqwest::header::HeaderValue {
+impl TryFrom<MozCookie> for reqwest::header::HeaderValue {
     type Error = reqwest::header::InvalidHeaderValue;
 
-    fn try_from(value: MozCookies) -> Result<Self, Self::Error> {
+    fn try_from(value: MozCookie) -> Result<Self, Self::Error> {
         Self::from_str(&value.set_cookie_header())
     }
 }
 #[cfg(feature = "reqwest")]
-impl FromIterator<MozCookies> for reqwest::cookie::Jar {
-    fn from_iter<T: IntoIterator<Item = MozCookies>>(iter: T) -> Self {
+impl FromIterator<MozCookie> for reqwest::cookie::Jar {
+    fn from_iter<T: IntoIterator<Item = MozCookie>>(iter: T) -> Self {
         let jar = Self::default();
         for cookie in iter {
             let set_cookie = cookie.set_cookie_header();
@@ -52,7 +53,7 @@ impl FromIterator<MozCookies> for reqwest::cookie::Jar {
     }
 }
 
-impl CookiesInfo for MozCookies {
+impl CookiesInfo for MozCookie {
     fn is_http_only(&self) -> bool {
         self.is_http_only
     }
@@ -88,7 +89,7 @@ impl CookiesInfo for MozCookies {
     }
 }
 
-impl From<moz_cookies::Model> for MozCookies {
+impl From<moz_cookies::Model> for MozCookie {
     fn from(value: moz_cookies::Model) -> Self {
         Self {
             id: value.id,

@@ -44,6 +44,7 @@ rawcopy-rs-next = { workspace = true, optional = true }
 Safari = ["dep:binary-cookies"]  # `binary_cookies` does not depend on Macos
 chromium = ["anyhow", "rawcopy-rs-next", "rayon", "sea-orm"]
 default = ["chromium", "firefox", "reqwest", "serde", "tracing"]
+ffi = []  # Use for bindgen
 firefox = ["rayon", "rust-ini", "sea-orm"]
 reqwest = ["dep:reqwest"]
 serde = ["chrono/serde", "dep:serde"]

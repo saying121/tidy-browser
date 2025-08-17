@@ -13,6 +13,7 @@ pub mod login_data_entities;
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "ffi", repr(C))]
 pub struct LoginData {
     pub origin_url: String,
     pub action_url: Option<String>,
