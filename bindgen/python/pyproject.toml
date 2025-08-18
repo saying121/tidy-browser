@@ -8,6 +8,9 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
   "Programming Language :: Rust",
+  "Topic :: Internet :: WWW/HTTP",
+  "Topic :: Internet :: WWW/HTTP :: Browsers",
+  "Topic :: Internet :: WWW/HTTP :: Session",
 ]
 dynamic = ["version"]
 
@@ -16,9 +19,15 @@ dynamic = ["version"]
 homepage = "https://github.com/saying121/tidy-browser"
 repository = "https://github.com/saying121/tidy-browser"
 
+[project.optional-dependencies]
+requests = [
+    "requests (>=2.23.0,<3.0.0)"
+]
+
 [build-system]
 requires = ["maturin>=1.9,<2.0"]
 build-backend = "maturin"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+python-source = "python"
