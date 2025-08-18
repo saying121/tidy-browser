@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 r"""
-.. include:: ../../README.md
+.. include:: ./README.md
 """
 
 from collections.abc import Sequence
