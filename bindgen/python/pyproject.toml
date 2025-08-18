@@ -1,5 +1,6 @@
 [project]
 name = "decrypt_cookies"
+description = "Decrypt cookies from browser"
 requires-python = ">=3.8"
 license = "LGPL-3.0-or-later"
 authors = [{ name = "saying121", email = "sayin121@outlook.com" }]
@@ -20,9 +21,7 @@ homepage = "https://github.com/saying121/tidy-browser"
 repository = "https://github.com/saying121/tidy-browser"
 
 [project.optional-dependencies]
-requests = [
-    "requests (>=2.23.0,<3.0.0)"
-]
+requests = ["requests (>=2.23.0,<3.0.0)"]
 
 [build-system]
 requires = ["maturin>=1.9,<2.0"]
