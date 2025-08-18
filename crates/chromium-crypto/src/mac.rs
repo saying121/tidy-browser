@@ -54,15 +54,15 @@ impl Decrypter {
         let safe_name: &'static str =
             unsafe { std::mem::transmute::<&str, &'static str>(safe_name) };
 
-        let entry = tokio::task::spawn_blocking(|| {
-            keyring::Entry::new(safe_storage, safe_name).context(error::KeyringSnafu)
+        tokio::task::spawn_blocking(|| {
+            let entry =
+                keyring::Entry::new(safe_storage, safe_name).context(error::KeyringSnafu)?;
+            entry
+                .get_secret()
+                .context(error::KeyringSnafu)
         })
         .await
-        .context(error::TaskSnafu)??;
-        entry
-            .get_password()
-            .map(String::into_bytes)
-            .context(error::KeyringSnafu)
+        .context(error::TaskSnafu)?
     }
 
     pub fn decrypt(&self, ciphertext: &mut [u8], which: Which) -> Result<String> {
