@@ -1,5 +1,6 @@
 [project]
 name = "decrypt_cookies"
+readme  = "./README.md"
 description = "Decrypt cookies from browser"
 requires-python = ">=3.8"
 license = "LGPL-3.0-or-later"

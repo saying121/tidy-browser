@@ -791,7 +791,7 @@ dependencies = [
 
 [[package]]
 name = "decrypt-cookies-py"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "chrono",
  "decrypt-cookies",
@@ -799,7 +799,6 @@ dependencies = [
  "pyo3",
  "pyo3-async-runtimes",
  "pyo3-stub-gen",
- "serde",
  "snafu",
  "tokio",
 ]

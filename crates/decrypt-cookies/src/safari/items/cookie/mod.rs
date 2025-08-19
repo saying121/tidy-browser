@@ -19,6 +19,7 @@ use crate::{
     reason = "Breaking change with Binarycookies format"
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "ffi", repr(C))]
 pub struct SafariCookie {
     pub version: u32,
 
