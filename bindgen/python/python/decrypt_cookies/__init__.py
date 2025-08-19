@@ -9,12 +9,14 @@ from .decrypt_cookies import *  # noqa: F403
 
 from datetime import datetime
 from http.cookiejar import Cookie, CookieJar
-from decrypt_cookies import ChromiumCookie, MozCookie
+from decrypt_cookies import ChromiumCookie, MozCookie, SafariCookie
 
 __all__ = ["to_cookiejar"]
 
 
-def to_cookiejar(cookies: Sequence[ChromiumCookie | MozCookie]) -> CookieJar:
+def to_cookiejar(
+    cookies: Sequence[ChromiumCookie | MozCookie | SafariCookie],
+) -> CookieJar:
     cookiejar = CookieJar()
     for cookie in cookies:
         if isinstance(cookie, ChromiumCookie):
@@ -30,7 +32,7 @@ def to_cookiejar(cookies: Sequence[ChromiumCookie | MozCookie]) -> CookieJar:
                     value=cookie.value,
                 )
             )
-        else:
+        elif isinstance(cookie, MozCookie):
             cookiejar.set_cookie(
                 cookie_new(
                     host=cookie.host,
@@ -42,6 +44,22 @@ def to_cookiejar(cookies: Sequence[ChromiumCookie | MozCookie]) -> CookieJar:
                     value=cookie.value,
                 )
             )
+        else:
+            cookiejar.set_cookie(
+                cookie_new(
+                    host=cookie.domain,
+                    expires_utc=cookie.expires,
+                    is_httponly=cookie.is_http_only,
+                    is_secure=cookie.is_secure,
+                    name=cookie.name,
+                    path=cookie.path,
+                    value=cookie.value,
+                    comment=cookie.comment,
+                    version=cookie.version,
+                    port=cookie.port,
+                )
+            )
+
     return cookiejar
 
 
@@ -53,15 +71,18 @@ def cookie_new(
     is_secure: bool,
     is_httponly: bool,
     expires_utc: datetime | None,
+    comment: None | str = None,
+    version: None | int = None,
+    port: None | int = None,
 ) -> Cookie:
     return Cookie(
-        port=None,
-        comment=None,
+        port=port,  # pyright: ignore[reportArgumentType]
+        port_specified=port is None,
+        comment=comment,
         comment_url=None,
         discard=False,
         path_specified=True,
-        port_specified=False,
-        version=0,
+        version=version,
         domain_initial_dot=host.startswith("."),
         domain_specified=True,
         domain=host,

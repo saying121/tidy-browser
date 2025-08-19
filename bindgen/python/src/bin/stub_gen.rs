@@ -2,12 +2,13 @@ use std::fs;
 
 use snafu::{OptionExt, ResultExt, Whatever};
 
+/// At python project root run: `cargo r && maturin develop`
 #[snafu::report]
 fn main() -> Result<(), Whatever> {
     let stub = decrypt_cookies_py::stub_info().whatever_context("Stub info")?;
     stub.generate()
         .whatever_context("Generte stub")?;
-    let pyi_path = "decrypt_cookies.pyi";
+    let pyi_path = "./python/decrypt_cookies.pyi";
     let pyi = fs::read_to_string(pyi_path).whatever_context("Not found pyi file")?;
 
     let mut res = String::new();
