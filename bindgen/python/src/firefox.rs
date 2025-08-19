@@ -219,7 +219,6 @@ firefoxs![Firefox, Librewolf, Floorp, Zen];
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
-#[derive(serde::Serialize, serde::Deserialize)]
 #[repr(C)]
 pub struct MozCookie {
     pub id: i32,

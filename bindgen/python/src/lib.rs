@@ -13,7 +13,6 @@ mod firefox;
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
-#[derive(serde::Serialize, serde::Deserialize)]
 pub enum SameSite {
     #[default]
     Non = 0,

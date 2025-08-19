@@ -24,7 +24,6 @@ decrypt-cookies-rs = { workspace = true, default-features = false, features = [
   "chromium",
   "ffi",
   "firefox",
-  "serde",
   "tracing",
 ] }
 pastey = { workspace = true }
@@ -34,7 +33,6 @@ pyo3-async-runtimes = { workspace = true, features = [
   "tokio-runtime",
 ] }
 pyo3-stub-gen = { workspace = true }
-serde = { workspace = true }
 snafu = { workspace = true }
 tokio = { workspace = true }
 
