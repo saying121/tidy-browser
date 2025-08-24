@@ -18,7 +18,7 @@ dynamic = ["version"]
 
 [project.urls]
 # documentation = "https://github.com/saying121/tidy-browser"
-homepage = "https://github.com/saying121/tidy-browser"
+homepage = "https://github.com/saying121/tidy-browser/tree/master/bindgen/python"
 repository = "https://github.com/saying121/tidy-browser"
 
 [project.optional-dependencies]
