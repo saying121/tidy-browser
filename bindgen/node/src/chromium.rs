@@ -25,6 +25,7 @@ macro_rules! chromiums {
                 #[derive(Default)]
                 pub struct [<$browser Getter>](ChromiumGetterRs<$browser>);
 
+                #[napi]
                 impl Display for [<$browser Getter>] {
                     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                         self.0.fmt(f)
