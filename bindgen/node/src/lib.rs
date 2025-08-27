@@ -1,6 +1,17 @@
 use napi_derive::napi;
 
+mod chromium;
+mod firefox;
+mod safari;
+
 #[napi]
-pub fn plus_100(input: u32) -> u32 {
-  input + 100
+#[derive(Clone, Copy)]
+#[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub enum SameSite {
+    #[default]
+    Non = 0,
+    Lax = 1,
+    Strict = 2,
 }

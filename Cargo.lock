@@ -823,6 +823,7 @@ dependencies = [
  "napi",
  "napi-build",
  "napi-derive",
+ "pastey",
  "snafu",
  "tokio",
 ]
@@ -1891,11 +1892,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc1d56eed08a179e1c5bedb1613c58e882087cec97fcaa7788cc42366335a41d"
 dependencies = [
  "bitflags",
+ "chrono",
  "ctor",
  "napi-build",
  "napi-sys",
  "nohash-hasher",
  "rustc-hash",
+ "tokio",
 ]
 
 [[package]]
