@@ -426,6 +426,7 @@ module.exports.OperaGXGetter = nativeBinding.OperaGXGetter
 module.exports.OperaGxLoginGetter = nativeBinding.OperaGxLoginGetter
 module.exports.OperaGXLoginGetter = nativeBinding.OperaGXLoginGetter
 module.exports.OperaLoginGetter = nativeBinding.OperaLoginGetter
+module.exports.SafariGetter = nativeBinding.SafariGetter
 module.exports.VivaldiCookieGetter = nativeBinding.VivaldiCookieGetter
 module.exports.VivaldiGetter = nativeBinding.VivaldiGetter
 module.exports.VivaldiLoginGetter = nativeBinding.VivaldiLoginGetter

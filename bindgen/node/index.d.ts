@@ -199,6 +199,12 @@ export declare class OperaLoginGetter {
   loginsByHost(host: string): Promise<Array<LoginData>>
 }
 
+export declare class SafariGetter {
+  static new(cookiesPath?: string | undefined | null): Promise<SafariGetter>
+  cookiesAll(): Array<SafariCookie>
+  cookiesByHost(host: string): Array<SafariCookie>
+}
+
 export declare class VivaldiCookieGetter {
   static new(base?: string | undefined | null): Promise<VivaldiCookieGetter>
   cookiesAll(): Promise<Array<ChromiumCookie>>
@@ -313,6 +319,22 @@ export interface MozCookie {
   inBrowserElement: number
   sameSite: SameSite
   schemeMap: number
+}
+
+export interface SafariCookie {
+  version: number
+  flags: number
+  port?: number
+  comment?: string
+  domain: string
+  name: string
+  path: string
+  value: string
+  expires?: Date
+  creation?: Date
+  sameSite: SameSite
+  isSecure: boolean
+  isHttpOnly: boolean
 }
 
 export declare const enum SameSite {
