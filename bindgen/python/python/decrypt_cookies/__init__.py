@@ -29,7 +29,9 @@ def to_cookiejar(
                     is_secure=cookie.is_secure,
                     name=cookie.name,
                     path=cookie.path,
-                    value=cookie.value,
+                    value=cookie.decrypted_value
+                    if cookie.decrypted_value is not None
+                    else cookie.value,
                 )
             )
         elif isinstance(cookie, MozCookie):
