@@ -6,7 +6,8 @@ use decrypt_cookies_rs::{
         ChromiumCookie as ChromiumCookieRs, GetCookies, GetLogins, LoginData as LoginDataRs,
     },
     prelude::{
-        ChromiumCookieGetter as ChromiumCookieGetterRs, ChromiumGetter as ChromiumGetterRs, *,
+        ChromiumCookieGetter as ChromiumCookieGetterRs, ChromiumGetter as ChromiumGetterRs,
+        ChromiumLoginGetter as ChromiumLoginGetterRs, *,
     },
 };
 use pyo3::{exceptions::PyValueError, prelude::*};
@@ -47,7 +48,7 @@ macro_rules! chromiums {
                         future_into_py(py, async move {
                             b.build()
                                 .await
-                                .map([<$browser Getter>])
+                                .map(Self)
                                 .map_err(|e| PyValueError::new_err(e.to_string()))
                         })
                         .map(|v| unsafe { v.downcast_into_unchecked() })
@@ -158,7 +159,7 @@ macro_rules! chromiums {
                         future_into_py(py, async move {
                             b.build_cookie()
                                 .await
-                                .map([<$browser CookieGetter>])
+                                .map(Self)
                                 .map_err(|e| PyValueError::new_err(e.to_string()))
                         })
                         .map(|v| unsafe { v.downcast_into_unchecked() })
@@ -197,6 +198,79 @@ macro_rules! chromiums {
                                 .map_err(|e| PyValueError::new_err(e.to_string()))?;
                             #[expect(clippy::transmute_undefined_repr, reason = "already repr(C)")]
                             let all = unsafe { mem::transmute::<Vec<ChromiumCookieRs>, Vec<ChromiumCookie>>(all) };
+                            Ok(all)
+                        })
+                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                    }
+                }
+
+                #[gen_stub_pyclass]
+                #[pyclass(frozen, str)]
+                #[derive(Clone)]
+                #[derive(Debug)]
+                #[derive(Default)]
+                pub struct [<$browser LoginGetter>](ChromiumLoginGetterRs<$browser>);
+
+                impl Display for [<$browser LoginGetter>] {
+                    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                        self.0.fmt(f)
+                    }
+                }
+
+                #[gen_stub_pymethods]
+                #[pymethods]
+                impl [<$browser LoginGetter>] {
+                    /// base: When browser start with `--user-data-dir=DIR` or special other channel
+                    #[new]
+                    #[pyo3(signature = (base=None))]
+                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[ChromiumGetter]", imports=("typing")))]
+                    pub fn new(py: Python<'_>, base: Option<PathBuf>) -> PyResult<Bound<'_, Self>> {
+                        let b = base.map_or_else(
+                            ChromiumBuilder::<$browser>::new,
+                            ChromiumBuilder::<$browser>::with_user_data_dir,
+                        );
+                        future_into_py(py, async move {
+                            b.build_login()
+                                .await
+                                .map(Self)
+                                .map_err(|e| PyValueError::new_err(e.to_string()))
+                        })
+                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                    }
+
+                    /// Return all login data
+                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
+                    pub fn logins_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'_, Vec<LoginData>>> {
+                        let self_ = self.clone();
+                        future_into_py(py, async move {
+                            let all = self_
+                                .0
+                                .logins_all()
+                                .await
+                                .map_err(|e| PyValueError::new_err(e.to_string()))?;
+                            #[expect(clippy::transmute_undefined_repr, reason = "already repr(C)")]
+                            let all = unsafe { mem::transmute::<Vec<LoginDataRs>, Vec<LoginData>>(all) };
+                            Ok(all)
+                        })
+                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                    }
+
+                    /// Filter by host
+                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
+                    pub fn logins_by_host<'a>(
+                        &'a self,
+                        py: Python<'a>,
+                        host: String,
+                    ) -> PyResult<Bound<'_, Vec<LoginData>>> {
+                        let self_ = self.clone();
+                        future_into_py(py, async move {
+                            let all = self_
+                                .0
+                                .logins_by_host(host)
+                                .await
+                                .map_err(|e| PyValueError::new_err(e.to_string()))?;
+                            #[expect(clippy::transmute_undefined_repr, reason = "already repr(C)")]
+                            let all = unsafe { mem::transmute::<Vec<LoginDataRs>, Vec<LoginData>>(all) };
                             Ok(all)
                         })
                         .map(|v| unsafe { v.downcast_into_unchecked() })

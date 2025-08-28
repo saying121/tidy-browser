@@ -44,6 +44,20 @@ class ArcGetter:
         Filter by host
         """
 
+class ArcLoginGetter:
+    def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[ArcLoginGetter]:
+        r"""
+        base: When browser start with `--user-data-dir=DIR` or special other channel
+        """
+    def logins_all(self) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Return all login data
+        """
+    def logins_by_host(self, host:builtins.str) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Filter by host
+        """
+
 class BraveCookieGetter:
     def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[BraveCookieGetter]:
         r"""
@@ -80,6 +94,20 @@ class BraveGetter:
         Filter by host
         """
 
+class BraveLoginGetter:
+    def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[BraveLoginGetter]:
+        r"""
+        base: When browser start with `--user-data-dir=DIR` or special other channel
+        """
+    def logins_all(self) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Return all login data
+        """
+    def logins_by_host(self, host:builtins.str) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Filter by host
+        """
+
 class ChromeCookieGetter:
     def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[ChromeCookieGetter]:
         r"""
@@ -106,6 +134,20 @@ class ChromeGetter:
     def cookies_by_host(self, host:builtins.str) -> typing.Awaitable[list[ChromiumCookie]]:
         r"""
         Filter by host
+        """
+    def logins_all(self) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Return all login data
+        """
+    def logins_by_host(self, host:builtins.str) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Filter by host
+        """
+
+class ChromeLoginGetter:
+    def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[ChromeLoginGetter]:
+        r"""
+        base: When browser start with `--user-data-dir=DIR` or special other channel
         """
     def logins_all(self) -> typing.Awaitable[list[LoginData]]:
         r"""
@@ -226,6 +268,20 @@ class ChromiumGetter:
         Filter by host
         """
 
+class ChromiumLoginGetter:
+    def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[ChromiumLoginGetter]:
+        r"""
+        base: When browser start with `--user-data-dir=DIR` or special other channel
+        """
+    def logins_all(self) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Return all login data
+        """
+    def logins_by_host(self, host:builtins.str) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Filter by host
+        """
+
 class CocCocCookieGetter:
     def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[CocCocCookieGetter]:
         r"""
@@ -262,6 +318,20 @@ class CocCocGetter:
         Filter by host
         """
 
+class CocCocLoginGetter:
+    def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[CocCocLoginGetter]:
+        r"""
+        base: When browser start with `--user-data-dir=DIR` or special other channel
+        """
+    def logins_all(self) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Return all login data
+        """
+    def logins_by_host(self, host:builtins.str) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Filter by host
+        """
+
 class EdgeCookieGetter:
     def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[EdgeCookieGetter]:
         r"""
@@ -288,6 +358,20 @@ class EdgeGetter:
     def cookies_by_host(self, host:builtins.str) -> typing.Awaitable[list[ChromiumCookie]]:
         r"""
         Filter by host
+        """
+    def logins_all(self) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Return all login data
+        """
+    def logins_by_host(self, host:builtins.str) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Filter by host
+        """
+
+class EdgeLoginGetter:
+    def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[EdgeLoginGetter]:
+        r"""
+        base: When browser start with `--user-data-dir=DIR` or special other channel
         """
     def logins_all(self) -> typing.Awaitable[list[LoginData]]:
         r"""
@@ -608,6 +692,20 @@ class OperaGXGetter:
         Filter by host
         """
 
+class OperaGXLoginGetter:
+    def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[OperaGXLoginGetter]:
+        r"""
+        base: When browser start with `--user-data-dir=DIR` or special other channel
+        """
+    def logins_all(self) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Return all login data
+        """
+    def logins_by_host(self, host:builtins.str) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Filter by host
+        """
+
 class OperaGetter:
     def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[OperaGetter]:
         r"""
@@ -620,6 +718,20 @@ class OperaGetter:
     def cookies_by_host(self, host:builtins.str) -> typing.Awaitable[list[ChromiumCookie]]:
         r"""
         Filter by host
+        """
+    def logins_all(self) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Return all login data
+        """
+    def logins_by_host(self, host:builtins.str) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Filter by host
+        """
+
+class OperaLoginGetter:
+    def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[OperaLoginGetter]:
+        r"""
+        base: When browser start with `--user-data-dir=DIR` or special other channel
         """
     def logins_all(self) -> typing.Awaitable[list[LoginData]]:
         r"""
@@ -725,6 +837,20 @@ class VivaldiGetter:
         Filter by host
         """
 
+class VivaldiLoginGetter:
+    def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[VivaldiLoginGetter]:
+        r"""
+        base: When browser start with `--user-data-dir=DIR` or special other channel
+        """
+    def logins_all(self) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Return all login data
+        """
+    def logins_by_host(self, host:builtins.str) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Filter by host
+        """
+
 class YandexCookieGetter:
     def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[YandexCookieGetter]:
         r"""
@@ -751,6 +877,20 @@ class YandexGetter:
     def cookies_by_host(self, host:builtins.str) -> typing.Awaitable[list[ChromiumCookie]]:
         r"""
         Filter by host
+        """
+    def logins_all(self) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Return all login data
+        """
+    def logins_by_host(self, host:builtins.str) -> typing.Awaitable[list[LoginData]]:
+        r"""
+        Filter by host
+        """
+
+class YandexLoginGetter:
+    def __new__(cls, base:typing.Optional[builtins.str | os.PathLike | pathlib.Path]=None) -> typing.Awaitable[YandexLoginGetter]:
+        r"""
+        base: When browser start with `--user-data-dir=DIR` or special other channel
         """
     def logins_all(self) -> typing.Awaitable[list[LoginData]]:
         r"""
