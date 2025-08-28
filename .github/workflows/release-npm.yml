@@ -251,7 +251,7 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v5
         with:
-          path: ./bindgen/node
+          path: ./bindgen/node/artifacts
       - name: Move artifacts
         run: yarn artifacts
       - name: List packages
