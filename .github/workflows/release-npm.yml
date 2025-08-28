@@ -26,6 +26,7 @@ jobs:
       - name: Install
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: 1.82
           components: clippy, rustfmt
       - name: Install dependencies
         run: yarn install
@@ -70,7 +71,7 @@ jobs:
       - name: Install
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
+          toolchain: 1.82
           targets: ${{ matrix.settings.target }}
       - name: Cache cargo
         uses: actions/cache@v4
