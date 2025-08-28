@@ -40,7 +40,7 @@ impl SafariGetter {
             }
             b.build()
                 .await
-                .map(SafariGetter)
+                .map(Self)
                 .map_err(|e| PyValueError::new_err(e.to_string()))
         })
         .map(|v| unsafe { v.downcast_into_unchecked() })

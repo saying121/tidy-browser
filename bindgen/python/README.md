@@ -19,7 +19,7 @@ async def get_cookies():
     print(c[0])
 
 
-asyncio.run(test_c())
+asyncio.run(get_cookies())
 ```
 
 ## Status
