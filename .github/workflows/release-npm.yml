@@ -109,8 +109,8 @@ jobs:
         with:
           name: bindings-${{ matrix.settings.target }}
           path: |
-            ${{ env.APP_NAME }}.*.node
-            ${{ env.APP_NAME }}.*.wasm
+            ./bindgen/node/${{ env.APP_NAME }}.*.node
+            ./bindgen/node/${{ env.APP_NAME }}.*.wasm
           if-no-files-found: error
   test-macOS-windows-binding:
     name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
@@ -151,7 +151,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: .
+          path: ./bindgen/node/artifacts
       - name: List packages
         run: ls -R .
         shell: bash
@@ -208,7 +208,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: bindings-${{ matrix.target }}
-          path: .
+          path: ./bindgen/node/artifacts
       - name: List packages
         run: ls -R .
         shell: bash
