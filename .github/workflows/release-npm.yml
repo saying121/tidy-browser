@@ -151,7 +151,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: ./bindgen/node/artifacts
+          path: ./bindgen/node
       - name: List packages
         run: ls -R .
         shell: bash
@@ -209,7 +209,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: bindings-${{ matrix.target }}
-          path: ./bindgen/node/artifacts
+          path: ./bindgen/node
       - name: List packages
         run: ls -R .
         shell: bash
