@@ -338,7 +338,7 @@ export interface SafariCookie {
 }
 
 export declare const enum SameSite {
-  Non = 0,
+  None = 0,
   Lax = 1,
   Strict = 2
 }

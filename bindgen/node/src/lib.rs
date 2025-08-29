@@ -11,7 +11,7 @@ mod safari;
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum SameSite {
     #[default]
-    Non = 0,
+    None = 0,
     Lax = 1,
     Strict = 2,
 }
