@@ -7,7 +7,8 @@ on:
   push:
     tags:
       - "*-v[0-9]+.[0-9]+.[0-9]+*"
-      # - "*"
+      - "!decrypt-cookies-node-*"
+      - "!decrypt-cookies-py-*"
 
 env:
   BIN_NAME: tidy-browser
