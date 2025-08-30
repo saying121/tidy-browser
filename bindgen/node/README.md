@@ -9,13 +9,13 @@ npm add decrypt-cookies
 ```
 
 ```js
-import { ChromeGetter, EdgeGetter } from "decrypt-cookies";
+import { ChromiumGetter } from "decrypt-cookies";
 
-var chromium_getter = await EdgeGetter.new();
+var chromium_getter = await ChromiumGetter.new();
 var all = await chromium_getter.cookiesAll();
-console.log("===" + all.length);
+
 for (let index = 0; index < 5; index++) {
-	const element = all[index];
-	console.log(element.decryptedValue);
+    const element = all[index];
+    console.log(element.decryptedValue);
 }
 ```
