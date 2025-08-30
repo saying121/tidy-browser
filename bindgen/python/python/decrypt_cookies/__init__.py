@@ -79,7 +79,7 @@ def cookie_new(
 ) -> Cookie:
     return Cookie(
         port=port,  # pyright: ignore[reportArgumentType]
-        port_specified=port is None,
+        port_specified=port is not None,
         comment=comment,
         comment_url=None,
         discard=False,

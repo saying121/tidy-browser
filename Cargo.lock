@@ -816,7 +816,7 @@ dependencies = [
 
 [[package]]
 name = "decrypt-cookies-node"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "decrypt-cookies",
@@ -830,7 +830,7 @@ dependencies = [
 
 [[package]]
 name = "decrypt-cookies-py"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "chrono",
  "decrypt-cookies",
