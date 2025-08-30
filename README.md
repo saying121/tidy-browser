@@ -60,6 +60,11 @@ Easily make a request using the authorization data from your browser.
 
 [decrypt-cookies](https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies)
 
+### Bindgen
+
+- [python](https://github.com/saying121/tidy-browser/tree/master/bindgen/python)
+- [node](https://github.com/saying121/tidy-browser/tree/master/bindgen/node)
+
 ## Status
 
 [status](https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies/README.md#test-status)
