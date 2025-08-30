@@ -1,6 +1,9 @@
 name: Rustfmt
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - "./**/*.md"
 
 permissions:
   contents: write

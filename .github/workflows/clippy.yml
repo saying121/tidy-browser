@@ -1,6 +1,9 @@
 name: Clippy
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - "./**/*.md"
 
 env:
   RUST_BACKTRACE: 1
