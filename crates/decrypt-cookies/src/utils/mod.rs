@@ -15,11 +15,9 @@ pub fn connect_db<P: AsRef<Path>>(
     use sea_orm::{ConnectOptions, Database};
     let db_url = format!("sqlite:{}?mode=ro", path.as_ref().display());
     let mut opt = ConnectOptions::new(db_url);
-    opt.sqlx_logging_level(
-        "trace"
-            .parse()
-            .expect("Should not failed"),
-    );
+
+    #[cfg(not(feature = "tracing"))]
+    opt.sqlx_logging(false);
 
     Database::connect(opt)
 }
