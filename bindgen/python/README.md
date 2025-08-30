@@ -4,7 +4,7 @@ Rust crate python bindgen.
 
 Easily make a request using the authorization data from your browser.
 
-[example](./python/example.py)
+[example](https://github.com/saying121/tidy-browser/tree/master/bindgen/python/python/example.py)
 
 ```python
 #!/usr/bin/env python3
