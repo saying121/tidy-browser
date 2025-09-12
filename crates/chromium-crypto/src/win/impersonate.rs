@@ -83,7 +83,7 @@ impl ImpersonateGuard {
     }
 
     /// stop impersonate and return sys token handle
-    pub fn stop_sys_handle(self) -> Result<HANDLE> {
+    pub fn stop_impe_ret_sys_handle(self) -> Result<HANDLE> {
         unsafe { RevertToSelf() }.context(error::CryptUnprotectDataSnafu)?;
         Ok(self.sys_token_handle)
     }

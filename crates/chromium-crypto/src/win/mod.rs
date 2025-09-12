@@ -115,7 +115,7 @@ impl Decrypter {
         let (mut key, pid, sys_handle) = {
             let (guard, pid) = ImpersonateGuard::start(None, None)?;
             let key = decrypt_with_dpapi(key)?;
-            (key, pid, guard.stop_sys_handle()?)
+            (key, pid, guard.stop_impe_ret_sys_handle()?)
         };
         let key_blob = decrypt_with_dpapi(&mut key)?;
         let key_data = KeyData::parse(&mut key_blob.as_slice())
@@ -319,7 +319,6 @@ fn derive_v20_master_key(
             let mut plain_aes_key = {
                 let (guard, _pid) = ImpersonateGuard::start(pid, sys_handle)?;
                 let key = decrypt_with_cng(enctypted_aes_key)?;
-                ImpersonateGuard::stop()?;
                 guard.close_sys_handle()?;
                 key
             };
