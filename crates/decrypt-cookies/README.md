@@ -62,7 +62,7 @@ async fn main() -> Result<(), Whatever> {
 - `COOKIES`, `LOGIN_DATA`, `KEY`: Relative to `BASE` path.
 - `NAME`: browser name
 
-Implement [`ChromiumInfo`, `FirefoxPath`](./src/browser/mod.rs) trait.
+Implement [`ChromiumPath`, `FirefoxPath`](./src/browser/mod.rs) trait.
 
 ## Test Status
 
