@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 r"""
-.. include:: ./README.md
+.. include:: ../../README.md
 """
 
 from collections.abc import Sequence
@@ -58,7 +58,7 @@ def to_cookiejar(
                     value=cookie.value,
                     comment=cookie.comment,
                     version=cookie.version,
-                    port=cookie.port,
+                    port=str(cookie.port),
                 )
             )
 
@@ -75,10 +75,10 @@ def cookie_new(
     expires_utc: datetime | None,
     comment: None | str = None,
     version: None | int = None,
-    port: None | int = None,
+    port: None | str = None,
 ) -> Cookie:
     return Cookie(
-        port=port,  # pyright: ignore[reportArgumentType]
+        port=port,
         port_specified=port is not None,
         comment=comment,
         comment_url=None,
