@@ -108,8 +108,7 @@ impl Decrypter {
                 else {
                     continue;
                 };
-                let s = s.leak();
-                CACHE_PASSWD.put(&label, s, 1);
+                CACHE_PASSWD.put(&label, s.leak(), 1);
             }
         }
 
