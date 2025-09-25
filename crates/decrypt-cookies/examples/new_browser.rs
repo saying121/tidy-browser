@@ -14,6 +14,9 @@ firefox!("windows", NewBrowserBasedFirefox, base: r"AppData\Roaming\Mozilla\NewB
 #[snafu::report]
 #[tokio::main]
 async fn main() -> Result<(), Whatever> {
+    assert!(BROWSERS.contains(&"NewBrowserBasedChromium"));
+    assert!(BROWSERS.contains(&"NewBrowserBasedFirefox"));
+
     let chromium = ChromiumBuilder::<NewBrowserBasedChromium>::new()
         .build()
         .await
