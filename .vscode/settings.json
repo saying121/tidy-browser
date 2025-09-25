@@ -8,7 +8,7 @@
 	"rust-analyzer.cargo.features": [
 		"chromium-crypto/tracing",
 		"decrypt-cookies/Safari",
-		"decrypt-cookies/tracing",
+		"decrypt-cookies/linkme",
 		"binary-cookies/serde",
 		"binary-cookies/tokio",
 		"binary-cookies/csv",

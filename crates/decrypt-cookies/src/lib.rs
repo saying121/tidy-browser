@@ -10,3 +10,6 @@ pub mod firefox;
 pub mod safari;
 
 pub(crate) mod utils;
+
+#[cfg(feature = "linkme")]
+pub use pastey;
