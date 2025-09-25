@@ -2,7 +2,7 @@
 name = "decrypt_cookies"
 readme  = "./README.md"
 description = "Decrypt cookies from browser"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = "LGPL-3.0-or-later"
 authors = [{ name = "saying121", email = "sayin121@outlook.com" }]
 keywords = ["Chromium", "Firefox", "Safari", "cookies", "decrypt"]
