@@ -257,7 +257,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
 
         #[cfg(target_os = "windows")]
         let crypto = {
-            let key_path = Self::cache_key(base).await?;
+            let key_path = Self::cache_key(base.to_owned()).await?;
             Decrypter::build(key_path)
         };
 
