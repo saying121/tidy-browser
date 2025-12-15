@@ -150,7 +150,7 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
     //     let login_data = B::login_data(profile_path.clone());
     //     let login_data_temp = B::login_data_temp().context(HomeSnafu)?;
     //
-    //     let key = B::key(profile_path.clone());
+    //     let key = B::key(profile_path);
     //     let key_temp = B::key_temp().context(HomeSnafu)?;
     //
     //     let (ck, lg, k) = join!(
@@ -170,7 +170,7 @@ impl<'b, B: FirefoxPath> FirefoxBuilder<'b, B> {
     // }
 
     async fn cache_cookies(profile_path: PathBuf) -> Result<CookiesQuery> {
-        let cookies = B::cookies(profile_path.clone());
+        let cookies = B::cookies(profile_path);
         let cookies_temp = B::cookies_temp().context(HomeSnafu)?;
 
         copy(&cookies, &cookies_temp).await?;

@@ -257,7 +257,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
 
         #[cfg(target_os = "windows")]
         let crypto = {
-            let key_path = Self::cache_key(base.to_owned()).await?;
+            let key_path = Self::cache_key(base).await?;
             Decrypter::build(key_path)
         };
 
@@ -271,7 +271,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
         let login_data = B::login_data(base.clone());
         let login_data_temp = B::login_data_temp().context(HomeSnafu)?;
 
-        let login_data_for_account = B::login_data_for_account(base.clone());
+        let login_data_for_account = B::login_data_for_account(base);
         let login_data_for_account_temp = B::login_data_for_account_temp().context(HomeSnafu)?;
 
         let (lg, lfac) = join!(
@@ -296,7 +296,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
     }
 
     async fn cache_cookies(base: PathBuf) -> Result<CookiesQuery> {
-        let cookies = B::cookies(base.clone());
+        let cookies = B::cookies(base);
         let cookies_temp = B::cookies_temp().context(HomeSnafu)?;
 
         copy(&cookies, &cookies_temp).await?;
@@ -307,7 +307,7 @@ impl<B: ChromiumPath + Send + Sync> ChromiumBuilder<B> {
 
     #[cfg(target_os = "windows")]
     async fn cache_key(base: PathBuf) -> Result<PathBuf> {
-        let key = B::key(base.clone());
+        let key = B::key(base);
         let key_temp = B::key_temp().context(HomeSnafu)?;
 
         copy(&key, &key_temp).await?;
