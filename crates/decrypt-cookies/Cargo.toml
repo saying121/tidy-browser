@@ -4,7 +4,7 @@ version = "0.10.4"
 authors = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
-description = "A decrypt browser crate"
+description = "A crate for decrypting browser info. Easily make a request using the authorization data from your browser."
 homepage = "https://github.com/saying121/tidy-browser/tree/master/crates/decrypt-cookies"
 repository = { workspace = true }
 license = { workspace = true }
