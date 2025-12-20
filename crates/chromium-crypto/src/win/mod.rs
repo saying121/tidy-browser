@@ -1,7 +1,7 @@
 mod impersonate;
 pub mod local_state;
 
-use std::{ffi::c_void, fmt::Display, path::Path, ptr, slice};
+use std::{ffi::c_void, fmt::Display, path::Path, ptr, slice, str};
 
 use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit};
 use base64::{prelude::BASE64_STANDARD, Engine};
@@ -127,7 +127,8 @@ impl Decrypter {
     pub fn decrypt(&self, ciphertext: &mut [u8], which: Which) -> Result<String> {
         let (pass, prefix_len) =
             if ciphertext.starts_with(Self::K_APP_BOUND_DATA_PREFIX) && self.pass_v20.is_some() {
-                #[expect(clippy::unwrap_used, reason = "Must be Some, TODO: use let-chains")]
+                // TODO: use let-chains
+                #[expect(clippy::unwrap_used, reason = "Must be Some")]
                 (
                     self.pass_v20.as_deref().unwrap(),
                     Self::K_APP_BOUND_DATA_PREFIX.len(),
@@ -155,14 +156,15 @@ impl Decrypter {
             .map(|res| match which {
                 Which::Cookie => {
                     if res.len() > 32 {
-                        String::from_utf8(res[32..].to_vec())
+                        str::from_utf8(&res[32..])
+                            .map(ToOwned::to_owned)
                             .or_else(|_| crate::from_utf8_cold(res))
                     }
                     else {
                         crate::from_utf8_cold(res)
                     }
                 },
-                Which::Login => String::from_utf8(res),
+                Which::Login => crate::spec_from_utf8(res),
             })?
             .context(Utf8Snafu)
     }

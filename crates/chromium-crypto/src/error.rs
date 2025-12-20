@@ -1,4 +1,4 @@
-use std::string::FromUtf8Error;
+use std::str::Utf8Error;
 
 use snafu::{Location, Snafu};
 
@@ -9,7 +9,7 @@ use snafu::{Location, Snafu};
 pub enum CryptoError {
     #[snafu(display("{source}\n@:{location}"))]
     Utf8 {
-        source: FromUtf8Error,
+        source: Utf8Error,
         #[snafu(implicit)]
         location: Location,
     },
@@ -34,7 +34,7 @@ pub enum CryptoError {
 pub enum CryptoError {
     #[snafu(display("{source}\n@:{location}"))]
     Utf8 {
-        source: FromUtf8Error,
+        source: Utf8Error,
         #[snafu(implicit)]
         location: Location,
     },
@@ -65,7 +65,7 @@ pub enum CryptoError {
 pub enum CryptoError {
     #[snafu(display("{source}\n@:{location}"))]
     Utf8 {
-        source: FromUtf8Error,
+        source: Utf8Error,
         #[snafu(implicit)]
         location: Location,
     },

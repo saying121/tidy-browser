@@ -21,18 +21,30 @@ pub enum Which {
     Login,
 }
 
+use std::str;
+
 #[cfg(not(target_os = "windows"))]
 /// Maybe use [`std::hint::unlikely`]
 #[cold]
 #[inline(never)]
-fn from_utf8_cold(arg: &[u8]) -> std::result::Result<String, std::string::FromUtf8Error> {
-    String::from_utf8(arg.to_vec())
+const fn from_utf8_cold(arg: &[u8]) -> std::result::Result<&str, std::str::Utf8Error> {
+    str::from_utf8(arg)
 }
 
 #[cfg(target_os = "windows")]
 /// Maybe use [`std::hint::unlikely`]
 #[cold]
 #[inline(never)]
-fn from_utf8_cold(arg: Vec<u8>) -> std::result::Result<String, std::string::FromUtf8Error> {
-    String::from_utf8(arg)
+fn from_utf8_cold(arg: Vec<u8>) -> std::result::Result<String, std::str::Utf8Error> {
+    spec_from_utf8(arg)
+}
+
+#[cfg(target_os = "windows")]
+/// Unified error types
+#[inline(always)]
+fn spec_from_utf8(arg: Vec<u8>) -> std::result::Result<String, std::str::Utf8Error> {
+    match str::from_utf8(&arg) {
+        Ok(..) => Ok(unsafe { String::from_utf8_unchecked(arg) }),
+        Err(e) => Err(e),
+    }
 }

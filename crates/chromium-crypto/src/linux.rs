@@ -1,4 +1,4 @@
-use std::sync::LazyLock;
+use std::{str, sync::LazyLock};
 
 use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
 use pbkdf2::pbkdf2_hmac;
@@ -140,17 +140,19 @@ impl Decrypter {
         decrypter
             .decrypt_padded_mut::<block_padding::Pkcs7>(&mut ciphertext[prefix_len..])
             .context(error::UnpaddingSnafu)
-            .map(|res| match which {
-                Which::Cookie => {
-                    if res.len() > 32 {
-                        String::from_utf8(res[32..].to_vec())
-                            .or_else(|_| crate::from_utf8_cold(res))
-                    }
-                    else {
-                        crate::from_utf8_cold(res)
-                    }
-                },
-                Which::Login => String::from_utf8(res.to_vec()),
+            .map(|res| {
+                match which {
+                    Which::Cookie => {
+                        if res.len() > 32 {
+                            str::from_utf8(&res[32..]).or_else(|_| crate::from_utf8_cold(res))
+                        }
+                        else {
+                            crate::from_utf8_cold(res)
+                        }
+                    },
+                    Which::Login => str::from_utf8(res),
+                }
+                .map(ToOwned::to_owned) // Lazily alloc memory
             })?
             .context(Utf8Snafu)
     }
