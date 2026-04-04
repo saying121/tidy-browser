@@ -22,6 +22,18 @@ macro_rules! push_temp {
     };
 }
 
+#[cfg(any(feature = "chromium", feature = "firefox"))]
+macro_rules! count_tts {
+    ()        => {0usize};
+    ($one:tt) => {1usize};
+    ($($pairs:tt $_p:tt)*) => {
+        count_tts!($($pairs)*) << 1usize
+    };
+    ($odd:tt $($rest:tt)*) => {
+        count_tts!($($rest)*) | 1usize
+    };
+}
+
 pub mod cookies;
 
 #[cfg(feature = "chromium")]

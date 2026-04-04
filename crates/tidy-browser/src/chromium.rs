@@ -109,7 +109,7 @@ When you use scoop on Windows, the data path is located at `~\scoop\persisst\<na
                             let task = task::spawn(async move {
                                 let cookies = if let Some(host) = host {
                                     chromium
-                                        .cookies_by_host(host)
+                                        .cookies_by_host(&host)
                                         .await
                                 }
                                 else {
@@ -128,7 +128,7 @@ When you use scoop on Windows, the data path is located at `~\scoop\persisst\<na
                             let host = host.clone();
                             let task = task::spawn(async move {
                                 let logins = if let Some(host) = host {
-                                    chromium.logins_by_host(host).await
+                                    chromium.logins_by_host(&host).await
                                 }
                                 else {
                                     chromium.logins_all().await

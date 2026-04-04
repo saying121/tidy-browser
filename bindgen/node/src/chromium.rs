@@ -68,7 +68,7 @@ macro_rules! chromiums {
                     pub async fn cookies_by_host(&self, host: String) -> napi::Result<Vec<ChromiumCookie>> {
                         let all = self
                             .0
-                            .cookies_by_host(host)
+                            .cookies_by_host(&host)
                             .await
                             .map_err(|e| napi::Error::new(napi::Status::ObjectExpected, e.to_string()))?;
 
@@ -94,7 +94,7 @@ macro_rules! chromiums {
                     pub async fn logins_by_host(&self, host: String) -> napi::Result<Vec<LoginData>> {
                         let all = self
                             .0
-                            .logins_by_host(host)
+                            .logins_by_host(&host)
                             .await
                             .map_err(|e| napi::Error::new(napi::Status::ObjectExpected, e.to_string()))?;
 
@@ -152,7 +152,7 @@ macro_rules! chromiums {
                     pub async fn cookies_by_host(&self, host: String) -> napi::Result<Vec<ChromiumCookie>> {
                         let all = self
                             .0
-                            .cookies_by_host(host)
+                            .cookies_by_host(&host)
                             .await
                             .map_err(|e| napi::Error::new(napi::Status::ObjectExpected, e.to_string()))?;
 
@@ -210,7 +210,7 @@ macro_rules! chromiums {
                     pub async fn logins_by_host(&self, host: String) -> napi::Result<Vec<LoginData>> {
                         let all = self
                             .0
-                            .logins_by_host(host)
+                            .logins_by_host(&host)
                             .await
                             .map_err(|e| napi::Error::new(napi::Status::ObjectExpected, e.to_string()))?;
 

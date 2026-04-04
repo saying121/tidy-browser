@@ -1,5 +1,5 @@
 #[cfg(any(feature = "chromium", feature = "firefox"))]
-pub use sea_orm::prelude::ColumnTrait;
+pub use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition};
 
 pub use crate::browser::{cookies::LeetCodeCookies, *};
 #[cfg(feature = "chromium")]

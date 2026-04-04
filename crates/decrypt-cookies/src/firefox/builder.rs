@@ -289,9 +289,4 @@ impl<'b, B: FirefoxPath + Send + Sync> FirefoxBuilder<'b, B> {
             __browser: core::marker::PhantomData::<B>,
         })
     }
-
-    #[deprecated(note = "use build_cookie")]
-    pub async fn build_cookies(self) -> Result<FirefoxCookieGetter<B>> {
-        self.build_cookie().await
-    }
 }

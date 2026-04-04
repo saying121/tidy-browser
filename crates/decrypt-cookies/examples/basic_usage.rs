@@ -16,7 +16,11 @@ async fn main() -> Result<(), Whatever> {
     dbg!(&all_cookies.first());
 
     let filtered_cookies = chromium
-        .cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
+        .cookies_filter(
+            ChromiumCookieCol::HostKey
+                .contains("google.com")
+                .into_condition(),
+        )
         .await
         .whatever_context("Chrome filter cookies failed")?;
 
@@ -32,13 +36,6 @@ async fn main() -> Result<(), Whatever> {
         .whatever_context("Firefox get all cookies failed")?;
 
     dbg!(&all_cookies.first());
-
-    let filtered_cookies = firefox
-        .cookies_filter(MozCookiesCol::Host.contains("google.com"))
-        .await
-        .whatever_context("Firefox filter cookies failed")?;
-
-    dbg!(&filtered_cookies.first());
 
     Ok(())
 }
