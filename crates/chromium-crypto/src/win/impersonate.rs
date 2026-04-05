@@ -36,7 +36,7 @@ impl Drop for ImpersonateGuard {
 }
 
 #[link(name = "ntdll")]
-extern "system" {
+unsafe extern "system" {
     fn RtlAdjustPrivilege(
         privilege: i32,
         enable: BOOL,
@@ -96,7 +96,12 @@ impl ImpersonateGuard {
     fn enable_privilege() -> Result<()> {
         let mut previous_value = BOOL(0);
         let status = unsafe {
-            RtlAdjustPrivilege(SE_DEBUG_PRIVILEGE, BOOL(1), BOOL(0), &mut previous_value)
+            RtlAdjustPrivilege(
+                SE_DEBUG_PRIVILEGE,
+                BOOL(1),
+                BOOL(0),
+                &raw mut previous_value,
+            )
         };
         if status != STATUS_SUCCESS {
             return Err(error::PrivilegeSnafu.build());
@@ -107,7 +112,7 @@ impl ImpersonateGuard {
     fn get_system_token(handle: HANDLE) -> Result<HANDLE> {
         let token_handle = unsafe {
             let mut token_handle = HANDLE::default();
-            OpenProcessToken(handle, TOKEN_DUPLICATE | TOKEN_QUERY, &mut token_handle)
+            OpenProcessToken(handle, TOKEN_DUPLICATE | TOKEN_QUERY, &raw mut token_handle)
                 .context(error::CryptUnprotectDataSnafu)?;
             token_handle
         };
@@ -116,7 +121,7 @@ impl ImpersonateGuard {
             DuplicateToken(
                 token_handle,
                 Security::SECURITY_IMPERSONATION_LEVEL(2),
-                &mut duplicate_token,
+                &raw mut duplicate_token,
             )
             .context(error::CryptUnprotectDataSnafu)?;
             CloseHandle(token_handle).context(error::CryptUnprotectDataSnafu)?;
@@ -154,10 +159,11 @@ impl ImpersonateGuard {
     fn get_system_pid_list() -> Result<impl Iterator<Item = u32>> {
         let cap = 1024;
         let mut lpidprocess = Vec::with_capacity(cap);
-        let mut lpcbneeded = 0;
+        let lpcbneeded = 0;
 
         unsafe {
-            EnumProcesses(lpidprocess.as_mut_ptr(), cap as u32 * 4, &mut lpcbneeded)
+            let mut var_name = cap as u32 * 4;
+            EnumProcesses(lpidprocess.as_mut_ptr(), lpcbneeded, &raw mut var_name)
                 .context(error::CryptUnprotectDataSnafu)?;
             let c_processes = lpcbneeded as usize / size_of::<u32>();
             lpidprocess.set_len(c_processes);

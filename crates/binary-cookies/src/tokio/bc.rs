@@ -5,7 +5,7 @@ use tokio::io::AsyncReadExt;
 
 use super::{cursor::CookieCursor, meta::MetaDecoder};
 use crate::{
-    decode::{DecodeResult, binary_cookies::BinaryCookieFsm, meta::MetaOffset, pages::PagesOffset},
+    decode::{binary_cookies::BinaryCookieFsm, meta::MetaOffset, pages::PagesOffset, DecodeResult},
     error::{self, Result},
     tokio::page::PagesHandle,
 };

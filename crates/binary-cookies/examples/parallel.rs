@@ -2,7 +2,7 @@ use std::fs::File;
 
 use binary_cookies::sync::{self, DecodeBinaryCookie};
 use rayon::prelude::{ParallelBridge, ParallelIterator};
-use snafu::{OptionExt, Whatever, prelude::*};
+use snafu::{prelude::*, OptionExt, Whatever};
 
 // Unfortunately, parallelism does not always improve performance.
 // In a simple test, it only brought about a 10% improvement when processing a 25MB file.

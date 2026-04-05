@@ -13,12 +13,12 @@ pub struct StreamDecoder<R: AsyncRead> {
 
 use crate::{
     decode::{
-        DecodeResult,
         binary_cookies::BinaryCookieFsm,
         cookies::CookieFsm,
         meta::MetaFsm,
         pages::PageFsm,
         stream::{State, Values},
+        DecodeResult,
     },
     error::{self, Result},
 };

@@ -4,7 +4,7 @@ use snafu::ResultExt;
 
 use crate::{
     cookie::{Checksum, Metadata},
-    decode::{DecodeResult, meta::MetaFsm},
+    decode::{meta::MetaFsm, DecodeResult},
     error::{self, Result},
 };
 

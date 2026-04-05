@@ -5,12 +5,12 @@ use snafu::ResultExt;
 
 use crate::{
     decode::{
-        DecodeResult,
         binary_cookies::BinaryCookieFsm,
         cookies::CookieFsm,
         meta::MetaFsm,
         pages::PageFsm,
         stream::{State, Values},
+        DecodeResult,
     },
     error::{self, Result},
 };

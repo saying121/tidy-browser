@@ -1,6 +1,6 @@
 use bstr::BString;
 use chrono::{Days, TimeZone as _, Utc};
-use rand::{Rng, SeedableRng, random, random_range};
+use rand::{random, random_range, Rng, SeedableRng};
 
 use crate::{
     cookie::{BinaryCookies, Cookie, Metadata, Page},

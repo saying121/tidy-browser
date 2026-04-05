@@ -26,13 +26,13 @@ pub enum Error {
     },
     #[snafu(display("Build Chromium: {source}\n@:{location}"))]
     ChromiumBuilder {
-        source: ChromiumBuilderError,
+        source: Box<ChromiumBuilderError>,
         #[snafu(implicit)]
         location: Location,
     },
     #[snafu(display("Chromium: {source}\n@:{location}"))]
     Chromium {
-        source: ChromiumError,
+        source: Box<ChromiumError>,
         #[snafu(implicit)]
         location: Location,
     },

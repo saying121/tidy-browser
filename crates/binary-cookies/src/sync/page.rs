@@ -4,9 +4,9 @@ use snafu::ResultExt;
 
 use crate::{
     decode::{
-        DecodeResult, OffsetSize,
         cookies::CookiesOffset,
         pages::{PageFsm, PagesOffset},
+        DecodeResult, OffsetSize,
     },
     error::{self, Result},
     sync::{cookie::CookieHandle, cursor::CookieCursor},

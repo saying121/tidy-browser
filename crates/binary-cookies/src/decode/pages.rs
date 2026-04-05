@@ -1,10 +1,10 @@
 use oval::Buffer;
 use winnow::{
-    Parser,
     stream::{Offset, Stream},
+    Parser,
 };
 
-use super::{DecodeResult, OffsetSize, cookies::CookiesOffsetInPage};
+use super::{cookies::CookiesOffsetInPage, DecodeResult, OffsetSize};
 use crate::{cookie::Page, decode::StreamIn, error::Result};
 
 #[derive(Clone)]

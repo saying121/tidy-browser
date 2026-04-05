@@ -9,7 +9,7 @@ use pretty_assertions::assert_eq;
 
 use crate::{
     cookie::{BinaryCookies, Cookie, Metadata, Page, SameSite},
-    decode::{F64ToSafariTime as _, OffsetSize, pages::PagesOffset, stream::Values},
+    decode::{pages::PagesOffset, stream::Values, F64ToSafariTime as _, OffsetSize},
     sync::{
         bc::DecodeBinaryCookie, cookie::CookieDecoder, cursor::CookieCursor, page::PageDecoder,
         stream::StreamDecoder,

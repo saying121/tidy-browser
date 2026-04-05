@@ -32,7 +32,7 @@ pub mod pages;
 #[cfg(any(feature = "sync", feature = "tokio"))]
 pub mod stream;
 
-use chrono::{DateTime, TimeZone as _, Utc, offset::LocalResult};
+use chrono::{offset::LocalResult, DateTime, TimeZone as _, Utc};
 use winnow::Partial;
 
 pub(crate) type StreamIn<'i> = Partial<&'i [u8]>;

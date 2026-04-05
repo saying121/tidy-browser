@@ -2,7 +2,7 @@ use std::{
     future::Future,
     pin::Pin,
     sync::Arc,
-    task::{Poll, ready},
+    task::{ready, Poll},
 };
 
 use positioned_io::{RandomAccessFile, ReadAt};

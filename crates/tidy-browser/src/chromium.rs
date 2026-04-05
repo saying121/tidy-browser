@@ -51,10 +51,9 @@ impl ChromiumBased {
                 .context(error::TokioTaskSnafu)?
             {
                 match e {
-                    error::Error::ChromiumBuilder {
-                        source: source @ ChromiumBuilderError::NotFoundBase { .. },
-                        ..
-                    } => {
+                    error::Error::ChromiumBuilder { source, .. }
+                        if matches!(*source, ChromiumBuilderError::NotFoundBase { .. }) =>
+                    {
                         #[cfg(not(target_os = "windows"))]
                         tracing::info!(r#"{source}"#,);
                         #[cfg(target_os = "windows")]
@@ -101,6 +100,7 @@ When you use scoop on Windows, the data path is located at `~\scoop\persisst\<na
                         }
                         .build()
                         .await
+                        .map_err(|e|Box::new(e))
                         .context(error::ChromiumBuilderSnafu)?;
 
                         let cookies = if values.contains(&Value::Cookie) {
@@ -115,6 +115,7 @@ When you use scoop on Windows, the data path is located at `~\scoop\persisst\<na
                                 else {
                                     chromium.cookies_all().await
                                 }
+                                .map_err(|e|Box::new(e))
                                 .context(error::ChromiumSnafu)?;
                                 Ok::<_, error::Error>(cookies)
                             });
@@ -133,6 +134,7 @@ When you use scoop on Windows, the data path is located at `~\scoop\persisst\<na
                                 else {
                                     chromium.logins_all().await
                                 }
+                                .map_err(|e|Box::new(e))
                                 .context(error::ChromiumSnafu)?;
                                 Ok::<_, error::Error>(logins)
                             });

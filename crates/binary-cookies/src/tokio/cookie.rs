@@ -5,8 +5,8 @@ use super::cursor::CookieCursor;
 use crate::{
     cookie::Cookie,
     decode::{
-        DecodeResult, OffsetSize,
         cookies::{CookieFsm, CookiesOffset},
+        DecodeResult, OffsetSize,
     },
     error::{self, Result},
 };

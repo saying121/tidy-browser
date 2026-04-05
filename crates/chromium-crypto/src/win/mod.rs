@@ -42,7 +42,7 @@ pub struct Decrypter {
 
 impl Decrypter {
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=36
-    /// AEAD key length in bytes.
+    // AEAD key length in bytes.
     // const K_KEY_LENGTH: u32 = 256 / 8;
 
     // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_win.cc;l=39
@@ -257,14 +257,14 @@ fn decrypt_with_cng(keydpapi: &[u8]) -> Result<Vec<u8>> {
     let mut phprovider = NCRYPT_PROV_HANDLE::default();
     unsafe {
         let pszprovidername = w!("Microsoft Software Key Storage Provider");
-        NCryptOpenStorageProvider(&mut phprovider, pszprovidername, 0)
+        NCryptOpenStorageProvider(&raw mut phprovider, pszprovidername, 0)
             .context(error::CryptUnprotectDataSnafu)?;
     };
     let mut hkey = NCRYPT_KEY_HANDLE::default();
     unsafe {
         NCryptOpenKey(
             phprovider,
-            &mut hkey,
+            &raw mut hkey,
             w!("Google Chromekey1"),
             Cryptography::CERT_KEY_SPEC::default(),
             Cryptography::NCRYPT_FLAGS::default(),
@@ -280,7 +280,7 @@ fn decrypt_with_cng(keydpapi: &[u8]) -> Result<Vec<u8>> {
             keydpapi.into(),
             None,
             Some(&mut output_buffer),
-            &mut output_len,
+            &raw mut output_len,
             Cryptography::NCRYPT_SILENT_FLAG,
         )
         .context(error::CryptUnprotectDataSnafu)?;
@@ -347,13 +347,13 @@ pub fn decrypt_with_dpapi(ciphertext: &mut [u8]) -> Result<Vec<u8>> {
 
     unsafe {
         Cryptography::CryptUnprotectData(
-            &input,
+            &raw const input,
             Some(ptr::null_mut()),
             Some(ptr::null()),
             Some(ptr::null()),
             Some(ptr::null()),
             0,
-            &mut output,
+            &raw mut output,
         )
         .context(error::CryptUnprotectDataSnafu)?;
     };
