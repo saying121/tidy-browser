@@ -22,6 +22,18 @@ macro_rules! push_temp {
     };
 }
 
+#[cfg(any(feature = "chromium", feature = "firefox"))]
+macro_rules! count_tts {
+    ()        => {0usize};
+    ($one:tt) => {1usize};
+    ($($pairs:tt $_p:tt)*) => {
+        count_tts!($($pairs)*) << 1usize
+    };
+    ($odd:tt $($rest:tt)*) => {
+        count_tts!($($rest)*) | 1usize
+    };
+}
+
 pub mod cookies;
 
 #[cfg(feature = "chromium")]
@@ -36,23 +48,3 @@ pub use firefox::*;
 
 #[cfg(any(feature = "chromium", feature = "firefox"))]
 const CACHE_PATH: &str = "decrypt-cookies";
-
-#[cfg(feature = "linkme")]
-#[linkme::distributed_slice]
-/// All supported browser names
-pub static BROWSERS: [&str];
-
-#[cfg(feature = "linkme")]
-#[test]
-fn linkme_work() {
-    assert!(BROWSERS.contains(&"Firefox"));
-    assert!(BROWSERS.contains(&"Librewolf"));
-
-    assert!(BROWSERS.contains(&"Edge"));
-    assert!(BROWSERS.contains(&"Chrome"));
-
-    #[cfg(not(target_os = "linux"))]
-    assert!(BROWSERS.contains(&"CocCoc"));
-    #[cfg(not(target_os = "linux"))]
-    assert!(BROWSERS.contains(&"Arc"));
-}

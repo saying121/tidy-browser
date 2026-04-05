@@ -36,6 +36,19 @@ pub struct ChromiumCookie {
 }
 
 #[cfg(feature = "reqwest")]
+pub fn jar_extend_chromium<'a, I>(jar: &reqwest::cookie::Jar, cks: I)
+where
+    I: IntoIterator<Item = &'a ChromiumCookie>,
+{
+    for cookie in cks {
+        let set_cookie = cookie.set_cookie_header();
+        if let Ok(url) = reqwest::Url::parse(&cookie.url()) {
+            jar.add_cookie_str(&set_cookie, &url);
+        }
+    }
+}
+
+#[cfg(feature = "reqwest")]
 impl TryFrom<ChromiumCookie> for reqwest::header::HeaderValue {
     type Error = reqwest::header::InvalidHeaderValue;
 
@@ -44,15 +57,10 @@ impl TryFrom<ChromiumCookie> for reqwest::header::HeaderValue {
     }
 }
 #[cfg(feature = "reqwest")]
-impl FromIterator<ChromiumCookie> for reqwest::cookie::Jar {
-    fn from_iter<T: IntoIterator<Item = ChromiumCookie>>(iter: T) -> Self {
+impl<'a> FromIterator<&'a ChromiumCookie> for reqwest::cookie::Jar {
+    fn from_iter<T: IntoIterator<Item = &'a ChromiumCookie>>(iter: T) -> Self {
         let jar = Self::default();
-        for cookie in iter {
-            let set_cookie = cookie.set_cookie_header();
-            if let Ok(url) = reqwest::Url::parse(&cookie.url()) {
-                jar.add_cookie_str(&set_cookie, &url);
-            }
-        }
+        jar_extend_chromium(&jar, iter);
         jar
     }
 }

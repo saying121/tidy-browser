@@ -79,7 +79,7 @@ macro_rules! firefoxs {
                     pub async fn cookies_by_host(&self, host: String) -> napi::Result<Vec<MozCookie>> {
                         let all = self
                             .0
-                            .cookies_by_host(host)
+                            .cookies_by_host(&host)
                             .await
                             .map_err(|e| napi::Error::new(napi::Status::ObjectExpected, e.to_string()))?;
 
@@ -150,7 +150,7 @@ macro_rules! firefoxs {
                     pub async fn cookies_by_host(&self, host: String) -> napi::Result<Vec<MozCookie>> {
                         let all = self
                             .0
-                            .cookies_by_host(host)
+                            .cookies_by_host(&host)
                             .await
                             .map_err(|e| napi::Error::new(napi::Status::ObjectExpected, e.to_string()))?;
 

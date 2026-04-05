@@ -82,7 +82,7 @@ macro_rules! chromiums {
                         future_into_py(py, async move {
                             let all = self_
                                 .0
-                                .cookies_by_host(host)
+                                .cookies_by_host(&host)
                                 .await
                                 .map_err(|e| PyValueError::new_err(e.to_string()))?;
                             #[expect(clippy::transmute_undefined_repr, reason = "already repr(C)")]
@@ -120,7 +120,7 @@ macro_rules! chromiums {
                         future_into_py(py, async move {
                             let all = self_
                                 .0
-                                .logins_by_host(host)
+                                .logins_by_host(&host)
                                 .await
                                 .map_err(|e| PyValueError::new_err(e.to_string()))?;
                             #[expect(clippy::transmute_undefined_repr, reason = "already repr(C)")]
@@ -193,7 +193,7 @@ macro_rules! chromiums {
                         future_into_py(py, async move {
                             let all = self_
                                 .0
-                                .cookies_by_host(host)
+                                .cookies_by_host(&host)
                                 .await
                                 .map_err(|e| PyValueError::new_err(e.to_string()))?;
                             #[expect(clippy::transmute_undefined_repr, reason = "already repr(C)")]
@@ -266,7 +266,7 @@ macro_rules! chromiums {
                         future_into_py(py, async move {
                             let all = self_
                                 .0
-                                .logins_by_host(host)
+                                .logins_by_host(&host)
                                 .await
                                 .map_err(|e| PyValueError::new_err(e.to_string()))?;
                             #[expect(clippy::transmute_undefined_repr, reason = "already repr(C)")]

@@ -16,7 +16,7 @@ async fn to_jar() {
     let all_cookies = chrmo.cookies_all().await.unwrap();
     let hd = all_cookies[1].set_cookie_header();
     dbg!(&hd);
-    let jar: reqwest::cookie::Jar = all_cookies.into_iter().collect();
+    let jar: reqwest::cookie::Jar = all_cookies.iter().collect();
     let a = jar
         .cookies(&Url::parse("https://leetcode.cn/").unwrap())
         .unwrap();

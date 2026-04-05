@@ -15,7 +15,7 @@ async fn main() -> Result<(), Whatever> {
         .cookies_all()
         .await
         .whatever_context("Chrome get all cookies failed")?
-        .into_iter()
+        .iter()
         .collect();
 
     let client = reqwest::Client::builder()

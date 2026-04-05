@@ -14,9 +14,6 @@ firefox!("windows", NewBrowserBasedFirefox, base: r"AppData\Roaming\Mozilla\NewB
 #[snafu::report]
 #[tokio::main]
 async fn main() -> Result<(), Whatever> {
-    assert!(BROWSERS.contains(&"NewBrowserBasedChromium"));
-    assert!(BROWSERS.contains(&"NewBrowserBasedFirefox"));
-
     let chromium = ChromiumBuilder::<NewBrowserBasedChromium>::new()
         .build()
         .await
@@ -29,7 +26,11 @@ async fn main() -> Result<(), Whatever> {
     dbg!(&all_cookies.first());
 
     let filtered_cookies = chromium
-        .cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
+        .cookies_filter(
+            ChromiumCookieCol::HostKey
+                .contains("google.com")
+                .into_condition(),
+        )
         .await
         .whatever_context("New browser Chromium based filter cookies failed")?;
 
@@ -47,7 +48,11 @@ async fn main() -> Result<(), Whatever> {
     dbg!(&all_cookies.first());
 
     let filtered_cookies = firefox
-        .cookies_filter(MozCookiesCol::Host.contains("google.com"))
+        .cookies_filter(
+            MozCookiesCol::Host
+                .contains("google.com")
+                .into_condition(),
+        )
         .await
         .whatever_context("New browser Firefox based filter cookies failed")?;
 

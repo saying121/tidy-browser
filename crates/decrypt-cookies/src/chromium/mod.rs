@@ -8,6 +8,8 @@ use std::{
 use chromium_crypto::{Decrypter, Which};
 use chrono::prelude::Utc;
 use items::cookie::cookie_entities::cookies;
+#[cfg(feature = "reqwest")]
+pub use items::cookie::jar_extend_chromium;
 pub use items::{
     cookie::{
         cookie_entities::cookies::{
@@ -21,7 +23,7 @@ pub use items::{
     },
 };
 use rayon::prelude::*;
-use sea_orm::{sea_query::IntoCondition, ColumnTrait, DbErr};
+use sea_orm::{ColumnTrait, Condition, DbErr};
 use snafu::{Location, ResultExt, Snafu};
 use tokio::task::{self, JoinError};
 
@@ -76,7 +78,7 @@ type Result<T> = std::result::Result<T, ChromiumError>;
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct ChromiumGetter<T> {
+pub struct ChromiumGetter<T: ChromiumPath> {
     pub(crate) cookies_query: CookiesQuery,
     pub(crate) login_data_query: LoginDataQuery,
     pub(crate) login_data_for_account_query: Option<LoginDataQuery>,
@@ -87,7 +89,7 @@ pub struct ChromiumGetter<T> {
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct ChromiumCookieGetter<T> {
+pub struct ChromiumCookieGetter<T: ChromiumPath> {
     pub(crate) cookies_query: CookiesQuery,
     pub(crate) crypto: Decrypter,
     pub(crate) __browser: PhantomData<T>,
@@ -96,7 +98,7 @@ pub struct ChromiumCookieGetter<T> {
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct ChromiumLoginGetter<T> {
+pub struct ChromiumLoginGetter<T: ChromiumPath> {
     pub(crate) login_data_query: LoginDataQuery,
     pub(crate) login_data_for_account_query: Option<LoginDataQuery>,
     pub(crate) crypto: Decrypter,
@@ -116,35 +118,35 @@ macro_rules! impl_display {
 }
 impl_display![ChromiumGetter, ChromiumCookieGetter, ChromiumLoginGetter,];
 
-impl<B> SealedCrypto for ChromiumGetter<B> {
+impl<B: ChromiumPath> SealedCrypto for ChromiumGetter<B> {
     fn crypto(&self) -> &Decrypter {
         &self.crypto
     }
 }
-impl<B> SealedCrypto for ChromiumCookieGetter<B> {
+impl<B: ChromiumPath> SealedCrypto for ChromiumCookieGetter<B> {
     fn crypto(&self) -> &Decrypter {
         &self.crypto
     }
 }
-impl<B> SealedCrypto for ChromiumLoginGetter<B> {
+impl<B: ChromiumPath> SealedCrypto for ChromiumLoginGetter<B> {
     fn crypto(&self) -> &Decrypter {
         &self.crypto
     }
 }
 
-impl<B> SealedCookies for ChromiumCookieGetter<B> {
+impl<B: ChromiumPath> SealedCookies for ChromiumCookieGetter<B> {
     fn cookies_query(&self) -> &CookiesQuery {
         &self.cookies_query
     }
 }
 
-impl<B> SealedCookies for ChromiumGetter<B> {
+impl<B: ChromiumPath> SealedCookies for ChromiumGetter<B> {
     fn cookies_query(&self) -> &CookiesQuery {
         &self.cookies_query
     }
 }
 
-impl<B> SealedLogins for ChromiumGetter<B> {
+impl<B: ChromiumPath> SealedLogins for ChromiumGetter<B> {
     fn login_data_query(&self) -> &LoginDataQuery {
         &self.login_data_query
     }
@@ -155,7 +157,7 @@ impl<B> SealedLogins for ChromiumGetter<B> {
     }
 }
 
-impl<B> SealedLogins for ChromiumLoginGetter<B> {
+impl<B: ChromiumPath> SealedLogins for ChromiumLoginGetter<B> {
     fn login_data_query(&self) -> &LoginDataQuery {
         &self.login_data_query
     }
@@ -166,75 +168,68 @@ impl<B> SealedLogins for ChromiumLoginGetter<B> {
     }
 }
 
-impl<B> GetCookies for ChromiumGetter<B> {}
-impl<B> GetCookies for ChromiumCookieGetter<B> {}
+impl<B: ChromiumPath> GetCookies for ChromiumGetter<B> {}
+impl<B: ChromiumPath> GetCookies for ChromiumCookieGetter<B> {}
 
-impl<B> GetLogins for ChromiumGetter<B> {}
-impl<B> GetLogins for ChromiumLoginGetter<B> {}
+impl<B: ChromiumPath> GetLogins for ChromiumGetter<B> {}
+impl<B: ChromiumPath> GetLogins for ChromiumLoginGetter<B> {}
 
+impl<B: ChromiumPath> GetCookiesLogins for ChromiumGetter<B> {}
+
+#[async_trait::async_trait]
 trait SealedCrypto {
     fn crypto(&self) -> &Decrypter;
-    fn par_decrypt_logins(
-        &self,
-        raw: Vec<logins::Model>,
-    ) -> impl std::future::Future<Output = Result<Vec<LoginData>>> + std::marker::Send
+    async fn par_decrypt_logins(&self, raw: Vec<logins::Model>) -> Result<Vec<LoginData>>
     where
         Self: Sync,
     {
-        async {
-            let crypto = self.crypto().clone();
+        let crypto = self.crypto().clone();
 
-            task::spawn_blocking(move || {
-                raw.into_par_iter()
-                    .map(|mut v| {
-                        let res = v
-                            .password_value
-                            .as_mut()
-                            .and_then(|v| {
-                                crypto
-                                    .decrypt(v, Which::Login)
-                                    .ok()
-                            });
+        task::spawn_blocking(move || {
+            raw.into_par_iter()
+                .map(|mut v| {
+                    let res = v
+                        .password_value
+                        .as_mut()
+                        .and_then(|v| {
+                            crypto
+                                .decrypt(v, Which::Login)
+                                .ok()
+                        });
 
-                        let mut login_data = LoginData::from(v);
-                        login_data.password_value = res;
-                        login_data
-                    })
-                    .collect()
-            })
-            .await
-            .context(TaskSnafu)
-        }
+                    let mut login_data = LoginData::from(v);
+                    login_data.password_value = res;
+                    login_data
+                })
+                .collect()
+        })
+        .await
+        .context(TaskSnafu)
     }
 
     /// parallel decrypt cookies
     /// and not blocking scheduling
-    fn par_decrypt_ck(
-        &self,
-        raw: Vec<cookies::Model>,
-    ) -> impl std::future::Future<Output = Result<Vec<ChromiumCookie>>> + Send + Sync
+    async fn par_decrypt_ck(&self, raw: Vec<cookies::Model>) -> Result<Vec<ChromiumCookie>>
     where
         Self: Sync,
     {
-        async {
-            let crypto = self.crypto().clone();
+        let crypto = self.crypto().clone();
 
-            let decrypted_ck = task::spawn_blocking(move || {
-                raw.into_par_iter()
-                    .map(|mut v| {
-                        let res = crypto
-                            .decrypt(&mut v.encrypted_value, Which::Cookie)
-                            .ok();
-                        let mut cookies = ChromiumCookie::from(v);
-                        cookies.decrypted_value = res;
-                        cookies
-                    })
-                    .collect()
-            })
-            .await
-            .context(TaskSnafu)?;
-            Ok(decrypted_ck)
-        }
+        let decrypted_ck = task::spawn_blocking(move || {
+            raw.into_par_iter()
+                .map(|mut v| {
+                    let res = crypto
+                        .decrypt(&mut v.encrypted_value, Which::Cookie)
+                        .ok();
+                    let mut cookies = ChromiumCookie::from(v);
+                    cookies.decrypted_value = res;
+                    cookies
+                })
+                .collect()
+        })
+        .await
+        .context(TaskSnafu)?;
+        Ok(decrypted_ck)
     }
 }
 
@@ -248,7 +243,8 @@ trait SealedLogins {
 }
 
 #[expect(private_bounds, reason = "impl details")]
-pub trait GetLogins: SealedCrypto + SealedLogins {
+#[async_trait::async_trait]
+pub trait GetLogins: SealedCrypto + SealedLogins + Display {
     /// contains passwords
     ///
     /// # Example:
@@ -263,94 +259,86 @@ pub trait GetLogins: SealedCrypto + SealedLogins {
     ///         .await
     ///         .unwrap();
     ///     let res = edge_getter
-    ///         .logins_filter(ChromiumLoginCol::OriginUrl.contains("google.com"))
+    ///         .logins_filter(
+    ///             ChromiumLoginCol::OriginUrl
+    ///                 .contains("google.com")
+    ///                 .into_condition(),
+    ///         )
     ///         .await
     ///         .unwrap_or_default();
     ///     dbg!(res);
     /// }
     /// ```
-    fn logins_filter<F>(
-        &self,
-        filter: F,
-    ) -> impl std::future::Future<Output = Result<Vec<LoginData>>> + Send
+    async fn logins_filter(&self, filter: Condition) -> Result<Vec<LoginData>>
     where
-        F: IntoCondition + Send + Clone,
         Self: Sync,
     {
-        async {
-            let mut raw_login = self
-                .login_data_query()
-                .query_login_dt_filter(filter.clone())
-                .await
-                .context(DbSnafu)?;
-            if raw_login.is_empty() {
-                if let Some(query) = &self.login_data_for_account_query() {
-                    raw_login = query
-                        .query_login_dt_filter(filter)
-                        .await
-                        .context(DbSnafu)?;
-                }
+        let mut raw_login = self
+            .login_data_query()
+            .query_login_dt_filter(filter.clone())
+            .await
+            .context(DbSnafu)?;
+        if raw_login.is_empty() {
+            if let Some(query) = &self.login_data_for_account_query() {
+                raw_login = query
+                    .query_login_dt_filter(filter)
+                    .await
+                    .context(DbSnafu)?;
             }
-            self.par_decrypt_logins(raw_login)
-                .await
         }
+        self.par_decrypt_logins(raw_login)
+            .await
     }
 
     /// Filter by host
-    fn logins_by_host<H>(
-        &self,
-        host: H,
-    ) -> impl std::future::Future<Output = Result<Vec<LoginData>>> + Send
+    #[doc(alias = "logins_by_domain", alias = "logins_by_url")]
+    async fn logins_by_host(&self, host: &str) -> Result<Vec<LoginData>>
     where
         Self: Sync,
-        H: AsRef<str> + Send + Sync,
     {
-        async move {
-            let mut raw_login = self
-                .login_data_query()
-                .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host.as_ref()))
-                .await
-                .context(DbSnafu)?;
-            if raw_login.is_empty() {
-                if let Some(query) = &self.login_data_for_account_query() {
-                    raw_login = query
-                        .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host.as_ref()))
-                        .await
-                        .context(DbSnafu)?;
-                }
+        let mut raw_login = self
+            .login_data_query()
+            .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host))
+            .await
+            .context(DbSnafu)?;
+        if raw_login.is_empty() {
+            if let Some(query) = &self.login_data_for_account_query() {
+                raw_login = query
+                    .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host))
+                    .await
+                    .context(DbSnafu)?;
             }
-            self.par_decrypt_logins(raw_login)
-                .await
         }
+        self.par_decrypt_logins(raw_login)
+            .await
     }
 
     /// Return all login data
-    fn logins_all(&self) -> impl std::future::Future<Output = Result<Vec<LoginData>>> + Send
+    async fn logins_all(&self) -> Result<Vec<LoginData>>
     where
         Self: Sync,
     {
-        async {
-            let mut raw_login = self
-                .login_data_query()
-                .query_all_login_dt()
-                .await
-                .context(DbSnafu)?;
-            if raw_login.is_empty() {
-                if let Some(query) = &self.login_data_for_account_query() {
-                    raw_login = query
-                        .query_all_login_dt()
-                        .await
-                        .context(DbSnafu)?;
-                }
+        let mut raw_login = self
+            .login_data_query()
+            .query_all_login_dt()
+            .await
+            .context(DbSnafu)?;
+        if raw_login.is_empty() {
+            if let Some(query) = &self.login_data_for_account_query() {
+                raw_login = query
+                    .query_all_login_dt()
+                    .await
+                    .context(DbSnafu)?;
             }
-            self.par_decrypt_logins(raw_login)
-                .await
         }
+        self.par_decrypt_logins(raw_login)
+            .await
     }
 }
 
 #[expect(private_bounds, reason = "impl details")]
-pub trait GetCookies: SealedCrypto + SealedCookies {
+#[async_trait::async_trait]
+pub trait GetCookies: SealedCrypto + SealedCookies + Display {
     /// filter cookies
     ///
     /// # Example:
@@ -365,155 +353,140 @@ pub trait GetCookies: SealedCrypto + SealedCookies {
     ///         .await
     ///         .unwrap();
     ///     let res = edge_getter
-    ///         .cookies_filter(ChromiumCookieCol::HostKey.contains("google.com"))
+    ///         .cookies_filter(
+    ///             ChromiumCookieCol::HostKey
+    ///                 .contains("google.com")
+    ///                 .into_condition(),
+    ///         )
     ///         .await
     ///         .unwrap_or_default();
     ///     dbg!(res);
     /// }
     /// ```
-    fn cookies_filter<F>(
-        &self,
-        filter: F,
-    ) -> impl std::future::Future<Output = Result<Vec<ChromiumCookie>>> + Send
+    async fn cookies_filter(&self, filter: Condition) -> Result<Vec<ChromiumCookie>>
     where
-        F: IntoCondition + Send,
         Self: Sync,
     {
-        async {
-            let raw_ck = self
-                .cookies_query()
-                .cookies_filter(filter)
-                .await
-                .context(DbSnafu)?;
-            self.par_decrypt_ck(raw_ck).await
-        }
+        let raw_ck = self
+            .cookies_query()
+            .cookies_filter(filter)
+            .await
+            .context(DbSnafu)?;
+        self.par_decrypt_ck(raw_ck).await
     }
 
     /// Filter by host
     #[doc(alias = "cookies_by_domain", alias = "cookies_by_url")]
-    fn cookies_by_host<H>(
-        &self,
-        host: H,
-    ) -> impl std::future::Future<Output = Result<Vec<ChromiumCookie>>> + Send
+    async fn cookies_by_host(&self, host: &str) -> Result<Vec<ChromiumCookie>>
     where
         Self: Sync,
-        H: AsRef<str> + Send + Sync,
     {
-        async move {
-            let raw_ck = self
-                .cookies_query()
-                .cookies_by_host(host.as_ref())
-                .await
-                .context(DbSnafu)?;
-            self.par_decrypt_ck(raw_ck).await
-        }
+        let raw_ck = self
+            .cookies_query()
+            .cookies_by_host(host.as_ref())
+            .await
+            .context(DbSnafu)?;
+        self.par_decrypt_ck(raw_ck).await
     }
 
     /// Return all cookies
-    fn cookies_all(&self) -> impl std::future::Future<Output = Result<Vec<ChromiumCookie>>> + Send
+    async fn cookies_all(&self) -> Result<Vec<ChromiumCookie>>
     where
         Self: Sync,
     {
-        async {
-            let raw_ck = self
-                .cookies_query()
-                .cookies_all()
-                .await
-                .context(DbSnafu)?;
-            self.par_decrypt_ck(raw_ck).await
-        }
+        let raw_ck = self
+            .cookies_query()
+            .cookies_all()
+            .await
+            .context(DbSnafu)?;
+        self.par_decrypt_ck(raw_ck).await
     }
 
     /// get `LEETCODE_SESSION` and `csrftoken` for leetcode
-    fn get_session_csrf<H>(
-        &self,
-        host: H,
-    ) -> impl std::future::Future<Output = Result<LeetCodeCookies>> + Send
+    async fn get_session_csrf(&self, host: &str) -> Result<LeetCodeCookies>
     where
         Self: Sync,
-        H: AsRef<str> + Send + Sync,
     {
-        async move {
-            let cookies = self
-                .cookies_query()
-                .cookies_filter(
-                    ChromiumCookieCol::HostKey
-                        .contains(host.as_ref())
-                        .and(
-                            ChromiumCookieCol::Name
-                                .eq("csrftoken")
-                                .or(ChromiumCookieCol::Name.eq("LEETCODE_SESSION")),
-                        ),
-                )
-                .await
-                .context(DbSnafu)?;
+        let cookies = self
+            .cookies_query()
+            .cookies_filter(
+                ChromiumCookieCol::HostKey
+                    .contains(host)
+                    .and(
+                        ChromiumCookieCol::Name
+                            .eq("csrftoken")
+                            .or(ChromiumCookieCol::Name.eq("LEETCODE_SESSION")),
+                    ),
+            )
+            .await
+            .context(DbSnafu)?;
 
-            let mut csrf_token = LeetCodeCookies::default();
-            let mut hds = Vec::with_capacity(2);
+        let mut csrf_token = LeetCodeCookies::default();
+        let mut hds = Vec::with_capacity(2);
 
-            #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-            enum CsrfSession {
-                Csrf,
-                Session,
-            }
-
-            // # Safety: scope task
-            let cy =
-                unsafe { std::mem::transmute::<&Decrypter, &'static Decrypter>(self.crypto()) };
-
-            for mut cookie in cookies {
-                if cookie.name == "csrftoken" {
-                    let expir = cookie
-                        .expires_utc
-                        .micros_to_chromium_utc();
-                    if let Some(expir) = expir {
-                        if Utc::now() > expir {
-                            csrf_token.expiry = true;
-                            break;
-                        }
-                    }
-
-                    let csrf_hd = task::spawn_blocking(move || {
-                        cy.decrypt(&mut cookie.encrypted_value, Which::Cookie)
-                            .inspect_err(|_e| {
-                                #[cfg(feature = "tracing")]
-                                tracing::warn!("decrypt csrf failed: {_e}");
-                            })
-                            .unwrap_or_default()
-                    });
-                    hds.push((csrf_hd, CsrfSession::Csrf));
-                }
-                else if cookie.name == "LEETCODE_SESSION" {
-                    let expir = cookie
-                        .expires_utc
-                        .micros_to_chromium_utc();
-                    if let Some(expir) = expir {
-                        if Utc::now() > expir {
-                            csrf_token.expiry = true;
-                            break;
-                        }
-                    }
-
-                    let session_hd = task::spawn_blocking(move || {
-                        cy.decrypt(&mut cookie.encrypted_value, Which::Cookie)
-                            .inspect_err(|_e| {
-                                #[cfg(feature = "tracing")]
-                                tracing::warn!("decrypt session failed: {_e}");
-                            })
-                            .unwrap_or_default()
-                    });
-                    hds.push((session_hd, CsrfSession::Session));
-                }
-            }
-
-            for (handle, flag) in hds {
-                let res = handle.await.context(TaskSnafu)?;
-                match flag {
-                    CsrfSession::Csrf => csrf_token.csrf = res,
-                    CsrfSession::Session => csrf_token.session = res,
-                }
-            }
-            Ok(csrf_token)
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        enum CsrfSession {
+            Csrf,
+            Session,
         }
+
+        // # Safety: scope task
+        let cy = unsafe { std::mem::transmute::<&Decrypter, &'static Decrypter>(self.crypto()) };
+
+        for mut cookie in cookies {
+            if cookie.name == "csrftoken" {
+                let expir = cookie
+                    .expires_utc
+                    .micros_to_chromium_utc();
+                if let Some(expir) = expir {
+                    if Utc::now() > expir {
+                        csrf_token.expiry = true;
+                        break;
+                    }
+                }
+
+                let csrf_hd = task::spawn_blocking(move || {
+                    cy.decrypt(&mut cookie.encrypted_value, Which::Cookie)
+                        .inspect_err(|_e| {
+                            #[cfg(feature = "tracing")]
+                            tracing::warn!("decrypt csrf failed: {_e}");
+                        })
+                        .unwrap_or_default()
+                });
+                hds.push((csrf_hd, CsrfSession::Csrf));
+            }
+            else if cookie.name == "LEETCODE_SESSION" {
+                let expir = cookie
+                    .expires_utc
+                    .micros_to_chromium_utc();
+                if let Some(expir) = expir {
+                    if Utc::now() > expir {
+                        csrf_token.expiry = true;
+                        break;
+                    }
+                }
+
+                let session_hd = task::spawn_blocking(move || {
+                    cy.decrypt(&mut cookie.encrypted_value, Which::Cookie)
+                        .inspect_err(|_e| {
+                            #[cfg(feature = "tracing")]
+                            tracing::warn!("decrypt session failed: {_e}");
+                        })
+                        .unwrap_or_default()
+                });
+                hds.push((session_hd, CsrfSession::Session));
+            }
+        }
+
+        for (handle, flag) in hds {
+            let res = handle.await.context(TaskSnafu)?;
+            match flag {
+                CsrfSession::Csrf => csrf_token.csrf = res,
+                CsrfSession::Session => csrf_token.session = res,
+            }
+        }
+        Ok(csrf_token)
     }
 }
+
+pub trait GetCookiesLogins: GetLogins + GetCookies {}

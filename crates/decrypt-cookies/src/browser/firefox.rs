@@ -1,6 +1,10 @@
 use std::path::PathBuf;
 
 use super::CACHE_PATH;
+use crate::firefox::{
+    builder::{FirefoxBuilder, FirefoxBuilderError},
+    GetCookies,
+};
 
 pub trait FirefoxPath {
     /// Suffix for data path
@@ -56,8 +60,6 @@ pub trait FirefoxPath {
 
 /// Register a Firefox based browser info
 ///
-/// When linkme feature is enabled, the macro requires the `linkme` crate.
-///
 /// It accept
 /// - `platform`
 /// - `browser`: Generate a struct
@@ -90,13 +92,6 @@ macro_rules! firefox {
         $(, login_data: $login_data:literal)?
         $(, key = $key:literal)?
     ) => {
-        #[cfg(feature = "linkme")]
-        $crate::pastey::paste! {
-            #[cfg(target_os = $platform)]
-            #[linkme::distributed_slice($crate::browser::BROWSERS)]
-            static [<$browser:upper _NAME>]: &str = stringify!($browser);
-        }
-
         #[cfg(target_os = $platform)]
         #[derive(Clone, Copy)]
         #[derive(Debug)]
@@ -124,16 +119,42 @@ macro_rules! firefox {
 }
 
 firefox!("linux", Firefox  , base: ".mozilla/firefox");
-firefox!("linux", Librewolf, base: ".librewolf"      );
 firefox!("linux", Floorp   , base: ".floorp"         );
+firefox!("linux", Librewolf, base: ".librewolf"      );
 firefox!("linux", Zen      , base: ".zen"            );
 
 firefox!("macos", Firefox  , base: "Library/Application Support/Firefox"  );
-firefox!("macos", Librewolf, base: "Library/Application Support/librewolf");
 firefox!("macos", Floorp   , base: "Library/Application Support/Floorp"   );
+firefox!("macos", Librewolf, base: "Library/Application Support/librewolf");
 firefox!("macos", Zen      , base: "Library/Application Support/zen"      );
 
 firefox!("windows", Firefox  , base: r"AppData\Roaming\Mozilla\Firefox");
-firefox!("windows", Librewolf, base: r"AppData\Roaming\librewolf"      );
 firefox!("windows", Floorp   , base: r"AppData\Roaming\Floorp"         );
+firefox!("windows", Librewolf, base: r"AppData\Roaming\librewolf"      );
 firefox!("windows", Zen      , base: r"AppData\Roaming\zen"            );
+
+/// get all builtin support cookies getter
+pub async fn firefox_cookies_getter(
+) -> Vec<Result<Box<dyn GetCookies + Send + Sync>, FirefoxBuilderError>> {
+    let mut result: Vec<Result<Box<dyn GetCookies + Send + Sync>, FirefoxBuilderError>>;
+
+    macro_rules! loop_builders {
+        ($($browser:ident),* $(,)?) => {
+            result = Vec::with_capacity(count_tts![$($browser)*]);
+            pastey::paste! {
+                let ($([<$browser:lower _getter>],)*) = tokio::join!(
+                    $(FirefoxBuilder::<$browser>::new().build_cookie(),)*
+                );
+                let ($([<$browser:lower _getter>],)*) = ($([<$browser:lower _getter>].map(|v| Box::new(v) as Box<dyn GetCookies + Send + Sync>),)*);
+
+                $(
+                    result.push([<$browser:lower _getter>]);
+                )*
+            }
+        };
+    }
+
+    loop_builders![Firefox, Floorp, Librewolf, Zen,];
+
+    result
+}

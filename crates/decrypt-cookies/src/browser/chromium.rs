@@ -1,6 +1,10 @@
 use std::path::PathBuf;
 
 use super::CACHE_PATH;
+use crate::chromium::{
+    builder::{ChromiumBuilder, ChromiumBuilderError},
+    GetCookies, GetCookiesLogins, GetLogins,
+};
 
 pub trait ChromiumPath {
     /// Suffix for browser data path
@@ -82,8 +86,6 @@ pub trait ChromiumPath {
 
 /// Register a Chromium based browser info
 ///
-/// When linkme feature is enabled, the macro requires the `linkme` crate.
-///
 /// It accept
 /// - `platform`
 /// - `browser`: Generate a struct
@@ -130,13 +132,6 @@ macro_rules! chromium {
         $(, key: $key:literal)?
         $(, safe_name: $safe_name:literal)?
     ) => {
-        #[cfg(feature = "linkme")]
-        $crate::pastey::paste! {
-            #[cfg(target_os = $platform)]
-            #[linkme::distributed_slice($crate::browser::BROWSERS)]
-            static [<$browser:upper _NAME>]: &str = stringify!($browser);
-        }
-
         #[cfg(target_os = $platform)]
         #[derive(Clone, Copy)]
         #[derive(Debug)]
@@ -169,16 +164,16 @@ macro_rules! chromium {
     };
 }
 
-chromium!("linux", Chrome  , base: ".config/google-chrome"              , safe_name: "Chrome"        );
-chromium!("linux", Edge    , base: ".config/microsoft-edge"             , safe_name: "Microsoft Edge");
-chromium!("linux", Chromium, base: ".config/chromium"                   , safe_name: "Chromium"      );
 chromium!("linux", Brave   , base: ".config/BraveSoftware/Brave-Browser", safe_name: "Brave"         );
-chromium!("linux", Vivaldi , base: ".config/vivaldi"                    , safe_name: "Vivaldi"       );
+chromium!("linux", Chrome  , base: ".config/google-chrome"              , safe_name: "Chrome"        );
+chromium!("linux", Chromium, base: ".config/chromium"                   , safe_name: "Chromium"      );
+chromium!("linux", Edge    , base: ".config/microsoft-edge"             , safe_name: "Microsoft Edge");
 chromium!("linux", Opera   , base: ".config/opera"                      , safe_name: "Opera"         );
+chromium!("linux", Vivaldi , base: ".config/vivaldi"                    , safe_name: "Vivaldi"       );
 chromium!("linux", Yandex  , base: ".config/yandex-browser"             , login_data: "Default/Ya Passman Data", safe_name: "Yandex");
 
 macro_rules! cache_it {
-    ($($browser:ident,)*) => {
+    ($($browser:ident),* $(,)?) => {
         #[cfg(target_os = "linux")]
         pub fn need_safe_storage(lab: &str) -> bool {
             matches!(
@@ -188,26 +183,119 @@ macro_rules! cache_it {
         }
     };
 }
-cache_it!(Chrome, Edge, Chromium, Brave, Vivaldi, Opera, Yandex,);
+cache_it!(Brave, Chrome, Chromium, Edge, Opera, Vivaldi, Yandex,);
 
-chromium!("macos", Chrome  , base: "Library/Application Support/Google/Chrome"              , safe_name: "Chrome"        );
-chromium!("macos", Edge    , base: "Library/Application Support/Microsoft Edge"             , safe_name: "Microsoft Edge");
-chromium!("macos", Chromium, base: "Library/Application Support/Chromium"                   , safe_name: "Chromium"      );
-chromium!("macos", Brave   , base: "Library/Application Support/BraveSoftware/Brave-Browser", safe_name: "Brave"         );
-chromium!("macos", Vivaldi , base: "Library/Application Support/Vivaldi"                    , safe_name: "Vivaldi"       );
-chromium!("macos", CocCoc  , base: "Library/Application Support/CocCoc/Browser"             , safe_name: "CocCoc"        );
 chromium!("macos", Arc     , base: "Library/Application Support/Arc/User Data"              , safe_name: "Arc"           );
+chromium!("macos", Brave   , base: "Library/Application Support/BraveSoftware/Brave-Browser", safe_name: "Brave"         );
+chromium!("macos", Chrome  , base: "Library/Application Support/Google/Chrome"              , safe_name: "Chrome"        );
+chromium!("macos", Chromium, base: "Library/Application Support/Chromium"                   , safe_name: "Chromium"      );
+chromium!("macos", CocCoc  , base: "Library/Application Support/CocCoc/Browser"             , safe_name: "CocCoc"        );
+chromium!("macos", Edge    , base: "Library/Application Support/Microsoft Edge"             , safe_name: "Microsoft Edge");
 chromium!("macos", Opera   , base: "Library/Application Support/com.operasoftware.Opera"    , safe_name: "Opera"         );
 chromium!("macos", OperaGX , base: "Library/Application Support/com.operasoftware.OperaGX"  , cookies: "Cookies", login_data: "Login Data", safe_name: "Opera");
+chromium!("macos", Vivaldi , base: "Library/Application Support/Vivaldi"                    , safe_name: "Vivaldi"       );
 chromium!("macos", Yandex  , base: "Library/Application Support/Yandex/YandexBrowser"       , login_data: "Default/Ya Passman Data", login_data_fa: "Default/Ya Passman Data", safe_name: "Yandex");
 
-chromium!("windows", Chrome  , base: r"AppData\Local\Google\Chrome\User Data"              );
-chromium!("windows", Edge    , base: r"AppData\Local\Microsoft\Edge\User Data"             );
-chromium!("windows", Chromium, base: r"AppData\Local\Chromium\User Data"                   );
+chromium!("windows", Arc     , base: r"AppData\Local\Packages\TheBrowserCompany.Arc_ttt1ap7aakyb4\LocalCache\Local\Arc\User Data");
 chromium!("windows", Brave   , base: r"AppData\Local\BraveSoftware\Brave-Browser\User Data");
-chromium!("windows", Vivaldi , base: r"AppData\Local\Vivaldi\User Data"                    );
+chromium!("windows", Chrome  , base: r"AppData\Local\Google\Chrome\User Data"              );
+chromium!("windows", Chromium, base: r"AppData\Local\Chromium\User Data"                   );
+chromium!("windows", CocCoc  , base: r"AppData\Local\CocCoc\Browser\User Data"             );
+chromium!("windows", Edge    , base: r"AppData\Local\Microsoft\Edge\User Data"             );
 chromium!("windows", Opera   , base: r"AppData\Roaming\Opera Software\Opera Stable"        );
 chromium!("windows", OperaGX , base: r"AppData\Roaming\Opera Software\Opera GX Stable"     , cookies: r"Network\Cookies", login_data: r"Login Data", login_data_fa: r"Login Data For Account");
-chromium!("windows", CocCoc  , base: r"AppData\Local\CocCoc\Browser\User Data"             );
-chromium!("windows", Arc     , base: r"AppData\Local\Packages\TheBrowserCompany.Arc_ttt1ap7aakyb4\LocalCache\Local\Arc\User Data");
+chromium!("windows", Vivaldi , base: r"AppData\Local\Vivaldi\User Data"                    );
 chromium!("windows", Yandex  , base: r"AppData\Local\Yandex\YandexBrowser\User Data"       , login_data: r"Default\Ya Passman Data");
+
+/// get all builtin support getter
+pub async fn chromium_getter(
+) -> Vec<Result<Box<dyn GetCookiesLogins + Send + Sync>, ChromiumBuilderError>> {
+    let mut result: Vec<Result<Box<dyn GetCookiesLogins + Send + Sync>, ChromiumBuilderError>>;
+
+    macro_rules! loop_builders {
+        ($($browser:ident),* $(,)?) => {
+            result = Vec::with_capacity(count_tts![$($browser)*]);
+            pastey::paste! {
+                let ($([<$browser:lower _getter>],)*) = tokio::join!(
+                    $(ChromiumBuilder::<$browser>::new().build(),)*
+                );
+                let ($([<$browser:lower _getter>],)*) = ($([<$browser:lower _getter>].map(|v| Box::new(v) as Box<dyn GetCookiesLogins + Send + Sync>),)*);
+
+                $(
+                    result.push([<$browser:lower _getter>]);
+                )*
+            }
+        };
+    }
+
+    #[cfg(target_os = "linux")]
+    loop_builders![Brave, Chrome, Chromium, Edge, Opera, Vivaldi, Yandex,];
+    #[cfg(target_os = "macos")]
+    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+    #[cfg(target_os = "windows")]
+    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+
+    result
+}
+
+/// get all builtin support cookies getter
+pub async fn chromium_cookies_getter(
+) -> Vec<Result<Box<dyn GetCookies + Send + Sync>, ChromiumBuilderError>> {
+    let mut result: Vec<Result<Box<dyn GetCookies + Send + Sync>, ChromiumBuilderError>>;
+
+    macro_rules! loop_builders {
+        ($($browser:ident),* $(,)?) => {
+            result = Vec::with_capacity(count_tts![$($browser)*]);
+            pastey::paste! {
+                let ($([<$browser:lower _getter>],)*) = tokio::join!(
+                    $(ChromiumBuilder::<$browser>::new().build_cookie(),)*
+                );
+                let ($([<$browser:lower _getter>],)*) = ($([<$browser:lower _getter>].map(|v| Box::new(v) as Box<dyn GetCookies + Send + Sync>),)*);
+
+                $(
+                    result.push([<$browser:lower _getter>]);
+                )*
+            }
+        };
+    }
+
+    #[cfg(target_os = "linux")]
+    loop_builders![Brave, Chrome, Chromium, Edge, Opera, Vivaldi, Yandex,];
+    #[cfg(target_os = "macos")]
+    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+    #[cfg(target_os = "windows")]
+    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+
+    result
+}
+
+/// get all builtin support logins getter
+pub async fn chromium_logins_getter(
+) -> Vec<Result<Box<dyn GetLogins + Send + Sync>, ChromiumBuilderError>> {
+    let mut result: Vec<Result<Box<dyn GetLogins + Send + Sync>, ChromiumBuilderError>>;
+
+    macro_rules! loop_builders {
+        ($($browser:ident),* $(,)?) => {
+            result = Vec::with_capacity(count_tts![$($browser)*]);
+            pastey::paste! {
+                let ($([<$browser:lower _getter>],)*) = tokio::join!(
+                    $(ChromiumBuilder::<$browser>::new().build_login(),)*
+                );
+                let ($([<$browser:lower _getter>],)*) = ($([<$browser:lower _getter>].map(|v| Box::new(v) as Box<dyn GetLogins + Send + Sync>),)*);
+
+                $(
+                    result.push([<$browser:lower _getter>]);
+                )*
+            }
+        };
+    }
+
+    #[cfg(target_os = "linux")]
+    loop_builders![Brave, Chrome, Chromium, Edge, Opera, Vivaldi, Yandex,];
+    #[cfg(target_os = "macos")]
+    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+    #[cfg(target_os = "windows")]
+    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+
+    result
+}

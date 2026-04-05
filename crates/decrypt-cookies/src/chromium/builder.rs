@@ -105,7 +105,7 @@ where
 #[derive(Debug)]
 #[derive(Default)]
 #[derive(PartialEq, Eq)]
-pub struct ChromiumBuilder<T> {
+pub struct ChromiumBuilder<T: ChromiumPath> {
     pub(crate) base: Option<PathBuf>,
     pub(crate) __browser: PhantomData<T>,
 }

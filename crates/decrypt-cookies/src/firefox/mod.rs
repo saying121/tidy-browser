@@ -3,15 +3,16 @@ pub mod items;
 
 use std::{
     fmt::Display,
-    future::Future,
     marker::{PhantomData, Sync},
 };
 
 use chrono::Utc;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use sea_orm::{prelude::ColumnTrait, sea_query::IntoCondition, DbErr};
+use sea_orm::{prelude::ColumnTrait, Condition, DbErr};
 use snafu::{Location, ResultExt, Snafu};
 
+#[cfg(feature = "reqwest")]
+pub use self::items::cookie::jar_extend_firefox;
 pub use self::items::cookie::{
     entities::moz_cookies::{Column as MozCookiesCol, ColumnIter as MozCookiesColIter},
     MozCookie,
@@ -72,15 +73,16 @@ impl<B> SealedCookies for FirefoxCookieGetter<B> {
         &self.cookies_query
     }
 }
-impl<B> GetCookies for FirefoxGetter<B> {}
-impl<B> GetCookies for FirefoxCookieGetter<B> {}
+impl<B: FirefoxPath> GetCookies for FirefoxGetter<B> {}
+impl<B: FirefoxPath> GetCookies for FirefoxCookieGetter<B> {}
 
 trait SealedCookies {
     fn cookies_query(&self) -> &CookiesQuery;
 }
 
+#[async_trait::async_trait]
 #[expect(private_bounds, reason = "impl details")]
-pub trait GetCookies: SealedCookies {
+pub trait GetCookies: SealedCookies + Display {
     /// filter by condition
     ///
     /// # Example
@@ -95,125 +97,114 @@ pub trait GetCookies: SealedCookies {
     ///         .await
     ///         .unwrap();
     ///     let res = ffget
-    ///         .cookies_filter(MozCookiesCol::Host.contains("mozilla.com"))
+    ///         .cookies_filter(MozCookiesCol::Host.contains("mozilla.com").into_condition())
     ///         .await
     ///         .unwrap_or_default();
     /// }
     /// ```
-    fn cookies_filter<F>(&self, filter: F) -> impl Future<Output = Result<Vec<MozCookie>>> + Send
+    async fn cookies_filter(&self, filter: Condition) -> Result<Vec<MozCookie>>
     where
-        F: IntoCondition + Send,
         Self: Sync,
     {
-        async {
-            let res = self
-                .cookies_query()
-                .query_cookie_filter(filter)
-                .await
-                .context(DbSnafu)?;
-            let res = res
-                .into_par_iter()
-                .map(MozCookie::from)
-                .collect();
-            Ok(res)
-        }
+        let res = self
+            .cookies_query()
+            .query_cookie_filter(filter)
+            .await
+            .context(DbSnafu)?;
+        let res = res
+            .into_par_iter()
+            .map(MozCookie::from)
+            .collect();
+        Ok(res)
     }
 
-    fn cookies_all(&self) -> impl Future<Output = Result<Vec<MozCookie>>> + Send
+    async fn cookies_all(&self) -> Result<Vec<MozCookie>>
     where
         Self: Sync,
     {
-        async {
-            let res = self
-                .cookies_query()
-                .query_all_cookie()
-                .await
-                .context(DbSnafu)?;
-            let res = res
-                .into_par_iter()
-                .map(MozCookie::from)
-                .collect();
-            Ok(res)
-        }
+        let res = self
+            .cookies_query()
+            .query_all_cookie()
+            .await
+            .context(DbSnafu)?;
+        let res = res
+            .into_par_iter()
+            .map(MozCookie::from)
+            .collect();
+        Ok(res)
     }
 
     /// Filter cookies by host
     #[doc(alias = "cookies_by_domain", alias = "cookies_by_url")]
-    fn cookies_by_host<H>(&self, host: H) -> impl Future<Output = Result<Vec<MozCookie>>> + Send
+    async fn cookies_by_host(&self, host: &str) -> Result<Vec<MozCookie>>
     where
         Self: Sync,
-        H: AsRef<str> + Send + Sync,
     {
-        async move {
-            let res = self
-                .cookies_query()
-                .query_cookie_by_host(host.as_ref())
-                .await
-                .context(DbSnafu)?;
-            let res = res
-                .into_par_iter()
-                .map(MozCookie::from)
-                .collect();
-            Ok(res)
-        }
+        let res = self
+            .cookies_query()
+            .query_cookie_by_host(host.as_ref())
+            .await
+            .context(DbSnafu)?;
+        let res = res
+            .into_par_iter()
+            .map(MozCookie::from)
+            .collect();
+        Ok(res)
     }
 
     /// get session csrf for leetcode
-    fn get_session_csrf<H>(&self, host: H) -> impl Future<Output = Result<LeetCodeCookies>> + Send
+    async fn get_session_csrf(&self, host: &str) -> Result<LeetCodeCookies>
     where
         Self: Sync,
-        H: AsRef<str> + Send + Sync,
     {
-        async move {
-            let cookies = self
-                .cookies_query()
-                .query_cookie_filter(
-                    MozCookiesCol::Host
-                        .contains(host.as_ref())
-                        .and(
-                            MozCookiesCol::Name
-                                .eq("csrftoken")
-                                .or(MozCookiesCol::Name.eq("LEETCODE_SESSION")),
-                        ),
-                )
-                .await
-                .context(DbSnafu)?;
+        let cookies = self
+            .cookies_query()
+            .query_cookie_filter(
+                MozCookiesCol::Host
+                    .contains(host)
+                    .and(
+                        MozCookiesCol::Name
+                            .eq("csrftoken")
+                            .or(MozCookiesCol::Name.eq("LEETCODE_SESSION")),
+                    ),
+            )
+            .await
+            .context(DbSnafu)?;
 
-            let mut res = LeetCodeCookies::default();
+        let mut res = LeetCodeCookies::default();
 
-            for cookie in cookies {
-                if let Some(s) = cookie.name {
-                    if s == "csrftoken" {
-                        let expir = cookie
-                            .expiry
-                            .unwrap_or_default()
-                            .secs_to_moz_utc();
-                        if let Some(expir) = expir {
-                            if Utc::now() > expir {
-                                res.expiry = true;
-                                break;
-                            }
+        for cookie in cookies {
+            if let Some(s) = cookie.name {
+                if s == "csrftoken" {
+                    let expir = cookie
+                        .expiry
+                        .unwrap_or_default()
+                        .secs_to_moz_utc();
+                    if let Some(expir) = expir {
+                        if Utc::now() > expir {
+                            res.expiry = true;
+                            break;
                         }
-
-                        res.csrf = cookie.value.unwrap_or_default();
                     }
-                    else if s == "LEETCODE_SESSION" {
-                        let expir = cookie
-                            .expiry
-                            .unwrap_or_default()
-                            .secs_to_moz_utc();
-                        if let Some(expir) = expir {
-                            if Utc::now() > expir {
-                                res.expiry = true;
-                                break;
-                            }
+
+                    res.csrf = cookie.value.unwrap_or_default();
+                }
+                else if s == "LEETCODE_SESSION" {
+                    let expir = cookie
+                        .expiry
+                        .unwrap_or_default()
+                        .secs_to_moz_utc();
+                    if let Some(expir) = expir {
+                        if Utc::now() > expir {
+                            res.expiry = true;
+                            break;
                         }
-
-                        res.session = cookie.value.unwrap_or_default();
                     }
+
+                    res.session = cookie.value.unwrap_or_default();
                 }
             }
-            Ok(res)
         }
+        Ok(res)
     }
 }

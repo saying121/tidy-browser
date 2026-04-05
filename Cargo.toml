@@ -22,7 +22,6 @@ panic = "abort"
 
 
 [workspace.dependencies]
-linkme = "0.3"
 napi = "3"
 napi-derive = "3"
 napi-build = "2"
@@ -47,6 +46,7 @@ winnow = "0.7.11"
 TinyUFO = "0.6"
 cfg-if = "1"
 tokio = { version = "^1", features = ["macros"] }
+async-trait = { version = "0.1.89" }
 # futures = { version = "^0.3", default-features = false }
 reqwest = { version = "^0.12", default-features = false }
 

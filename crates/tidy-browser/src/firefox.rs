@@ -121,7 +121,7 @@ The browser is not installed or started with `-P`/`-profile` arg."#,
                                 let firefox = firefox.clone();
                                 let task = task::spawn(async move {
                                     let cookies = if let Some(host) = host {
-                                        firefox.cookies_by_host(host).await
+                                        firefox.cookies_by_host(&host).await
                                     }
                                     else {
                                         firefox.cookies_all().await
