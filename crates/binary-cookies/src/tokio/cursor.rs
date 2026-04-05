@@ -2,7 +2,7 @@ use std::{
     future::Future,
     pin::Pin,
     sync::Arc,
-    task::{ready, Poll},
+    task::{Poll, ready},
 };
 
 use positioned_io::{RandomAccessFile, ReadAt};
@@ -118,7 +118,6 @@ impl AsyncRead for AsyncCursor {
                     Ok(buffer) => {
                         self.file_offset += buffer.valid_len as u64;
                         self.state = State::Idle(Some(buffer));
-                        continue;
                     },
                     Err(e) => return Poll::Ready(Err(e)),
                 },

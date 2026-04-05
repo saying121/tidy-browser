@@ -4,9 +4,9 @@ use tokio::io::{AsyncRead, AsyncReadExt};
 use super::{cookie::CookieHandle, cursor::CookieCursor};
 use crate::{
     decode::{
+        DecodeResult, OffsetSize,
         cookies::CookiesOffset,
         pages::{PageFsm, PagesOffset},
-        DecodeResult, OffsetSize,
     },
     error::{self, Result},
 };
@@ -71,7 +71,6 @@ impl<'a, R: AsyncRead + Unpin + Send, F: CookieCursor + Sync> PageDecoder<'a, R,
             match fsm.process()? {
                 DecodeResult::Continue(fsm_) => {
                     fsm = fsm_;
-                    continue;
                 },
                 DecodeResult::Done((cookie_offset_in_page, _)) => {
                     let cookies_offset =

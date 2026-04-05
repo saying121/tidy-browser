@@ -6,7 +6,6 @@ use std::{
 
 use snafu::ResultExt;
 use windows::{
-    core::BOOL,
     Wdk::System::SystemServices::SE_DEBUG_PRIVILEGE,
     Win32::{
         Foundation::{CloseHandle, HANDLE, NTSTATUS, STATUS_SUCCESS},
@@ -21,6 +20,7 @@ use windows::{
             },
         },
     },
+    core::BOOL,
 };
 
 use crate::error::{self, Result};

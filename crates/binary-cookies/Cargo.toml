@@ -2,8 +2,8 @@
 name = "binary-cookies"
 version = "0.3.1"
 authors.workspace = true
-edition.workspace = true
-rust-version.workspace = true
+edition = "2021"
+rust-version = "1.82"
 description = "BinaryCookies decode and encode"
 readme = "./README.md"
 homepage = "https://github.com/saying121/tidy-browser/tree/master/crates/binary-cookies"

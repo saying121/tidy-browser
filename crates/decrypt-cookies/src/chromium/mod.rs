@@ -12,14 +12,14 @@ use items::cookie::cookie_entities::cookies;
 pub use items::cookie::jar_extend_chromium;
 pub use items::{
     cookie::{
+        ChromiumCookie,
         cookie_entities::cookies::{
             Column as ChromiumCookieCol, ColumnIter as ChromiumCookieColIter,
         },
-        ChromiumCookie,
     },
     passwd::{
-        login_data_entities::logins::{Column as ChromiumLoginCol, Column as ChromiumLoginColIter},
         LoginData,
+        login_data_entities::logins::{Column as ChromiumLoginCol, Column as ChromiumLoginColIter},
     },
 };
 use rayon::prelude::*;
@@ -28,11 +28,11 @@ use snafu::{Location, ResultExt, Snafu};
 use tokio::task::{self, JoinError};
 
 use crate::{
-    browser::{cookies::LeetCodeCookies, ChromiumPath},
+    browser::{ChromiumPath, cookies::LeetCodeCookies},
     chromium::items::{
+        I64ToChromiumDateTime,
         cookie::cookie_dao::CookiesQuery,
         passwd::{login_data_dao::LoginDataQuery, login_data_entities::logins},
-        I64ToChromiumDateTime,
     },
 };
 

@@ -4,9 +4,9 @@ use snafu::ResultExt;
 
 use crate::{
     decode::{
+        DecodeResult, OffsetSize,
         cookies::CookiesOffset,
         pages::{PageFsm, PagesOffset},
-        DecodeResult, OffsetSize,
     },
     error::{self, Result},
     sync::{cookie::CookieHandle, cursor::CookieCursor},
@@ -71,7 +71,6 @@ impl<'a, R: Read, F: CookieCursor> PageDecoder<'a, R, F> {
             match fsm.process()? {
                 DecodeResult::Continue(fsm_) => {
                     fsm = fsm_;
-                    continue;
                 },
                 DecodeResult::Done((cookie_offset_in_page, _)) => {
                     let cookies_offset =

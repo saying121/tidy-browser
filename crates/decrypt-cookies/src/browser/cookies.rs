@@ -14,7 +14,7 @@ pub struct LeetCodeCookies {
 }
 
 impl LeetCodeCookies {
-    pub fn is_completion(&self) -> bool {
+    pub const fn is_completion(&self) -> bool {
         !(self.expiry || self.csrf.is_empty() || self.session.is_empty())
     }
 }
@@ -57,7 +57,7 @@ pub trait CookiesInfo {
             properties.push(format!("Domain={}", self.domain()));
         }
         if let Some(expiry) = self.expiry() {
-            properties.push(format!("Expires={}", expiry));
+            properties.push(format!("Expires={expiry}"));
         }
         if self.is_secure() {
             properties.push("Secure".to_owned());

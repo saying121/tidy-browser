@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use super::CACHE_PATH;
 use crate::firefox::{
-    builder::{FirefoxBuilder, FirefoxBuilderError},
     GetCookies,
+    builder::{FirefoxBuilder, FirefoxBuilderError},
 };
 
 pub trait FirefoxPath {
@@ -134,8 +134,8 @@ firefox!("windows", Librewolf, base: r"AppData\Roaming\librewolf"      );
 firefox!("windows", Zen      , base: r"AppData\Roaming\zen"            );
 
 /// get all builtin support cookies getter
-pub async fn firefox_cookies_getter(
-) -> Vec<Result<Box<dyn GetCookies + Send + Sync>, FirefoxBuilderError>> {
+pub async fn firefox_cookies_getter()
+-> Vec<Result<Box<dyn GetCookies + Send + Sync>, FirefoxBuilderError>> {
     let mut result: Vec<Result<Box<dyn GetCookies + Send + Sync>, FirefoxBuilderError>>;
 
     macro_rules! loop_builders {

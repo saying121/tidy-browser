@@ -1,7 +1,7 @@
 use std::{collections::HashSet, fmt::Display, path::PathBuf};
 
 use decrypt_cookies::{
-    firefox::{builder::FirefoxBuilderError, GetCookies as _},
+    firefox::{GetCookies as _, builder::FirefoxBuilderError},
     prelude::*,
 };
 use snafu::ResultExt;

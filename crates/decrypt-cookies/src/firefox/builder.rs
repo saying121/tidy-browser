@@ -9,7 +9,7 @@ use tokio::fs;
 
 use super::FirefoxCookieGetter;
 use crate::{
-    firefox::{items::cookie::dao::CookiesQuery, FirefoxGetter},
+    firefox::{FirefoxGetter, items::cookie::dao::CookiesQuery},
     prelude::FirefoxPath,
 };
 

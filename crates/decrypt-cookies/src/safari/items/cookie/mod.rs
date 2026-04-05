@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 
 use binary_cookies::{cookie::Cookie, tokio::DecodeBinaryCookie};
-use chrono::{prelude::Utc, DateTime};
+use chrono::{DateTime, prelude::Utc};
 use snafu::{OptionExt, ResultExt};
 
 use super::super::Result;

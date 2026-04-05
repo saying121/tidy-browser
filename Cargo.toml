@@ -1,8 +1,8 @@
 [workspace.package]
-edition = "2021"
+edition = "2024"
 authors = ["saying121 <saying121@outlook.com>"]
 homepage = "https://github.com/saying121/tidy-browser"
-rust-version = "1.82"
+rust-version = "1.88"
 license = "LGPL-3.0-or-later"
 repository = "https://github.com/saying121/tidy-browser"
 keywords = ["cookies", "decrypt", "Chromium", "Firefox", "Safari"]
@@ -92,7 +92,6 @@ chromium-crypto = { path = "./crates/chromium-crypto", version = "0.4" }
 binary-cookies = { path = "./crates/binary-cookies", version = "0.3" }
 
 [workspace.lints.rust]
-temporary_cstring_as_ptr = "deny"
 
 [workspace.lints.clippy]
 perf = { level = "deny", priority = -1 }
@@ -103,7 +102,6 @@ trivial_regex = "allow" # see: <https://github.com/rust-lang/rust-clippy/issues/
 
 ### pedantic group
 inconsistent_struct_constructor = "warn"
-match_on_vec_items = "warn"
 match_same_arms = "warn"
 single_char_pattern = "warn"
 missing_fields_in_debug = "warn"

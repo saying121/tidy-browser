@@ -21,7 +21,7 @@ async fn get_cookie_work() -> Result<()> {
     let ck = edge
         .get_session_csrf(leetcode_cn)
         .await?;
-    writeln!(std_lock, "{:#?}", ck)?;
+    writeln!(std_lock, "{ck:#?}")?;
 
     Ok(())
 }

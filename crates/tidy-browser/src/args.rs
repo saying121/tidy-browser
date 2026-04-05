@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use clap::{
-    builder::{IntoResettable, OsStr, Resettable},
     ArgAction, ValueHint,
+    builder::{IntoResettable, OsStr, Resettable},
 };
 
 #[derive(Clone)]

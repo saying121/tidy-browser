@@ -3,8 +3,8 @@ use std::path::PathBuf;
 #[cfg(target_os = "macos")]
 use decrypt_cookies::safari::SafariError;
 use decrypt_cookies::{
-    chromium::{builder::ChromiumBuilderError, ChromiumError},
-    firefox::{builder::FirefoxBuilderError, FirefoxError},
+    chromium::{ChromiumError, builder::ChromiumBuilderError},
+    firefox::{FirefoxError, builder::FirefoxBuilderError},
 };
 use snafu::{Location, Snafu};
 

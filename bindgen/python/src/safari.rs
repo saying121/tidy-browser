@@ -5,8 +5,8 @@ use decrypt_cookies_rs::prelude::{
     SafariBuilder, SafariCookie as SafariCookieRs, SafariGetter as SafariGetterRs,
 };
 use pyo3::{
-    exceptions::PyValueError, prelude::PyAnyMethods as _, pyclass, pymethods, Bound, PyResult,
-    Python,
+    Bound, PyResult, Python, exceptions::PyValueError, prelude::PyAnyMethods as _, pyclass,
+    pymethods,
 };
 use pyo3_async_runtimes::tokio::future_into_py;
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};

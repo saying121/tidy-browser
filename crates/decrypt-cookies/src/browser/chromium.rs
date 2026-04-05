@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use super::CACHE_PATH;
 use crate::chromium::{
-    builder::{ChromiumBuilder, ChromiumBuilderError},
     GetCookies, GetCookiesLogins, GetLogins,
+    builder::{ChromiumBuilder, ChromiumBuilderError},
 };
 
 pub trait ChromiumPath {
@@ -208,8 +208,8 @@ chromium!("windows", Vivaldi , base: r"AppData\Local\Vivaldi\User Data"         
 chromium!("windows", Yandex  , base: r"AppData\Local\Yandex\YandexBrowser\User Data"       , login_data: r"Default\Ya Passman Data");
 
 /// get all builtin support getter
-pub async fn chromium_getter(
-) -> Vec<Result<Box<dyn GetCookiesLogins + Send + Sync>, ChromiumBuilderError>> {
+pub async fn chromium_getter()
+-> Vec<Result<Box<dyn GetCookiesLogins + Send + Sync>, ChromiumBuilderError>> {
     let mut result: Vec<Result<Box<dyn GetCookiesLogins + Send + Sync>, ChromiumBuilderError>>;
 
     macro_rules! loop_builders {
@@ -231,16 +231,20 @@ pub async fn chromium_getter(
     #[cfg(target_os = "linux")]
     loop_builders![Brave, Chrome, Chromium, Edge, Opera, Vivaldi, Yandex,];
     #[cfg(target_os = "macos")]
-    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+    loop_builders![
+        Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,
+    ];
     #[cfg(target_os = "windows")]
-    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+    loop_builders![
+        Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,
+    ];
 
     result
 }
 
 /// get all builtin support cookies getter
-pub async fn chromium_cookies_getter(
-) -> Vec<Result<Box<dyn GetCookies + Send + Sync>, ChromiumBuilderError>> {
+pub async fn chromium_cookies_getter()
+-> Vec<Result<Box<dyn GetCookies + Send + Sync>, ChromiumBuilderError>> {
     let mut result: Vec<Result<Box<dyn GetCookies + Send + Sync>, ChromiumBuilderError>>;
 
     macro_rules! loop_builders {
@@ -262,16 +266,20 @@ pub async fn chromium_cookies_getter(
     #[cfg(target_os = "linux")]
     loop_builders![Brave, Chrome, Chromium, Edge, Opera, Vivaldi, Yandex,];
     #[cfg(target_os = "macos")]
-    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+    loop_builders![
+        Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,
+    ];
     #[cfg(target_os = "windows")]
-    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+    loop_builders![
+        Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,
+    ];
 
     result
 }
 
 /// get all builtin support logins getter
-pub async fn chromium_logins_getter(
-) -> Vec<Result<Box<dyn GetLogins + Send + Sync>, ChromiumBuilderError>> {
+pub async fn chromium_logins_getter()
+-> Vec<Result<Box<dyn GetLogins + Send + Sync>, ChromiumBuilderError>> {
     let mut result: Vec<Result<Box<dyn GetLogins + Send + Sync>, ChromiumBuilderError>>;
 
     macro_rules! loop_builders {
@@ -293,9 +301,13 @@ pub async fn chromium_logins_getter(
     #[cfg(target_os = "linux")]
     loop_builders![Brave, Chrome, Chromium, Edge, Opera, Vivaldi, Yandex,];
     #[cfg(target_os = "macos")]
-    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+    loop_builders![
+        Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,
+    ];
     #[cfg(target_os = "windows")]
-    loop_builders![Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,];
+    loop_builders![
+        Arc, Brave, Chrome, Chromium, CocCoc, Edge, Opera, OperaGX, Vivaldi, Yandex,
+    ];
 
     result
 }

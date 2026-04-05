@@ -6,8 +6,8 @@ use super::cursor::CookieCursor;
 use crate::{
     cookie::Cookie,
     decode::{
-        cookies::{CookieFsm, CookiesOffset},
         DecodeResult, OffsetSize,
+        cookies::{CookieFsm, CookiesOffset},
     },
     error::{self, Result},
 };
@@ -72,7 +72,6 @@ impl<R: Read> CookieDecoder<R> {
             match fsm.process()? {
                 DecodeResult::Continue(fsm_) => {
                     fsm = fsm_;
-                    continue;
                 },
                 DecodeResult::Done((r, _)) => return Ok(r),
             }

@@ -4,7 +4,7 @@ use snafu::ResultExt;
 
 use crate::{
     cookie::{Checksum, Metadata},
-    decode::{meta::MetaFsm, DecodeResult},
+    decode::{DecodeResult, meta::MetaFsm},
     error::{self, Result},
 };
 
@@ -28,7 +28,6 @@ impl<R: Read> MetaDecoder<R> {
             match fsm.process()? {
                 DecodeResult::Continue(fsm_) => {
                     fsm = fsm_;
-                    continue;
                 },
                 DecodeResult::Done(done) => return Ok(done),
             }

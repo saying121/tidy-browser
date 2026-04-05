@@ -88,7 +88,7 @@ pub enum ExpectErr {
 
 impl std::fmt::Debug for ExpectErr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{}", self))
+        f.write_fmt(format_args!("{self}"))
     }
 }
 
@@ -97,8 +97,8 @@ impl Error for ExpectErr {}
 impl Display for ExpectErr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::U32(binary) => f.write_fmt(format_args!("got: {:#>06x}", binary)),
-            Self::U64(binary) => f.write_fmt(format_args!("got: {:#010x}", binary)),
+            Self::U32(binary) => f.write_fmt(format_args!("got: {binary:#>06x}")),
+            Self::U64(binary) => f.write_fmt(format_args!("got: {binary:#010x}")),
             Self::Magic(e) => {
                 let s: String = e
                     .iter()

@@ -1,9 +1,9 @@
 use decrypt_cookies::{
-    browser::{cookies::CookiesInfo, Edge},
+    browser::{Edge, cookies::CookiesInfo},
     chromium::GetCookies,
     prelude::*,
 };
-use reqwest::{cookie::CookieStore, Url};
+use reqwest::{Url, cookie::CookieStore};
 
 #[ignore]
 #[tokio::test]

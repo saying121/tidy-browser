@@ -7,7 +7,7 @@ use std::{
 };
 
 use chromium_crypto::Decrypter;
-use snafu::{ensure, Location, OptionExt, ResultExt, Snafu};
+use snafu::{Location, OptionExt, ResultExt, Snafu, ensure};
 use tokio::{fs, join};
 
 use super::{ChromiumCookieGetter, ChromiumGetter, ChromiumLoginGetter};

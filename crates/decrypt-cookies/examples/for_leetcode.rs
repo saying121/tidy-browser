@@ -20,7 +20,7 @@ async fn main() -> Result<(), Whatever> {
         .whatever_context("Chrome get session csrf failed")?;
 
     let mut lock = stdout.lock();
-    writeln!(lock, "{:#?}", ck).whatever_context("Write stdout failed")?;
+    writeln!(lock, "{ck:#?}").whatever_context("Write stdout failed")?;
 
     Ok(())
 }

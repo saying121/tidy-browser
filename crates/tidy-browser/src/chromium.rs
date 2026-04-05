@@ -1,7 +1,7 @@
 use std::{collections::HashSet, fmt::Display, fs::File, io::IoSlice, path::PathBuf};
 
 use decrypt_cookies::{
-    chromium::{builder::ChromiumBuilderError, GetCookies, GetLogins},
+    chromium::{GetCookies, GetLogins, builder::ChromiumBuilderError},
     prelude::*,
 };
 use snafu::ResultExt;

@@ -9,7 +9,7 @@ use decrypt_cookies_rs::{
     },
 };
 use pyo3::{
-    exceptions::PyValueError, prelude::PyAnyMethods, pyclass, pymethods, Bound, PyResult, Python,
+    Bound, PyResult, Python, exceptions::PyValueError, prelude::PyAnyMethods, pyclass, pymethods,
 };
 use pyo3_async_runtimes::tokio::future_into_py;
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
@@ -77,7 +77,7 @@ macro_rules! firefoxs {
 
                     /// Return all cookies
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
-                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'_, Vec<MozCookie>>> {
+                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<MozCookie>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -98,7 +98,7 @@ macro_rules! firefoxs {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'_, Vec<MozCookie>>> {
+                    ) -> PyResult<Bound<'a, Vec<MozCookie>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -171,7 +171,7 @@ macro_rules! firefoxs {
 
                     /// Return all cookies
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
-                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'_, Vec<MozCookie>>> {
+                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<MozCookie>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -192,7 +192,7 @@ macro_rules! firefoxs {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'_, Vec<MozCookie>>> {
+                    ) -> PyResult<Bound<'a, Vec<MozCookie>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_

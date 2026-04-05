@@ -1,12 +1,12 @@
 use std::{borrow::ToOwned, convert::Into, str};
 
-use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
+use aes::cipher::{BlockDecryptMut, KeyIvInit, block_padding};
 use pbkdf2::pbkdf2_hmac;
 use snafu::ResultExt;
 
 use crate::{
-    error::{self, Result, Utf8Snafu},
     Which,
+    error::{self, Result, Utf8Snafu},
 };
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_mac.mm;l=35

@@ -8,17 +8,17 @@ use std::{
 
 use chrono::Utc;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use sea_orm::{prelude::ColumnTrait, Condition, DbErr};
+use sea_orm::{Condition, DbErr, prelude::ColumnTrait};
 use snafu::{Location, ResultExt, Snafu};
 
 #[cfg(feature = "reqwest")]
 pub use self::items::cookie::jar_extend_firefox;
 pub use self::items::cookie::{
-    entities::moz_cookies::{Column as MozCookiesCol, ColumnIter as MozCookiesColIter},
     MozCookie,
+    entities::moz_cookies::{Column as MozCookiesCol, ColumnIter as MozCookiesColIter},
 };
-use self::items::{cookie::dao::CookiesQuery, I64ToMozTime};
-use crate::browser::{cookies::LeetCodeCookies, FirefoxPath};
+use self::items::{I64ToMozTime, cookie::dao::CookiesQuery};
+use crate::browser::{FirefoxPath, cookies::LeetCodeCookies};
 
 #[derive(Debug)]
 #[derive(Snafu)]

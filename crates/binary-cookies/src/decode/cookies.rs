@@ -2,8 +2,8 @@ use std::ops::Deref;
 
 use oval::Buffer;
 use winnow::{
-    stream::{Offset, Stream},
     Parser,
+    stream::{Offset, Stream},
 };
 
 use super::{DecodeResult, OffsetSize};

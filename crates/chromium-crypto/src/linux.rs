@@ -1,14 +1,14 @@
 use std::{str, sync::LazyLock};
 
-use aes::cipher::{block_padding, BlockDecryptMut, KeyIvInit};
+use aes::cipher::{BlockDecryptMut, KeyIvInit, block_padding};
 use pbkdf2::pbkdf2_hmac;
 use secret_service::{EncryptionType, SecretService};
 use snafu::ResultExt;
 use tinyufo::TinyUfo;
 
 use crate::{
-    error::{self, Result, Utf8Snafu},
     Which,
+    error::{self, Result, Utf8Snafu},
 };
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=32
@@ -16,7 +16,6 @@ use crate::{
 // const K_DERIVED_KEY_SIZE_IN_BITS: u32 = 128;
 type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 
-#[expect(clippy::empty_line_after_doc_comments, reason = "it not use")]
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;l=50
 /// The UMA metric name for whether the false was decryptable with an empty key.
 // const K_METRIC_DECRYPTED_WITH_EMPTY_KEY: &[u8] = b"OSCrypt.Linux.DecryptedWithEmptyKey";
@@ -91,17 +90,16 @@ impl Decrypter {
             else {
                 continue;
             };
-            // TODO: use 1.88 let_chains
-            if let Some(cache_it) = &predicate {
-                if cache_it(&label) || label == safe_storage {
-                    let Ok(s) = item.get_secret().await
-                    else {
-                        continue;
-                    };
+            if let Some(cache_it) = &predicate
+                && (cache_it(&label) || label == safe_storage)
+            {
+                let Ok(s) = item.get_secret().await
+                else {
+                    continue;
+                };
 
-                    let s = s.leak();
-                    CACHE_PASSWD.put(&label, s, 1);
-                }
+                let s = s.leak();
+                CACHE_PASSWD.put(&label, s, 1);
             }
             else if label == safe_storage {
                 let Ok(s) = item.get_secret().await

@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use sea_orm::{
-    sea_query::IntoCondition, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter,
+    ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, sea_query::IntoCondition,
 };
 
 use super::cookie_entities::{

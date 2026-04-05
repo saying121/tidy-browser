@@ -1,9 +1,9 @@
 use std::path::Path;
 
 use sea_orm::{
+    DbErr,
     prelude::{DatabaseConnection, EntityTrait, QueryFilter},
     sea_query::IntoCondition,
-    DbErr,
 };
 
 use super::login_data_entities::{logins, prelude::Logins};

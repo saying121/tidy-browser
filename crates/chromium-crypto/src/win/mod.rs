@@ -3,32 +3,32 @@ pub mod local_state;
 
 use std::{ffi::c_void, fmt::Display, path::Path, ptr, slice, str};
 
-use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit};
-use base64::{prelude::BASE64_STANDARD, Engine};
+use aes_gcm::{Aes256Gcm, KeyInit, aead::Aead};
+use base64::{Engine, prelude::BASE64_STANDARD};
 use chacha20poly1305::ChaCha20Poly1305;
 use local_state::LocalState;
 use snafu::ResultExt;
 use tokio::{fs, task::spawn_blocking};
 use windows::{
-    core::w,
     Win32::{
         Foundation::{self, HANDLE},
         Security::Cryptography::{
-            self, NCryptOpenKey, NCryptOpenStorageProvider, NCRYPT_KEY_HANDLE, NCRYPT_PROV_HANDLE,
+            self, NCRYPT_KEY_HANDLE, NCRYPT_PROV_HANDLE, NCryptOpenKey, NCryptOpenStorageProvider,
         },
     },
+    core::w,
 };
 use winnow::{
-    binary::{le_u32, le_u8},
+    Parser,
+    binary::{le_u8, le_u32},
     error::{ContextError, FromExternalError, StrContext},
     token::take,
-    Parser,
 };
 
 use crate::{
+    Which,
     error::{self, Result, Utf8Snafu},
     win::impersonate::ImpersonateGuard,
-    Which,
 };
 
 #[derive(Clone)]

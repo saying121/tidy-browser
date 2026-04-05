@@ -3,16 +3,16 @@ use std::num::NonZeroUsize;
 use bstr::{BString, ByteSlice as _};
 use chrono::{DateTime, TimeZone as _, Utc};
 use winnow::{
-    binary::{be_u32, be_u64, be_u8, le_f64, le_u16, le_u32},
+    ModalResult, Parser,
+    binary::{be_u8, be_u32, be_u64, le_f64, le_u16, le_u32},
     combinator::repeat,
     error::{ContextError, ErrMode, FromExternalError, Needed, StrContext, StrContextValue},
     token::take,
-    ModalResult, Parser,
 };
 
 use crate::{
     decode::{
-        binary_cookies::Offsets, cookies::CookiesOffsetInPage, F64ToSafariTime as _, StreamIn,
+        F64ToSafariTime as _, StreamIn, binary_cookies::Offsets, cookies::CookiesOffsetInPage,
     },
     error::{BadKeySnafu, ExpectErr, MagicSnafu, NotDictSnafu, OneByteIntSnafu},
 };

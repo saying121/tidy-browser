@@ -5,12 +5,12 @@ use snafu::ResultExt;
 
 use crate::{
     decode::{
+        DecodeResult,
         binary_cookies::BinaryCookieFsm,
         cookies::CookieFsm,
         meta::MetaFsm,
         pages::PageFsm,
         stream::{State, Values},
-        DecodeResult,
     },
     error::{self, Result},
 };
@@ -48,7 +48,6 @@ impl<R: Read> StreamDecoder<R> {
                 match fsm.process()? {
                     DecodeResult::Continue(fsm_) => {
                         fsm = fsm_;
-                        continue;
                     },
                     DecodeResult::Done((meta_offset, pages_offset, buffer)) => {
                         self.state = State::Page {
@@ -68,7 +67,6 @@ impl<R: Read> StreamDecoder<R> {
                 match fsm.process()? {
                     DecodeResult::Continue(fsm_) => {
                         fsm = fsm_;
-                        continue;
                     },
                     DecodeResult::Done((c, buffer)) => {
                         self.state = State::Cookie {
@@ -94,7 +92,6 @@ impl<R: Read> StreamDecoder<R> {
                 match fsm.process()? {
                     DecodeResult::Continue(fsm_) => {
                         fsm = fsm_;
-                        continue;
                     },
                     DecodeResult::Done((cookie, buffer)) => {
                         let remaining_cookie = remaining_cookie - 1;
@@ -128,7 +125,6 @@ impl<R: Read> StreamDecoder<R> {
                 match fsm.process()? {
                     DecodeResult::Continue(fsm_) => {
                         fsm = fsm_;
-                        continue;
                     },
                     DecodeResult::Done((checksum, meta)) => {
                         self.state = State::Finished;

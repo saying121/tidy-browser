@@ -6,7 +6,7 @@ use snafu::ResultExt;
 
 use super::{cursor::CookieCursor, meta::MetaDecoder};
 use crate::{
-    decode::{binary_cookies::BinaryCookieFsm, meta::MetaOffset, pages::PagesOffset, DecodeResult},
+    decode::{DecodeResult, binary_cookies::BinaryCookieFsm, meta::MetaOffset, pages::PagesOffset},
     error::Result,
     sync::page::PagesHandle,
 };
@@ -34,14 +34,13 @@ where
             match fsm.process()? {
                 DecodeResult::Continue(fsm_) => {
                     fsm = fsm_;
-                    continue;
                 },
                 DecodeResult::Done((meta_offset, pages_offset, _)) => {
                     return Ok(BinaryCookiesHandle {
                         file: self,
                         meta_offset,
                         pages_offset,
-                    })
+                    });
                 },
             }
         }

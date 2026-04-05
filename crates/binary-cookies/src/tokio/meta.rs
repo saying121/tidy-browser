@@ -3,7 +3,7 @@ use tokio::io::{AsyncRead, AsyncReadExt};
 
 use crate::{
     cookie::{Checksum, Metadata},
-    decode::{meta::MetaFsm, DecodeResult},
+    decode::{DecodeResult, meta::MetaFsm},
     error::{self, Result},
 };
 
@@ -28,7 +28,6 @@ impl<R: AsyncRead + Unpin + Send> MetaDecoder<R> {
             match fsm.process()? {
                 DecodeResult::Continue(fsm_) => {
                     fsm = fsm_;
-                    continue;
                 },
                 DecodeResult::Done(done) => return Ok(done),
             }

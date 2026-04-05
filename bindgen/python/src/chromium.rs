@@ -56,7 +56,7 @@ macro_rules! chromiums {
 
                     /// Return all cookies
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
-                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'_, Vec<ChromiumCookie>>> {
+                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<ChromiumCookie>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -77,7 +77,7 @@ macro_rules! chromiums {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'_, Vec<ChromiumCookie>>> {
+                    ) -> PyResult<Bound<'a, Vec<ChromiumCookie>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -94,7 +94,7 @@ macro_rules! chromiums {
 
                     /// Return all login data
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
-                    pub fn logins_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'_, Vec<LoginData>>> {
+                    pub fn logins_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<LoginData>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -115,7 +115,7 @@ macro_rules! chromiums {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'_, Vec<LoginData>>> {
+                    ) -> PyResult<Bound<'a, Vec<LoginData>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -167,7 +167,7 @@ macro_rules! chromiums {
 
                     /// Return all cookies
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
-                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'_, Vec<ChromiumCookie>>> {
+                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<ChromiumCookie>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -188,7 +188,7 @@ macro_rules! chromiums {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'_, Vec<ChromiumCookie>>> {
+                    ) -> PyResult<Bound<'a, Vec<ChromiumCookie>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -240,7 +240,7 @@ macro_rules! chromiums {
 
                     /// Return all login data
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
-                    pub fn logins_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'_, Vec<LoginData>>> {
+                    pub fn logins_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<LoginData>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -261,7 +261,7 @@ macro_rules! chromiums {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'_, Vec<LoginData>>> {
+                    ) -> PyResult<Bound<'a, Vec<LoginData>>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
