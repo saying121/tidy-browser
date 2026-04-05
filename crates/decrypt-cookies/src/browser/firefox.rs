@@ -60,8 +60,6 @@ pub trait FirefoxPath {
 
 /// Register a Firefox based browser info
 ///
-/// When linkme feature is enabled, the macro requires the `linkme` crate.
-///
 /// It accept
 /// - `platform`
 /// - `browser`: Generate a struct
@@ -94,13 +92,6 @@ macro_rules! firefox {
         $(, login_data: $login_data:literal)?
         $(, key = $key:literal)?
     ) => {
-        #[cfg(feature = "linkme")]
-        $crate::pastey::paste! {
-            #[cfg(target_os = $platform)]
-            #[linkme::distributed_slice($crate::browser::BROWSERS)]
-            static [<$browser:upper _NAME>]: &str = stringify!($browser);
-        }
-
         #[cfg(target_os = $platform)]
         #[derive(Clone, Copy)]
         #[derive(Debug)]

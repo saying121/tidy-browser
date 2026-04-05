@@ -22,7 +22,6 @@ panic = "abort"
 
 
 [workspace.dependencies]
-linkme = "0.3"
 napi = "3"
 napi-derive = "3"
 napi-build = "2"

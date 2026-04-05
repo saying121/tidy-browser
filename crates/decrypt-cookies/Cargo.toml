@@ -17,7 +17,6 @@ binary-cookies = { workspace = true, features = ["tokio"], optional = true }
 chromium-crypto = { workspace = true }
 chrono = { workspace = true }
 dirs = { workspace = true }
-linkme = { workspace = true, optional = true }
 pastey = { workspace = true }
 rayon = { workspace = true, optional = true }
 reqwest = { workspace = true, default-features = false, features = ["cookies"], optional = true }
@@ -46,7 +45,6 @@ chromium = ["anyhow", "rawcopy-rs-next", "rayon", "sea-orm"]
 default = ["chromium", "firefox", "reqwest", "serde", "tracing"]
 ffi = []  # Use for bindgen
 firefox = ["rayon", "rust-ini", "sea-orm"]
-linkme = ["dep:linkme"]  # Generate a browser name array
 reqwest = ["dep:reqwest"]
 serde = ["chrono/serde", "dep:serde"]
 tracing = ["chromium-crypto/tracing", "dep:tracing"]
