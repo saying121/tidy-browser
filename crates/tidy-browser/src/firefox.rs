@@ -54,12 +54,19 @@ impl FirefoxBased {
                         source: FirefoxBuilderError::NotFoundBase { path, .. },
                         ..
                     } => {
+                        #[cfg(not(target_os = "windows"))]
                         tracing::info!(
                             r#"Not found {},
 The browser is not installed or started with `-P`/`-profile` arg."#,
                             path.display()
                         );
-                        todo!()
+                        #[cfg(target_os = "windows")]
+                        tracing::info!(
+                            r#"Not found {},
+The browser is not installed or started with `-P`/`-profile` arg.
+When you use scoop on Windows, the data path is located at `~\scoop\persisst\<name>\<xxx>`"#,
+                            path.display()
+                        );
                     },
                     e => tracing::error!("{e}"),
                 }
