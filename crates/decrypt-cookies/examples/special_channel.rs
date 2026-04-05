@@ -48,7 +48,11 @@ async fn main() -> Result<(), snafu::Whatever> {
     dbg!(&all_cookies.first());
 
     let filtered_cookies = firefox
-        .cookies_filter(MozCookiesCol::Host.contains("google.com").into_condition())
+        .cookies_filter(
+            MozCookiesCol::Host
+                .contains("google.com")
+                .into_condition(),
+        )
         .await
         .whatever_context("Firefox filter cookies failed")?;
 

@@ -8,6 +8,8 @@ use std::{
 use chromium_crypto::{Decrypter, Which};
 use chrono::prelude::Utc;
 use items::cookie::cookie_entities::cookies;
+#[cfg(feature = "reqwest")]
+pub use items::cookie::jar_extend_chromium;
 pub use items::{
     cookie::{
         cookie_entities::cookies::{

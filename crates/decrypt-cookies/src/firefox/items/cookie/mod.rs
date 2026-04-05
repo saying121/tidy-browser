@@ -31,6 +31,20 @@ pub struct MozCookie {
     // pub raw_same_site: i32,
     pub scheme_map: i32,
 }
+
+#[cfg(feature = "reqwest")]
+pub fn jar_extend_firefox<'a, I>(jar: &reqwest::cookie::Jar, cks: I)
+where
+    I: IntoIterator<Item = &'a MozCookie>,
+{
+    for cookie in cks {
+        let set_cookie = cookie.set_cookie_header();
+        if let Ok(url) = reqwest::Url::parse(&cookie.url()) {
+            jar.add_cookie_str(&set_cookie, &url);
+        }
+    }
+}
+
 #[cfg(feature = "reqwest")]
 impl TryFrom<MozCookie> for reqwest::header::HeaderValue {
     type Error = reqwest::header::InvalidHeaderValue;
@@ -40,15 +54,10 @@ impl TryFrom<MozCookie> for reqwest::header::HeaderValue {
     }
 }
 #[cfg(feature = "reqwest")]
-impl FromIterator<MozCookie> for reqwest::cookie::Jar {
-    fn from_iter<T: IntoIterator<Item = MozCookie>>(iter: T) -> Self {
+impl<'a> FromIterator<&'a MozCookie> for reqwest::cookie::Jar {
+    fn from_iter<T: IntoIterator<Item = &'a MozCookie>>(iter: T) -> Self {
         let jar = Self::default();
-        for cookie in iter {
-            let set_cookie = cookie.set_cookie_header();
-            if let Ok(url) = reqwest::Url::parse(&cookie.url()) {
-                jar.add_cookie_str(&set_cookie, &url);
-            }
-        }
+        jar_extend_firefox(&jar, iter);
         jar
     }
 }

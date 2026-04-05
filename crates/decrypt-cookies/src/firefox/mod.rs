@@ -11,6 +11,8 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use sea_orm::{prelude::ColumnTrait, Condition, DbErr};
 use snafu::{Location, ResultExt, Snafu};
 
+#[cfg(feature = "reqwest")]
+pub use self::items::cookie::jar_extend_firefox;
 pub use self::items::cookie::{
     entities::moz_cookies::{Column as MozCookiesCol, ColumnIter as MozCookiesColIter},
     MozCookie,
