@@ -27,9 +27,9 @@ napi-derive = "3"
 napi-build = "2"
 
 pastey = "0.2"
-pyo3 = "0.26"
-pyo3-async-runtimes = "0.26"
-pyo3-stub-gen = "0.13"
+pyo3 = "0.28"
+pyo3-async-runtimes = "0.28"
+pyo3-stub-gen = "0.21"
 
 snafu = "0.9"
 owo-colors = "4.2"

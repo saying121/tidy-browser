@@ -10,7 +10,7 @@ use decrypt_cookies_rs::{
         ChromiumLoginGetter as ChromiumLoginGetterRs, *,
     },
 };
-use pyo3::{exceptions::PyValueError, prelude::*};
+use pyo3::{exceptions::PyValueError, prelude::*, types::PyList};
 use pyo3_async_runtimes::tokio::future_into_py;
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
@@ -21,7 +21,7 @@ macro_rules! chromiums {
         pastey::paste! {
             $(
                 #[gen_stub_pyclass]
-                #[pyclass(frozen, str)]
+                #[pyclass(frozen, str, from_py_object)]
                 #[derive(Clone)]
                 #[derive(Debug)]
                 #[derive(Default)]
@@ -51,12 +51,12 @@ macro_rules! chromiums {
                                 .map(Self)
                                 .map_err(|e| PyValueError::new_err(e.to_string()))
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Return all cookies
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
-                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<ChromiumCookie>>> {
+                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -68,7 +68,7 @@ macro_rules! chromiums {
                             let all = unsafe { mem::transmute::<Vec<ChromiumCookieRs>, Vec<ChromiumCookie>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Filter by host
@@ -77,7 +77,7 @@ macro_rules! chromiums {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'a, Vec<ChromiumCookie>>> {
+                    ) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -89,12 +89,12 @@ macro_rules! chromiums {
                             let all = unsafe { mem::transmute::<Vec<ChromiumCookieRs>, Vec<ChromiumCookie>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Return all login data
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
-                    pub fn logins_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<LoginData>>> {
+                    pub fn logins_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -106,7 +106,7 @@ macro_rules! chromiums {
                             let all = unsafe { mem::transmute::<Vec<LoginDataRs>, Vec<LoginData>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Filter by host
@@ -115,7 +115,7 @@ macro_rules! chromiums {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'a, Vec<LoginData>>> {
+                    ) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -127,12 +127,12 @@ macro_rules! chromiums {
                             let all = unsafe { mem::transmute::<Vec<LoginDataRs>, Vec<LoginData>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
                 }
 
                 #[gen_stub_pyclass]
-                #[pyclass(frozen, str)]
+                #[pyclass(frozen, str, from_py_object)]
                 #[derive(Clone)]
                 #[derive(Debug)]
                 #[derive(Default)]
@@ -162,12 +162,12 @@ macro_rules! chromiums {
                                 .map(Self)
                                 .map_err(|e| PyValueError::new_err(e.to_string()))
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Return all cookies
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
-                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<ChromiumCookie>>> {
+                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -179,7 +179,7 @@ macro_rules! chromiums {
                             let all = unsafe { mem::transmute::<Vec<ChromiumCookieRs>, Vec<ChromiumCookie>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Filter by host
@@ -188,7 +188,7 @@ macro_rules! chromiums {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'a, Vec<ChromiumCookie>>> {
+                    ) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -200,12 +200,12 @@ macro_rules! chromiums {
                             let all = unsafe { mem::transmute::<Vec<ChromiumCookieRs>, Vec<ChromiumCookie>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
                 }
 
                 #[gen_stub_pyclass]
-                #[pyclass(frozen, str)]
+                #[pyclass(frozen, str, from_py_object)]
                 #[derive(Clone)]
                 #[derive(Debug)]
                 #[derive(Default)]
@@ -235,12 +235,12 @@ macro_rules! chromiums {
                                 .map(Self)
                                 .map_err(|e| PyValueError::new_err(e.to_string()))
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Return all login data
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
-                    pub fn logins_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<LoginData>>> {
+                    pub fn logins_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -252,7 +252,7 @@ macro_rules! chromiums {
                             let all = unsafe { mem::transmute::<Vec<LoginDataRs>, Vec<LoginData>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Filter by host
@@ -261,7 +261,7 @@ macro_rules! chromiums {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'a, Vec<LoginData>>> {
+                    ) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -273,7 +273,7 @@ macro_rules! chromiums {
                             let all = unsafe { mem::transmute::<Vec<LoginDataRs>, Vec<LoginData>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
                 }
             )*
@@ -286,7 +286,7 @@ chromiums![Chrome, Edge, Chromium, Brave, Vivaldi, Yandex, Opera];
 chromiums![Arc, OperaGX, CocCoc];
 
 #[gen_stub_pyclass]
-#[pyclass(get_all, set_all, eq, ord)]
+#[pyclass(get_all, set_all, eq, ord, from_py_object)]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
@@ -314,7 +314,7 @@ pub struct ChromiumCookie {
 }
 
 #[gen_stub_pyclass]
-#[pyclass(get_all, set_all, eq, ord)]
+#[pyclass(get_all, set_all, eq, ord, from_py_object)]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]

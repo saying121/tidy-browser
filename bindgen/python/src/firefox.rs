@@ -8,9 +8,7 @@ use decrypt_cookies_rs::{
         FirefoxGetter as FirefoxGetterRs, *,
     },
 };
-use pyo3::{
-    Bound, PyResult, Python, exceptions::PyValueError, prelude::PyAnyMethods, pyclass, pymethods,
-};
+use pyo3::{Bound, PyResult, Python, exceptions::PyValueError, pyclass, pymethods, types::PyList};
 use pyo3_async_runtimes::tokio::future_into_py;
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
@@ -21,7 +19,7 @@ macro_rules! firefoxs {
         pastey::paste! {
             $(
                 #[gen_stub_pyclass]
-                #[pyclass(frozen, str)]
+                #[pyclass(frozen, str, from_py_object)]
                 #[derive(Clone)]
                 #[derive(Debug)]
                 #[derive(Default)]
@@ -72,12 +70,12 @@ macro_rules! firefoxs {
                                 .map(Self)
                                 .map_err(|e| PyValueError::new_err(e.to_string()))
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Return all cookies
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
-                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<MozCookie>>> {
+                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -89,7 +87,7 @@ macro_rules! firefoxs {
                             let all = unsafe { mem::transmute::<Vec<MozCookieRs>, Vec<MozCookie>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Filter by host
@@ -98,7 +96,7 @@ macro_rules! firefoxs {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'a, Vec<MozCookie>>> {
+                    ) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -110,12 +108,12 @@ macro_rules! firefoxs {
                             let all = unsafe { mem::transmute::<Vec<MozCookieRs>, Vec<MozCookie>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
                 }
 
                 #[gen_stub_pyclass]
-                #[pyclass(frozen, str)]
+                #[pyclass(frozen, str, from_py_object)]
                 #[derive(Clone)]
                 #[derive(Debug)]
                 #[derive(Default)]
@@ -166,12 +164,12 @@ macro_rules! firefoxs {
                                 .map(Self)
                                 .map_err(|e| PyValueError::new_err(e.to_string()))
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Return all cookies
                     #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
-                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, Vec<MozCookie>>> {
+                    pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -183,7 +181,7 @@ macro_rules! firefoxs {
                             let all = unsafe { mem::transmute::<Vec<MozCookieRs>, Vec<MozCookie>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
 
                     /// Filter by host
@@ -192,7 +190,7 @@ macro_rules! firefoxs {
                         &'a self,
                         py: Python<'a>,
                         host: String,
-                    ) -> PyResult<Bound<'a, Vec<MozCookie>>> {
+                    ) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
                             let all = self_
@@ -204,7 +202,7 @@ macro_rules! firefoxs {
                             let all = unsafe { mem::transmute::<Vec<MozCookieRs>, Vec<MozCookie>>(all) };
                             Ok(all)
                         })
-                        .map(|v| unsafe { v.downcast_into_unchecked() })
+                        .map(|v| unsafe { v.cast_into_unchecked() })
                     }
                 }
             )*
@@ -215,7 +213,7 @@ macro_rules! firefoxs {
 firefoxs![Firefox, Librewolf, Floorp, Zen];
 
 #[gen_stub_pyclass]
-#[pyclass(get_all, set_all, eq, ord)]
+#[pyclass(get_all, set_all, eq, ord, from_py_object)]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
