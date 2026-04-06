@@ -4,17 +4,14 @@ use chrono::{DateTime, Utc};
 use decrypt_cookies_rs::prelude::{
     SafariBuilder, SafariCookie as SafariCookieRs, SafariGetter as SafariGetterRs,
 };
-use pyo3::{
-    Bound, PyResult, Python, exceptions::PyValueError, prelude::PyAnyMethods as _, pyclass,
-    pymethods,
-};
+use pyo3::{Bound, PyResult, Python, exceptions::PyValueError, pyclass, pymethods};
 use pyo3_async_runtimes::tokio::future_into_py;
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 use crate::SameSite;
 
 #[gen_stub_pyclass]
-#[pyclass(frozen, str)]
+#[pyclass(frozen, str, from_py_object)]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(Default)]
@@ -43,7 +40,7 @@ impl SafariGetter {
                 .map(Self)
                 .map_err(|e| PyValueError::new_err(e.to_string()))
         })
-        .map(|v| unsafe { v.downcast_into_unchecked() })
+        .map(|v| unsafe { v.cast_into_unchecked() })
     }
 
     pub fn cookies_all(&self) -> Vec<SafariCookie> {
@@ -68,7 +65,7 @@ impl SafariGetter {
 }
 
 #[gen_stub_pyclass]
-#[pyclass(get_all, set_all, eq, ord)]
+#[pyclass(get_all, set_all, eq, ord, from_py_object)]
 #[derive(Clone)]
 #[derive(Debug)]
 #[derive(PartialEq, Eq, PartialOrd, Ord)]

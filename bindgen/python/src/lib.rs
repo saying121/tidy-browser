@@ -13,7 +13,7 @@ mod firefox;
 mod safari;
 
 #[gen_stub_pyclass_enum]
-#[pyclass(eq, eq_int, ord)]
+#[pyclass(eq, eq_int, ord, from_py_object)]
 #[derive(Clone, Copy)]
 #[derive(Debug)]
 #[derive(Default)]
