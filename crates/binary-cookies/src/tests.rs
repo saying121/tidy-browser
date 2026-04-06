@@ -1,6 +1,6 @@
 use bstr::BString;
 use chrono::{Days, TimeZone as _, Utc};
-use rand::{random, random_range, Rng, SeedableRng};
+use rand::{random, random_range, RngExt, SeedableRng};
 
 use crate::{
     cookie::{BinaryCookies, Cookie, Metadata, Page},
@@ -98,7 +98,7 @@ impl Cookie {
 }
 
 fn rand_vec() -> Vec<u8> {
-    let rng = rand::rngs::StdRng::from_os_rng();
+    let rng = rand::rngs::StdRng::seed_from_u64(1);
     let size = random_range(30..40);
     rng.random_iter()
         .take(size)
