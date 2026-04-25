@@ -163,21 +163,21 @@ impl CookiesGetter {
                 && (v.name().eq("csrftoken") || v.name().eq("LEETCODE_SESSION"))
         }) {
             if ck.name() == "csrftoken" {
-                if let Some(expires) = ck.expires {
-                    if Utc::now() > expires {
-                        lc_cookies.expiry = true;
-                        break;
-                    }
+                if let Some(expires) = ck.expires
+                    && Utc::now() > expires
+                {
+                    lc_cookies.expiry = true;
+                    break;
                 }
                 ck.value()
                     .clone_into(&mut lc_cookies.csrf);
             }
             else if ck.name() == "LEETCODE_SESSION" {
-                if let Some(expires) = ck.expires {
-                    if Utc::now() > expires {
-                        lc_cookies.expiry = true;
-                        break;
-                    }
+                if let Some(expires) = ck.expires
+                    && Utc::now() > expires
+                {
+                    lc_cookies.expiry = true;
+                    break;
                 }
                 ck.value()
                     .clone_into(&mut lc_cookies.session);

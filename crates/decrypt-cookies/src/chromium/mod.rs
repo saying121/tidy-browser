@@ -278,13 +278,13 @@ pub trait GetLogins: SealedCrypto + SealedLogins + Display {
             .query_login_dt_filter(filter.clone())
             .await
             .context(DbSnafu)?;
-        if raw_login.is_empty() {
-            if let Some(query) = &self.login_data_for_account_query() {
-                raw_login = query
-                    .query_login_dt_filter(filter)
-                    .await
-                    .context(DbSnafu)?;
-            }
+        if raw_login.is_empty()
+            && let Some(query) = &self.login_data_for_account_query()
+        {
+            raw_login = query
+                .query_login_dt_filter(filter)
+                .await
+                .context(DbSnafu)?;
         }
         self.par_decrypt_logins(raw_login)
             .await
@@ -301,13 +301,13 @@ pub trait GetLogins: SealedCrypto + SealedLogins + Display {
             .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host))
             .await
             .context(DbSnafu)?;
-        if raw_login.is_empty() {
-            if let Some(query) = &self.login_data_for_account_query() {
-                raw_login = query
-                    .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host))
-                    .await
-                    .context(DbSnafu)?;
-            }
+        if raw_login.is_empty()
+            && let Some(query) = &self.login_data_for_account_query()
+        {
+            raw_login = query
+                .query_login_dt_filter(ChromiumLoginCol::OriginUrl.contains(host))
+                .await
+                .context(DbSnafu)?;
         }
         self.par_decrypt_logins(raw_login)
             .await
@@ -323,13 +323,13 @@ pub trait GetLogins: SealedCrypto + SealedLogins + Display {
             .query_all_login_dt()
             .await
             .context(DbSnafu)?;
-        if raw_login.is_empty() {
-            if let Some(query) = &self.login_data_for_account_query() {
-                raw_login = query
-                    .query_all_login_dt()
-                    .await
-                    .context(DbSnafu)?;
-            }
+        if raw_login.is_empty()
+            && let Some(query) = &self.login_data_for_account_query()
+        {
+            raw_login = query
+                .query_all_login_dt()
+                .await
+                .context(DbSnafu)?;
         }
         self.par_decrypt_logins(raw_login)
             .await
@@ -438,11 +438,11 @@ pub trait GetCookies: SealedCrypto + SealedCookies + Display {
                 let expir = cookie
                     .expires_utc
                     .micros_to_chromium_utc();
-                if let Some(expir) = expir {
-                    if Utc::now() > expir {
-                        csrf_token.expiry = true;
-                        break;
-                    }
+                if let Some(expir) = expir
+                    && Utc::now() > expir
+                {
+                    csrf_token.expiry = true;
+                    break;
                 }
 
                 let csrf_hd = task::spawn_blocking(move || {
@@ -459,11 +459,11 @@ pub trait GetCookies: SealedCrypto + SealedCookies + Display {
                 let expir = cookie
                     .expires_utc
                     .micros_to_chromium_utc();
-                if let Some(expir) = expir {
-                    if Utc::now() > expir {
-                        csrf_token.expiry = true;
-                        break;
-                    }
+                if let Some(expir) = expir
+                    && Utc::now() > expir
+                {
+                    csrf_token.expiry = true;
+                    break;
                 }
 
                 let session_hd = task::spawn_blocking(move || {

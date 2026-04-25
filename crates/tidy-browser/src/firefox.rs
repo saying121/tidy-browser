@@ -59,7 +59,6 @@ impl FirefoxBased {
 The browser is not installed or started with `-P`/`-profile` arg."#,
                             path.display()
                         );
-                        todo!()
                     },
                     e => tracing::error!("{e}"),
                 }

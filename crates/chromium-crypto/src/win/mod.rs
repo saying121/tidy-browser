@@ -154,17 +154,21 @@ impl Decrypter {
             .decrypt(nonce.into(), raw_ciphertext)
             .context(error::AesGcmSnafu)
             .map(|res| match which {
-                Which::Cookie => {
-                    if res.len() > 32 {
-                        str::from_utf8(&res[32..])
+                Which::Cookie => res.get(32..).map_or_else(
+                    || {
+                        std::hint::cold_path();
+                        String::from_utf8(res).map_err(|e| e.utf8_error())
+                    },
+                    |slice| {
+                        str::from_utf8(slice)
                             .map(ToOwned::to_owned)
-                            .or_else(|_| crate::from_utf8_cold(res))
-                    }
-                    else {
-                        crate::from_utf8_cold(res)
-                    }
-                },
-                Which::Login => crate::spec_from_utf8(res),
+                            .or_else(|_| {
+                                std::hint::cold_path();
+                                String::from_utf8(res).map_err(|e| e.utf8_error())
+                            })
+                    },
+                ),
+                Which::Login => String::from_utf8(arg).map_err(|e| e.utf8_error()),
             })?
             .context(Utf8Snafu)
     }

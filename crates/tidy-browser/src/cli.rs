@@ -97,7 +97,7 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
                     name,
                     user_data_dir,
                     args.host,
-                    HashSet::from_iter(values.into_iter()),
+                    HashSet::from_iter(values),
                     output_dir,
                     args.sep,
                     args.out_format,
@@ -117,7 +117,7 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
                     profile,
                     profile_path,
                     args.host,
-                    HashSet::from_iter(values.into_iter()),
+                    HashSet::from_iter(values),
                     output_dir,
                     args.sep,
                     args.out_format,
@@ -141,7 +141,7 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
             #[cfg(target_os = "macos")]
             args::SubCmd::Safari(SafariArgs { values, cookies_path }) => {
                 SafariBased::write_data(
-                    HashSet::from_iter(values.into_iter()),
+                    HashSet::from_iter(values),
                     cookies_path,
                     args.host,
                     args.sep,

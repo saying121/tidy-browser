@@ -52,7 +52,7 @@ impl ChromiumBased {
             {
                 match e {
                     error::Error::ChromiumBuilder { source, .. }
-                        if matches!(*source, ChromiumBuilderError::NotFoundBase { .. }) =>
+                        if let ChromiumBuilderError::NotFoundBase { .. } = source.as_ref() =>
                     {
                         #[cfg(not(target_os = "windows"))]
                         tracing::info!(r#"{source}"#,);

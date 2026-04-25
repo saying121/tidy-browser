@@ -31,7 +31,7 @@ pub(crate) fn write_all_vectored(
                 ));
             },
             Ok(n) => IoSlice::advance_slices(&mut bufs, n),
-            Err(ref e) if matches!(e.kind(), ErrorKind::Interrupted) => {},
+            Err(ref e) if let ErrorKind::Interrupted = e.kind() => {},
             Err(e) => return Err(e),
         }
     }

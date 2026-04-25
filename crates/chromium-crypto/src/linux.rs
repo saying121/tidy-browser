@@ -140,14 +140,18 @@ impl Decrypter {
             .context(error::UnpaddingSnafu)
             .map(|res| {
                 match which {
-                    Which::Cookie => {
-                        if res.len() > 32 {
-                            str::from_utf8(&res[32..]).or_else(|_| crate::from_utf8_cold(res))
-                        }
-                        else {
-                            crate::from_utf8_cold(res)
-                        }
-                    },
+                    Which::Cookie => res.get(32..).map_or_else(
+                        || {
+                            std::hint::cold_path();
+                            str::from_utf8(res)
+                        },
+                        |slice| {
+                            str::from_utf8(slice).or_else(|_| {
+                                std::hint::cold_path();
+                                str::from_utf8(res)
+                            })
+                        },
+                    ),
                     Which::Login => str::from_utf8(res),
                 }
                 .map(ToOwned::to_owned) // Lazily alloc memory

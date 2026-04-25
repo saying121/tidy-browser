@@ -452,7 +452,6 @@ dependencies = [
  "base64",
  "block-padding",
  "cbc",
- "cfg-if",
  "chacha20poly1305",
  "keyring",
  "pbkdf2",

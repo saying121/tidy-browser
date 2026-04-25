@@ -13,7 +13,6 @@ categories.workspace = true
 include = ["Cargo.toml", "README.md", "src"]
 
 [dependencies]
-cfg-if = { workspace = true }
 snafu = { workspace = true }
 tokio = { workspace = true, features = ["fs", "rt"] }
 tracing = { workspace = true, optional = true }

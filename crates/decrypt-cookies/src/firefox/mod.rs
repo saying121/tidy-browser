@@ -180,11 +180,11 @@ pub trait GetCookies: SealedCookies + Display {
                         .expiry
                         .unwrap_or_default()
                         .secs_to_moz_utc();
-                    if let Some(expir) = expir {
-                        if Utc::now() > expir {
-                            res.expiry = true;
-                            break;
-                        }
+                    if let Some(expir) = expir
+                        && Utc::now() > expir
+                    {
+                        res.expiry = true;
+                        break;
                     }
 
                     res.csrf = cookie.value.unwrap_or_default();
@@ -194,11 +194,11 @@ pub trait GetCookies: SealedCookies + Display {
                         .expiry
                         .unwrap_or_default()
                         .secs_to_moz_utc();
-                    if let Some(expir) = expir {
-                        if Utc::now() > expir {
-                            res.expiry = true;
-                            break;
-                        }
+                    if let Some(expir) = expir
+                        && Utc::now() > expir
+                    {
+                        res.expiry = true;
+                        break;
                     }
 
                     res.session = cookie.value.unwrap_or_default();
