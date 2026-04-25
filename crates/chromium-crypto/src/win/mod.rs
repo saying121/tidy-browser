@@ -168,7 +168,7 @@ impl Decrypter {
                             })
                     },
                 ),
-                Which::Login => String::from_utf8(arg).map_err(|e| e.utf8_error()),
+                Which::Login => String::from_utf8(res).map_err(|e| e.utf8_error()),
             })?
             .context(Utf8Snafu)
     }
