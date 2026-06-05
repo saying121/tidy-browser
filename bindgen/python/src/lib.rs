@@ -1,7 +1,7 @@
 use decrypt_cookies_rs::browser::cookies::SameSite as SameSiteRs;
 use pyo3::prelude::*;
-// use pyo3_stub_gen::{define_stub_info_gatherer, derive::gen_stub_pyclass_enum};
 
+// use pyo3_stub_gen::{define_stub_info_gatherer, derive::gen_stub_pyclass_enum};
 use self::{
     chromium::*,
     firefox::*,
