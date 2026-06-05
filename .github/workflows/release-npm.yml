@@ -95,9 +95,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           tool: cargo-zigbuild
-      - name: Setup toolchain
-        run: ${{ matrix.settings.setup }}
-        if: ${{ matrix.settings.setup }}
+      - name: Install Rust target
+        run: rustup target add ${{ matrix.settings.target }}
         shell: bash
       - name: Install dependencies
         run: yarn install
