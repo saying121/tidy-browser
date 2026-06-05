@@ -159,23 +159,21 @@ impl ImpersonateGuard {
     fn get_system_pid_list() -> Result<impl Iterator<Item = u32>> {
         let cap = 1024;
         let mut lpidprocess = Vec::with_capacity(cap);
-        let lpcbneeded = 0;
+        let mut lpcbneeded = 0u32;
+        let buffer_size = cap as u32 * 4;
 
         unsafe {
-            let mut var_name = cap as u32 * 4;
-            EnumProcesses(lpidprocess.as_mut_ptr(), lpcbneeded, &raw mut var_name)
+            EnumProcesses(lpidprocess.as_mut_ptr(), buffer_size, &raw mut lpcbneeded)
                 .context(error::CryptUnprotectDataSnafu)?;
             let c_processes = lpcbneeded as usize / size_of::<u32>();
             lpidprocess.set_len(c_processes);
         };
 
-        let filter = lpidprocess
-            .into_iter()
-            .filter(|&v| {
-                v != 0
-                    && Self::process_name_is(v, |n| n == "lsass.exe" || n == "winlogon.exe")
-                        .unwrap_or(false)
-            });
+        let filter = lpidprocess.into_iter().filter(|&v| {
+            v != 0
+                && Self::process_name_is(v, |n| n == "lsass.exe" || n == "winlogon.exe")
+                    .unwrap_or(false)
+        });
         Ok(filter)
     }
 
