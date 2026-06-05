@@ -263,4 +263,4 @@ jobs:
           npm publish --no-git-tag-version --no-sign-git-tag --access public
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
