@@ -10,8 +10,8 @@ use decrypt_cookies_rs::{
 };
 use pyo3::{Bound, PyResult, Python, exceptions::PyValueError, pyclass, pymethods, types::PyList};
 use pyo3_async_runtimes::tokio::future_into_py;
-// use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
+// use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 use crate::SameSite;
 
 macro_rules! firefoxs {

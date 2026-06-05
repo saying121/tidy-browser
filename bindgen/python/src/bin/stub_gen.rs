@@ -1,6 +1,4 @@
-use std::fs;
-
-use snafu::{OptionExt, ResultExt, Whatever};
+use snafu::Whatever;
 
 /// At python project root run: `cargo r && maturin develop`
 #[snafu::report]
