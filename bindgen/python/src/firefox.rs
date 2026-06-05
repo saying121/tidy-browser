@@ -10,7 +10,7 @@ use decrypt_cookies_rs::{
 };
 use pyo3::{Bound, PyResult, Python, exceptions::PyValueError, pyclass, pymethods, types::PyList};
 use pyo3_async_runtimes::tokio::future_into_py;
-use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
+// use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 use crate::SameSite;
 
@@ -18,7 +18,7 @@ macro_rules! firefoxs {
     ($($browser:ident),* $(,)?) => {
         pastey::paste! {
             $(
-                #[gen_stub_pyclass]
+                // #[gen_stub_pyclass]
                 #[pyclass(frozen, str, from_py_object)]
                 #[derive(Clone)]
                 #[derive(Debug)]
@@ -31,7 +31,7 @@ macro_rules! firefoxs {
                     }
                 }
 
-                #[gen_stub_pymethods]
+                // #[gen_stub_pymethods]
                 #[pymethods]
                 impl [<$browser Getter>] {
                     /// `base`: When Firefox data path changed
@@ -41,7 +41,7 @@ macro_rules! firefoxs {
                     /// When set `profile_path` ignore other parameters like `base`, `profile`.
                     #[new]
                     #[pyo3(signature = (base=None, profile=None, profile_path=None))]
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[FirefoxGetter]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[FirefoxGetter]", imports=("typing")))]
                     pub fn new(
                         py: Python<'_>,
                         base: Option<PathBuf>,
@@ -74,7 +74,7 @@ macro_rules! firefoxs {
                     }
 
                     /// Return all cookies
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
                     pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
@@ -91,7 +91,7 @@ macro_rules! firefoxs {
                     }
 
                     /// Filter by host
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
                     pub fn cookies_by_host<'a>(
                         &'a self,
                         py: Python<'a>,
@@ -112,7 +112,7 @@ macro_rules! firefoxs {
                     }
                 }
 
-                #[gen_stub_pyclass]
+                // #[gen_stub_pyclass]
                 #[pyclass(frozen, str, from_py_object)]
                 #[derive(Clone)]
                 #[derive(Debug)]
@@ -125,7 +125,7 @@ macro_rules! firefoxs {
                     }
                 }
 
-                #[gen_stub_pymethods]
+                // #[gen_stub_pymethods]
                 #[pymethods]
                 impl [<$browser CookieGetter>] {
                     /// `base`: When Firefox data path changed
@@ -135,7 +135,7 @@ macro_rules! firefoxs {
                     /// When set `profile_path` ignore other parameters like `base`, `profile`.
                     #[new]
                     #[pyo3(signature = (base=None, profile=None, profile_path=None))]
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[FirefoxCookieGetter]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[FirefoxCookieGetter]", imports=("typing")))]
                     pub fn new(
                         py: Python<'_>,
                         base: Option<PathBuf>,
@@ -168,7 +168,7 @@ macro_rules! firefoxs {
                     }
 
                     /// Return all cookies
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
                     pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
@@ -185,7 +185,7 @@ macro_rules! firefoxs {
                     }
 
                     /// Filter by host
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[MozCookie]]", imports=("typing")))]
                     pub fn cookies_by_host<'a>(
                         &'a self,
                         py: Python<'a>,
@@ -212,7 +212,7 @@ macro_rules! firefoxs {
 
 firefoxs![Firefox, Librewolf, Floorp, Zen];
 
-#[gen_stub_pyclass]
+// #[gen_stub_pyclass]
 #[pyclass(get_all, set_all, eq, ord, from_py_object)]
 #[derive(Clone)]
 #[derive(Debug)]

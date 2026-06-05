@@ -6,11 +6,11 @@ use decrypt_cookies_rs::prelude::{
 };
 use pyo3::{Bound, PyResult, Python, exceptions::PyValueError, pyclass, pymethods};
 use pyo3_async_runtimes::tokio::future_into_py;
-use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
+// use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 use crate::SameSite;
 
-#[gen_stub_pyclass]
+// #[gen_stub_pyclass]
 #[pyclass(frozen, str, from_py_object)]
 #[derive(Clone)]
 #[derive(Debug)]
@@ -23,12 +23,12 @@ impl Display for SafariGetter {
     }
 }
 
-#[gen_stub_pymethods]
+// #[gen_stub_pymethods]
 #[pymethods]
 impl SafariGetter {
     #[new]
     #[pyo3(signature = (cookies_path=None))]
-    #[gen_stub(override_return_type(type_repr="typing.Awaitable[SafariGetter]", imports=("typing")))]
+    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[SafariGetter]", imports=("typing")))]
     pub fn new(py: Python<'_>, cookies_path: Option<PathBuf>) -> PyResult<Bound<'_, Self>> {
         future_into_py(py, async move {
             let mut b = SafariBuilder::new();
@@ -64,7 +64,7 @@ impl SafariGetter {
     }
 }
 
-#[gen_stub_pyclass]
+// #[gen_stub_pyclass]
 #[pyclass(get_all, set_all, eq, ord, from_py_object)]
 #[derive(Clone)]
 #[derive(Debug)]

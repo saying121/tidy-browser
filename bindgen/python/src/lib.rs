@@ -1,6 +1,6 @@
 use decrypt_cookies_rs::browser::cookies::SameSite as SameSiteRs;
 use pyo3::prelude::*;
-use pyo3_stub_gen::{define_stub_info_gatherer, derive::gen_stub_pyclass_enum};
+// use pyo3_stub_gen::{define_stub_info_gatherer, derive::gen_stub_pyclass_enum};
 
 use self::{
     chromium::*,
@@ -12,7 +12,7 @@ mod chromium;
 mod firefox;
 mod safari;
 
-#[gen_stub_pyclass_enum]
+// #[gen_stub_pyclass_enum]
 #[pyclass(eq, eq_int, ord, from_py_object)]
 #[derive(Clone, Copy)]
 #[derive(Debug)]
@@ -68,4 +68,4 @@ pub fn decrypt_cookies(m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
-define_stub_info_gatherer!(stub_info);
+// define_stub_info_gatherer!(stub_info);

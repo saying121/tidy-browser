@@ -12,7 +12,7 @@ use decrypt_cookies_rs::{
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyList};
 use pyo3_async_runtimes::tokio::future_into_py;
-use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
+// use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 use crate::SameSite;
 
@@ -20,7 +20,7 @@ macro_rules! chromiums {
     ($($browser:ident),* $(,)?) => {
         pastey::paste! {
             $(
-                #[gen_stub_pyclass]
+                // #[gen_stub_pyclass]
                 #[pyclass(frozen, str, from_py_object)]
                 #[derive(Clone)]
                 #[derive(Debug)]
@@ -33,13 +33,13 @@ macro_rules! chromiums {
                     }
                 }
 
-                #[gen_stub_pymethods]
+                // #[gen_stub_pymethods]
                 #[pymethods]
                 impl [<$browser Getter>] {
                     /// base: When browser start with `--user-data-dir=DIR` or special other channel
                     #[new]
                     #[pyo3(signature = (base=None))]
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[ChromiumGetter]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[ChromiumGetter]", imports=("typing")))]
                     pub fn new(py: Python<'_>, base: Option<PathBuf>) -> PyResult<Bound<'_, Self>> {
                         let b = base.map_or_else(
                             ChromiumBuilder::<$browser>::new,
@@ -55,7 +55,7 @@ macro_rules! chromiums {
                     }
 
                     /// Return all cookies
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
                     pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
@@ -72,7 +72,7 @@ macro_rules! chromiums {
                     }
 
                     /// Filter by host
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
                     pub fn cookies_by_host<'a>(
                         &'a self,
                         py: Python<'a>,
@@ -93,7 +93,7 @@ macro_rules! chromiums {
                     }
 
                     /// Return all login data
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
                     pub fn logins_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
@@ -110,7 +110,7 @@ macro_rules! chromiums {
                     }
 
                     /// Filter by host
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
                     pub fn logins_by_host<'a>(
                         &'a self,
                         py: Python<'a>,
@@ -131,7 +131,7 @@ macro_rules! chromiums {
                     }
                 }
 
-                #[gen_stub_pyclass]
+                // #[gen_stub_pyclass]
                 #[pyclass(frozen, str, from_py_object)]
                 #[derive(Clone)]
                 #[derive(Debug)]
@@ -144,13 +144,13 @@ macro_rules! chromiums {
                     }
                 }
 
-                #[gen_stub_pymethods]
+                // #[gen_stub_pymethods]
                 #[pymethods]
                 impl [<$browser CookieGetter>] {
                     /// base: When browser start with `--user-data-dir=DIR` or special other channel
                     #[new]
                     #[pyo3(signature = (base=None))]
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[ChromiumCookieGetter]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[ChromiumCookieGetter]", imports=("typing")))]
                     pub fn new(py: Python<'_>, base: Option<PathBuf>) -> PyResult<Bound<'_, Self>> {
                         let b = base.map_or_else(
                             ChromiumBuilder::<$browser>::new,
@@ -166,7 +166,7 @@ macro_rules! chromiums {
                     }
 
                     /// Return all cookies
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
                     pub fn cookies_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
@@ -183,7 +183,7 @@ macro_rules! chromiums {
                     }
 
                     /// Filter by host
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[ChromiumCookie]]", imports=("typing")))]
                     pub fn cookies_by_host<'a>(
                         &'a self,
                         py: Python<'a>,
@@ -204,7 +204,7 @@ macro_rules! chromiums {
                     }
                 }
 
-                #[gen_stub_pyclass]
+                // #[gen_stub_pyclass]
                 #[pyclass(frozen, str, from_py_object)]
                 #[derive(Clone)]
                 #[derive(Debug)]
@@ -217,13 +217,13 @@ macro_rules! chromiums {
                     }
                 }
 
-                #[gen_stub_pymethods]
+                // #[gen_stub_pymethods]
                 #[pymethods]
                 impl [<$browser LoginGetter>] {
                     /// base: When browser start with `--user-data-dir=DIR` or special other channel
                     #[new]
                     #[pyo3(signature = (base=None))]
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[ChromiumGetter]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[ChromiumGetter]", imports=("typing")))]
                     pub fn new(py: Python<'_>, base: Option<PathBuf>) -> PyResult<Bound<'_, Self>> {
                         let b = base.map_or_else(
                             ChromiumBuilder::<$browser>::new,
@@ -239,7 +239,7 @@ macro_rules! chromiums {
                     }
 
                     /// Return all login data
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
                     pub fn logins_all<'a>(&'a self, py: Python<'a>) -> PyResult<Bound<'a, PyList>> {
                         let self_ = self.clone();
                         future_into_py(py, async move {
@@ -256,7 +256,7 @@ macro_rules! chromiums {
                     }
 
                     /// Filter by host
-                    #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
+                    // #[gen_stub(override_return_type(type_repr="typing.Awaitable[list[LoginData]]", imports=("typing")))]
                     pub fn logins_by_host<'a>(
                         &'a self,
                         py: Python<'a>,
@@ -285,7 +285,7 @@ chromiums![Chrome, Edge, Chromium, Brave, Vivaldi, Yandex, Opera];
 #[cfg(not(target_os = "linux"))]
 chromiums![Arc, OperaGX, CocCoc];
 
-#[gen_stub_pyclass]
+// #[gen_stub_pyclass]
 #[pyclass(get_all, set_all, eq, ord, from_py_object)]
 #[derive(Clone)]
 #[derive(Debug)]
@@ -313,7 +313,7 @@ pub struct ChromiumCookie {
     pub last_update_utc: Option<DateTime<Utc>>,
 }
 
-#[gen_stub_pyclass]
+// #[gen_stub_pyclass]
 #[pyclass(get_all, set_all, eq, ord, from_py_object)]
 #[derive(Clone)]
 #[derive(Debug)]
