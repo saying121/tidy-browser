@@ -55,14 +55,14 @@ impl ChromiumBased {
                         if let ChromiumBuilderError::NotFoundBase { .. } = source.as_ref() =>
                     {
                         #[cfg(not(target_os = "windows"))]
-                        tracing::info!(r#"{source}"#,);
+                        tracing::info!(source = %source);
                         #[cfg(target_os = "windows")]
                         tracing::info!(
-                            r#"{source}
-When you use scoop on Windows, the data path is located at `~\scoop\persisst\<name>\<xxx>`"#,
+                            source = %source,
+                            r#"When you use scoop on Windows, the data path is located at `~\scoop\persisst\<name>\<xxx>`"#,
                         );
                     },
-                    e => tracing::error!("{e}"),
+                    e => tracing::error!(error = %e),
                 }
             }
         }
