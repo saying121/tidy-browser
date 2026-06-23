@@ -81,7 +81,7 @@ pub async fn run_cli(args: crate::args::Args) -> Result<()> {
         #[cfg(target_os = "macos")]
         if let Err(e) = s.context(error::TokioTaskSnafu)? {
             // With arg `-a` just print error
-            tracing::error!("{e}");
+            tracing::error!(error = %e);
         }
 
         return Ok(());

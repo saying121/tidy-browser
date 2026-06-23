@@ -449,7 +449,7 @@ pub trait GetCookies: SealedCrypto + SealedCookies + Display {
                     cy.decrypt(&mut cookie.encrypted_value, Which::Cookie)
                         .inspect_err(|_e| {
                             #[cfg(feature = "tracing")]
-                            tracing::warn!("decrypt csrf failed: {_e}");
+                            tracing::warn!(error = %_e, "decrypt csrf failed");
                         })
                         .unwrap_or_default()
                 });
@@ -470,7 +470,7 @@ pub trait GetCookies: SealedCrypto + SealedCookies + Display {
                     cy.decrypt(&mut cookie.encrypted_value, Which::Cookie)
                         .inspect_err(|_e| {
                             #[cfg(feature = "tracing")]
-                            tracing::warn!("decrypt session failed: {_e}");
+                            tracing::warn!(error = %_e, "decrypt session failed");
                         })
                         .unwrap_or_default()
                 });

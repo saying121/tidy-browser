@@ -27,7 +27,7 @@ async fn main() -> Result<(), Whatever> {
         let getter = match ele {
             Ok(getter) => getter,
             Err(e) => {
-                tracing::error!("The computer not install the browser: {}", e);
+                tracing::error!(error = %e, "The computer not install the browser");
                 continue;
             },
         };

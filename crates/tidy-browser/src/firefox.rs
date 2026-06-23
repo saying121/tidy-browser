@@ -55,12 +55,11 @@ impl FirefoxBased {
                         ..
                     } => {
                         tracing::info!(
-                            r#"Not found {},
-The browser is not installed or started with `-P`/`-profile` arg."#,
-                            path.display()
+                            path = %path.display(),
+                            r#"Not found, The browser is not installed or started with `-P`/`-profile` arg"#,
                         );
                     },
-                    e => tracing::error!("{e}"),
+                    e => tracing::error!(error = %e),
                 }
             }
         }
