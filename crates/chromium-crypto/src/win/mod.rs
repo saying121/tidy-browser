@@ -131,7 +131,10 @@ impl Decrypter {
             (pass_v20, Self::K_APP_BOUND_DATA_PREFIX.len())
         }
         else if ciphertext.starts_with(Self::K_ENCRYPTION_VERSION_PREFIX) {
-            (&self.pass_v10, Self::K_ENCRYPTION_VERSION_PREFIX.len())
+            (
+                self.pass_v10.as_slice(),
+                Self::K_ENCRYPTION_VERSION_PREFIX.len(),
+            )
         }
         else {
             return Ok(String::from_utf8_lossy(&decrypt_with_dpapi(ciphertext)?).to_string());
