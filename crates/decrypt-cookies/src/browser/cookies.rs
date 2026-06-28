@@ -70,7 +70,6 @@ pub trait CookiesInfo {
         properties.join("; ")
     }
 
-    // TODO: reanme to `url`
     fn url(&self) -> String {
         format!("https://{}{}", self.domain().trim_matches('.'), self.path())
     }
