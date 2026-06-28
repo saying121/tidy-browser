@@ -128,7 +128,7 @@ impl Decrypter {
         let (pass, prefix_len) = if let Some(pass_v20) = &self.pass_v20
             && ciphertext.starts_with(Self::K_APP_BOUND_DATA_PREFIX)
         {
-            (pass_v20, Self::K_APP_BOUND_DATA_PREFIX.len())
+            (pass_v20.as_slice(), Self::K_APP_BOUND_DATA_PREFIX.len())
         }
         else if ciphertext.starts_with(Self::K_ENCRYPTION_VERSION_PREFIX) {
             (
