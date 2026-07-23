@@ -145,7 +145,7 @@ pub async fn firefox_cookies_getter()
                 let ($([<$browser:lower _getter>],)*) = tokio::join!(
                     $(FirefoxBuilder::<$browser>::new().build_cookie(),)*
                 );
-                let ($([<$browser:lower _getter>],)*) = ($([<$browser:lower _getter>].map(|v| Box::new(v) as Box<dyn GetCookies + Send + Sync>),)*);
+                let ($([<$browser:lower _getter>],)*) = ($([<$browser:lower _getter>].map(|v| -> Box<dyn GetCookies + Send + Sync> { Box::new(v) }),)*);
 
                 $(
                     result.push([<$browser:lower _getter>]);

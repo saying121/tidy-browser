@@ -219,7 +219,7 @@ pub async fn chromium_getter()
                 let ($([<$browser:lower _getter>],)*) = tokio::join!(
                     $(ChromiumBuilder::<$browser>::new().build(),)*
                 );
-                let ($([<$browser:lower _getter>],)*) = ($([<$browser:lower _getter>].map(|v| Box::new(v) as Box<dyn GetCookiesLogins + Send + Sync>),)*);
+                let ($([<$browser:lower _getter>],)*) = ($([<$browser:lower _getter>].map(|v| -> Box<dyn GetCookiesLogins + Send + Sync> { Box::new(v) }),)*);
 
                 $(
                     result.push([<$browser:lower _getter>]);
