@@ -74,8 +74,14 @@ impl CookiesInfo for SafariCookie {
         &self.value
     }
     fn expiry(&self) -> Option<String> {
-        self.expires
-            .map(|expiry| expiry.to_rfc2822())
+        use chrono::Datelike;
+
+        if let Some(time) = self.expires {
+            // The chrono to_rfc2822() method panics if the year is negative or it has more than 4 digits.
+            (0..=9999).contains(&time.year()).then(|| time.to_rfc2822())
+        } else {
+            None
+        }
     }
     fn is_secure(&self) -> bool {
         self.is_secure

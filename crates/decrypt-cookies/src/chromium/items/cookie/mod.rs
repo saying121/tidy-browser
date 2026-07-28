@@ -81,8 +81,14 @@ impl CookiesInfo for ChromiumCookie {
         &self.host_key
     }
     fn expiry(&self) -> Option<String> {
-        self.expires_utc
-            .map(|expir| expir.to_rfc2822())
+        use chrono::Datelike;
+
+        if let Some(time) = self.expires_utc {
+            // The chrono to_rfc2822() method panics if the year is negative or it has more than 4 digits.
+            (0..=9999).contains(&time.year()).then(|| time.to_rfc2822())
+        } else {
+            None
+        }
     }
     fn is_secure(&self) -> bool {
         self.is_secure
