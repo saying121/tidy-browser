@@ -83,16 +83,11 @@ impl CookiesInfo for ChromiumCookie {
     fn expiry(&self) -> Option<String> {
         use chrono::Datelike;
 
-        #[expect(clippy::option_if_let_else, reason = "code clarity")]
-        if let Some(time) = self.expires_utc {
-            // The chrono to_rfc2822() method panics if the year is negative or it has more than 4 digits.
-            (0..=9999)
-                .contains(&time.year())
-                .then(|| time.to_rfc2822())
-        }
-        else {
-            None
-        }
+        let time = self.expires_utc?;
+        // The chrono to_rfc2822() method panics if the year is negative or it has more than 4 digits.
+        (0..=9999)
+            .contains(&time.year())
+            .then(|| time.to_rfc2822())
     }
     fn is_secure(&self) -> bool {
         self.is_secure
